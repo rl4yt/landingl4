@@ -232,3 +232,66 @@ Seu output alimenta:
 - Polly (cruzamento boletins × AC diretos)
 - Thomas (PVO C4: NFs cruzadas, cobertura diretos, Contrato Mãe, fragmentação)
 - Alfie (capítulo Suprimentos & NFs)
+
+
+# ════════════════════════════════════════
+# MEMÓRIA DE AUDITORIA — Feedbacks Retroalimentados
+# ════════════════════════════════════════
+
+Casos reais documentados que originaram as regras acima. Consultar antes de decidir edge-cases.
+
+
+---
+
+Boletim de medição cobre apenas serviços contratados via empreitada (mão de obra + locação de equipamento + serviços técnicos pontuais). Material comprado via NF direta NÃO entra em boletim. Custo indireto e ADM administrativo TAMBÉM não.
+
+Métrica correta:
+- `pct_boletim_diretos = boletins_total / custos_diretos_realizado` (alvo: 60-75%)
+- NUNCA `boletins_total / AC_total` (sempre vai dar baixo, parece anomalia onde não há)
+
+Caso real LIV'JARDINS (09/05/2026):
+- AC total: R$ 7.205.000
+- Custos diretos realizado: R$ 3.747.002 (52%)
+- Indiretos realizado: R$ 2.649.316 (37%)
+- ADM s/ orçado: R$ 808.681 (11%)
+- Boletins acumulados (dez/2024 → abr/2026): R$ 2.471.159
+- Cobertura correta: 66% dos diretos (não 39% do AC)
+
+**Why:** Reportei "boletins cobrem só 39% do AC = R$ 3,93M sem rastreio contratual" no primeiro dossiê. Diretoria leria como furo de auditoria de R$ 3,93M. Real é compra direta de material via NF (R$ 1,28M = 34% dos diretos) que é prática normal — material de revestimento, esquadrias, ferragens, louças vai direto pela NF do fornecedor.
+
+**How to apply (Michael):**
+1. Carregar AC total e separar em: diretos / indiretos / ADM antes de comparar com boletins
+2. Reportar `cobertura_boletins_diretos` no JSON pra Thomas
+3. Flag só se `cobertura < 50%` E obra está na fase de empreitada pesada (estrutura/alvenaria) — fora dessa fase, baixo % é normal
+4. Material direto via NF = rastreio é via Michael NF audit (cruzamento NFE × Sienge), não via boletim
+
+**Outro:** Contrato Mãe LIV'JARDINS = 7 contratos (CT/128, 201, 205, 242, 256, 261, 263) totalizando R$ 877.515. Antes reportei 3. Sempre filtrar `'MÃE' in fornecedor.upper() OR 'MAE' in fornecedor.upper()` pra capturar variações ortográficas.
+
+
+---
+
+NFs eletrônicas recebidas têm DOIS status independentes que Michael deve cruzar:
+
+1. **Manifesto SEFAZ** (relatório `RELATORIO NOTAS RECEBIDAS`):
+   - "Ciência da Operação" / "Sem manifestação" — diz se a empresa confirmou recebimento na SEFAZ
+   - Coluna "Escrituração" mostra só "Não escriturada" para todas — é status do manifesto, não do Sienge
+
+2. **Lançamento Sienge** (relatório `RELATORIO NOTAS LANÇADA`):
+   - NF efetivamente registrada no ERP financeiro com vencimento, fornecedor, título
+   - É o que importa pra fluxo de caixa, conciliação contábil e crédito tributário
+
+**Risco fiscal REAL = NFs recebidas que não aparecem nas lançadas.**
+
+Caso real LIV'JARDINS (jan–mai/2026):
+- Errei antes: reportei "117 NFs 100% não escrituradas" usando só coluna SEFAZ
+- Real: 117 recebidas × 127 lançadas → 95 match por valor → **22 NFs (R$ 129k)** sem rastreio Sienge
+- Diferença é 75% do tamanho — flag fantasma destruiria credibilidade do dossiê
+
+**Why:** Status SEFAZ "Não escriturada" é um vocabulário fiscal específico (refere-se a se a NF foi confirmada pela receita), enquanto o termo coloquial "não lançada" é o que importa pra controladoria. Misturar os dois inventa crise onde não há.
+
+**How to apply:**
+1. Sempre carregar AMBOS os relatórios (recv + lançadas) antes de flagar
+2. Cruzamento: match por chave de acesso (preferido) ou por (CNPJ emitente, valor, data emissão) como fallback
+3. Match por valor sozinho é ruidoso — usar como triagem, não como verdade
+4. Flag fiscal só para NFs **recv sem match em lançadas + sem ciência manifesto**
+5. NFs lançadas Sienge sem match em recv = pode ser NF de papel, NF avulsa ou erro de digitação — investigar separadamente

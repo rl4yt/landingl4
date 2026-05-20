@@ -278,3 +278,128 @@ Reportar `razao_indir_dir_atual` + `caveat_temporal_indireto` no JSON.
 ```
 /freddie (JSON validado) → /polly (você) → JSON EVM → /thomas → PVO → /alfie
 ```
+
+
+# ════════════════════════════════════════
+# MEMÓRIA DE AUDITORIA — Feedbacks Retroalimentados
+# ════════════════════════════════════════
+
+Casos reais documentados que originaram as regras acima. Consultar antes de decidir edge-cases.
+
+
+---
+
+Toda obra L4 tem dois EVs possíveis e Polly/Thomas devem reportar AMBOS:
+
+**EV Sienge (otimista):** %med × orçado, somado por etapa. Vem direto do "Custo por Nível". Reflete boletim contratual pago ao empreiteiro — pode incluir antecipações.
+
+**EV físico (realista):** %real Grace × orçado por etapa direta. Reflete entrega física auditável no canteiro.
+
+⚠ **Regra crítica para INDIRETO:**
+Custo Indireto = overhead temporal (escritório, residente, EPI, encargos). Gasta mês a mês independente do físico. NUNCA usar %real_global Grace para indireto — usar `%med Sienge` (proxy de tempo decorrido vs total) OU `(hoje − inicio_obra) / (entrega_planejada − inicio_obra)`.
+
+Caso real LIV'JARDINS (10/05/2026):
+- BUG inicial: indireto × 15% (Grace global) → EV físico R$ 3,65M → CPI 0,51 (irreal)
+- Corrigido: indireto × 76,7% (%med Sienge) → EV físico R$ 5,34M → CPI 0,74 ≈ CPI Sienge
+- **Conclusão**: nesta obra os dois CPIs convergem (~0,74). Não há leituras divergentes.
+
+Quando há divergência REAL:
+- Boletim de medição contratual paga adiantamento sem entrega física correspondente
+- %med Sienge sobe mais rápido que %real Grace por etapa direta
+- Aí sim faz sentido reportar EV Sienge (otimista) vs EV físico (pessimista)
+
+**Why:** Diretoria precisa saber a faixa do risco. CPI Sienge sozinho subestima cenário pior. CPI físico sozinho ignora overhead. Usar ambos cria intervalo defensável.
+
+**How to apply:**
+1. Polly calcula `EV_sienge` e `EV_fisico` em todo cruzamento.
+2. Thomas reporta no dashboard **dois EAC**: Otimista (Sienge) e Pessimista (físico).
+3. Plano de ação dimensiona pela média entre os dois.
+4. Se gap > 20pp → flag adicional "descolamento boletim vs entrega".
+
+Mapeamento etapa Polly → fase Grace é manual (semântico). Tabela mantida em script junto com Thomas — extrair por palavras-chave (Vedações, Drywall, Fachada, etc.) e validar manualmente na primeira vez por obra.
+
+
+---
+
+Quando uma etapa tem `%med < 5%` (não iniciada / quase nada medido), CPI local fica numericamente instável:
+- Pequenas compras avulsas (placas, sondagem, etc.) já lançadas como "realizado" sem medição correspondente puxam CPI pra baixo artificialmente
+- Resultado: EAC da etapa explode (ex: Comunicação CPI 0,05 → EAC R$ 3M num orçado de R$ 149k)
+
+**Regra correta para projeção de etapa não iniciada:**
+```
+EAC_futuro = orçado_etapa / CPI_global
+```
+NÃO usar `EAC = orçado / CPI_etapa` quando `%med < 5%`.
+
+Caso real LIV'JARDINS (09/05/2026), CPI global 0,738:
+- IMPERMEABILIZAÇÃO orçado R$ 310k
+  - CPI etapa 0,02 → EAC absurdo R$ 15,6M (errado)
+  - CPI global 0,738 → EAC realista R$ 420k (estouro projetado +R$ 110k)
+- COMUNICAÇÃO orçado R$ 149k
+  - CPI etapa 0,05 → EAC R$ 3,3M (errado)
+  - CPI global 0,738 → EAC R$ 202k (+R$ 53k)
+- ACABAMENTOS PISO orçado R$ 625k → EAC R$ 847k (+R$ 222k)
+- ESQUADRIAS ALU orçado R$ 249k → EAC R$ 338k (+R$ 89k)
+
+**Why:** Sem essa regra, dashboard reporta números absurdos (etapas pequenas projetando estouros maiores que o BAC inteiro), perdendo credibilidade. CPI global é a melhor estimativa quando dado da etapa não é estatisticamente significativo.
+
+**How to apply:**
+- `%med < 5%` → usar CPI_global
+- `5% ≤ %med ≤ 95%` → usar CPI_etapa (ativa, dado significativo)
+- `%med > 95%` → não projetar EAC, etapa é histórico (excesso = real − orçado)
+
+Limiar 5% é regra L4. Pode ajustar se obra tem pacote de compra antecipada grande (ex: esquadrias compradas antes da instalação).
+
+
+---
+
+Sienge "Custo por Nível" pode ter múltiplas unidades construtivas no mesmo arquivo, separadas por linha "Total da unidade construtiva" e nova "Obra/Unidade construtiva" header.
+
+Caso real LIV'JARDINS (relatório 08/05/2026):
+- Unidade 1: CUSTOS DIRETOS — etapas 01–22 (R$ 7,35M orçado, R$ 3,75M real)
+- Unidade 2: CUSTOS INDIRETOS — itens 01.001 a 01.020 (R$ 2,75M orçado, R$ 2,65M real)
+- Unidade 3: SEM NOME — apenas 00.001 ADM DE OBRA (orçado R$ 0, real R$ 808.681,46) ← FÁCIL DE PERDER
+- **Total da obra (linha 185):** orçado R$ 10.100.090,59 · realizado R$ 7.204.999,65
+
+Minha primeira extração capturou só Unidade 1+2 e perdeu R$ 808k de ADM. CPI errou de 0,738 pra 0,831. EAC errou em R$ 1,5M.
+
+**Why:** ADM/Logística sem orçado é prática comum em Sienge quando esses itens vieram pós-orçamento original. Capturar só os pais nominados ignora a realidade contábil.
+
+**How to apply (Freddie):**
+1. Ler o arquivo até linha "Total da obra" — esse é o ground truth do AC e BAC.
+2. Capturar **todas as linhas com código numérico** independente de unidade construtiva.
+3. Validar: soma dos pais L1 (extraídos) deve bater com "Total da obra". Se não bater → tem unidade fantasma sem header → reverter pra extração linha-a-linha até linha "Total da obra".
+
+**How to apply (Polly):**
+1. Quando AC do Freddie ≠ "Total da obra" do relatório → erro de extração, não pode prosseguir.
+2. Itens com orçado R$ 0 e realizado > 0 = **item não previsto no orçamento original** → flag separada (não estouro, é ESQUECIMENTO ORÇAMENTÁRIO).
+
+Caso real itens não orçados encontrados:
+- 00.001 ADM DE OBRA: R$ 808.681 sem orçado
+- 01.020 EQUIPE DE LOGÍSTICA: R$ 44.786 sem orçado
+
+Total esquecido no orçamento original: **R$ 853.467** que deveria estar nos indiretos desde o início.
+
+
+---
+
+Sienge tem múltiplas formas de agregar custos:
+- **Curva ABC de Serviços**: agrupa por código de serviço/insumo (concreto FCK 35, aço CA-50 12,5mm, etc.)
+- **Custo por Nível**: agrupa por etapa WBS L1/L2 (Supraestrutura, Vedações, etc.)
+
+Itens podem cair em buckets diferentes nos dois relatórios. Não dá pra somar palavras-chave da Curva ABC esperando bater com L1 do Custo por Nível.
+
+Caso real LIV'JARDINS Supraestrutura:
+- Custo por Nível ON 04 orçado: R$ 1.774.212
+- Curva ABC itens "supra" (concreto + forma + armadura + escoramento + protensão): R$ 2.113.789
+- Diff: +R$ 339k (~ 19% acima)
+- Causa provável: itens de "Locação Escoramento", "Plataforma Piscina" e "Mão de obra mensalista" caem em Indireto/Equipamentos no Custo por Nível mas em "supra" pela palavra-chave Curva ABC.
+
+**Why:** Tentar validar Custo por Nível somando Curva ABC produz "estouros fantasmas" ou "sobras fantasmas" quando categorização difere.
+
+**How to apply:**
+1. Custo por Nível é a fonte de verdade para EVM (BAC/EV/AC por etapa).
+2. Curva ABC é a fonte de verdade para análise de SERVIÇOS (qual insumo concentra custo).
+3. NÃO somar Curva ABC por palavra-chave esperando bater com L1 do Custo por Nível.
+4. Para auditar etapa específica: pedir export filtrado de Sienge com WBS = ON da etapa (não usar busca textual).
+5. Se diff entre soma Curva ABC e L1 Custo por Nível > 10% → é categorização diferente, não bug. Documentar a diferença, não tratar como erro.

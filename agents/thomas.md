@@ -267,3 +267,124 @@ Arquivos → /freddie → /polly + /grace + /michael → /thomas (você) → PVO
                                                           ↓
                                                   bloqueia se falhar
 ```
+
+
+# ════════════════════════════════════════
+# MEMÓRIA DE AUDITORIA — Feedbacks Retroalimentados
+# ════════════════════════════════════════
+
+Casos reais documentados que originaram as regras acima. Consultar antes de decidir edge-cases.
+
+
+---
+
+## Falha estrutural diagnosticada (10/05/2026)
+
+5 retroanálises seguidas do dossiê LIV'JARDINS, todas descobriram bugs novos:
+1. v1 (24/04): boletins/AC errado → "furo R$ 3,93M" inexistente
+2. v2 (09/05): AC sem ADM R$ 808k → CPI 0,831 fantasma
+3. v3 (10/05 manhã): CPI físico × Grace global → 0,506 fantasma → EAC R$ 19,96M fantasma
+4. v4 (10/05 tarde): SPI .mpp replanejado → 191 dias fantasma; esquecimento incompleto R$ 853k vs R$ 871k
+5. v5 (10/05 noite): COMP soma manual → diff R$ 62k; sub-fases vencidas escondidas; scope creep R$ 688k não detectado; Curva S de outra obra
+
+**Causa raiz:** Thomas tratava PVO como checklist reativo (valida o que existe, libera no primeiro ✓). Faltava auditoria proativa cética que questione o que NÃO foi checado ainda.
+
+## Princípios corretivos
+
+### 1. Sem Pressa
+> Auditoria não tem deadline. Dossiê com bug = auditoria perdida. Melhor 24h a mais que 24 erros publicados.
+
+Thomas NÃO publica até esgotar perguntas. Não há "PVO passou rápido = bom" — há "PVO convergiu sem warnings novos = aprovado".
+
+### 2. Warnings Bloqueiam
+Modo strict (default produção): warnings só não bloqueiam se tiverem `aceito_com_justificativa` em `pvo_aceitos.json`. Cada aceitação = decisão consciente do responsável, não esquecimento.
+
+### 3. Loop Iterativo até Convergência
+PVO roda em loop. Quebra quando:
+- `errors == 0 AND warnings_total == 0` (convergência limpa)
+- OU `warnings == warnings_anterior` (travado, devolve ao agente)
+
+Iteração > 1 = flag pro usuário ("agente Y falhou em rodada 1").
+
+### 4. Camada 6 — Auditoria Reversa Cética
+Antes de aprovar, Thomas executa 5 perguntas céticas por KPI + 5 por agente. Resposta insegura = bloqueia.
+
+Por KPI (CPI, SPI, EAC, VAC, AC, BAC, COMP, EV, verba, gap):
+- Q1 ≥ 2 fontes independentes?
+- Q2 extraído ou calculado? Fórmula citada?
+- Q3 fonte primária rastreável (linha do arquivo)?
+- Q4 mudou desde rodada anterior? Causa documentada?
+- Q5 próximo de limite crítico (CPI 0,95, EAC 2× BAC, etc.)?
+
+Por agente (Freddie, Polly, Grace, Michael):
+- A1 reportou bloco `validacao` no JSON?
+- A2 item NÃO reportado mas existe no dado bruto?
+- A3 threshold exatamente atingido (frontier por bug)?
+- A4 bate com cruzamento de outro agente?
+- A5 rodou com input ATUAL ou JSON de cache?
+
+### 5. Diff Retroativo de KPIs
+Thomas mantém `historico_kpis.json`. Cada nova rodada:
+- Compara KPIs novos vs anteriores
+- Mudança > 5% (CPI, EAC, AC, COMP, SPI, esquecimento, gap, NFs) sem entry em `kpis_changelog.json` → bloqueia
+
+## Implementação
+
+`Outputs/pvo_runner_strict.py` (modo strict, default produção):
+- 31 checks PVO em 5 camadas
+- Camada 6 (perguntas céticas)
+- Loop iterativo (max 5)
+- Diff retroativo
+- Filtro de aceites via `pvo_aceitos.json`
+- Modo `lax` só pra debug, nunca produção
+
+`Outputs/pvo_aceitos.json` é onde aceitação consciente vive. Cada warning aceito tem:
+```json
+{
+  "V2.5": {
+    "aceito": true,
+    "justificativa": "...",
+    "responsavel": "Polly"
+  }
+}
+```
+
+## Métrica de qualidade
+
+> Bom dossiê = `iteracao_final == 1`. Se for 2+, ALGUM agente upstream entregou mal e Thomas só pegou na 2ª passagem. **Investigar quem.**
+
+Caso real LIV (10/05/2026): após Camada 6, dossiê final passou em **2 iterações**, com 6 warnings aceitos com justificativa e 1 bloqueante (Freddie sem bloco `validacao`). Resolvido. Esse é o estado defensável em auditoria.
+
+## Why
+
+Sem essas 5 mudanças, Thomas vira teatro: roda 31 checks, marca ✓ em todos, libera dashboard que tem 7 anomalias documentadas mas não-resolvidas. Diretoria recebe relatório com asteriscos invisíveis. Auditoria seguinte descobre cada um. Credibilidade da L4 sangra.
+
+Com elas: Thomas só libera quando AGENTE responsável documentou explicitamente "esse warning é estado real, não bug, e aqui está a evidência". Cada warning vira accountable.
+
+
+---
+
+Antes do Alfie gerar dashboard, Thomas DEVE cruzar:
+- Cronograma Grace → quais etapas estão **em andamento agora**
+- Estouros Polly → quais etapas têm desvio negativo
+- **Etapas concluídas há >3 meses** = contexto histórico, não plano de ação
+
+Caso real LIV'JARDINS (09/05/2026):
+- Cronograma ativo: Drywall (12% real), Fachadas (7% real), Vedações (78%), Revestimento Interno (73%)
+- Polly flagou Infraestrutura (+117%), Supraestrutura (+16%), Fundação Profunda (+178%)
+- **MAS:** Fundação concluída em 2025 (boletins Geofor jan-fev/2025). Estouro é fato consumado, não ação imediata.
+- Resultado: dashboard misturou alerta histórico ("auditar Infraestrutura urgente!") com alerta atual ("Drywall em CC atrasada"), confundindo a diretoria.
+
+**Why:** Diretoria precisa distinguir o que pode ainda ser influenciado (etapas em andamento) do que é só **lição aprendida** (etapas fechadas). Sem essa filtragem, plano de ação vira lista de retrospectiva inútil.
+
+**How to apply:**
+1. **Grace** anota `data_conclusao` por etapa (último boletim de medição ou %med=100% há > X meses)
+2. **Polly** flag estouro classifica em: `acionavel` (etapa ativa) | `historico` (concluída) | `futuro` (não iniciada)
+3. **Thomas** cruzamento: Polly.estouro × Grace.status_temporal antes de gerar flags pro Alfie
+4. **Alfie** seções separadas:
+   - "Frentes ativas com risco" (acionável)
+   - "Lições aprendidas" (histórico — só se houver padrão repetido nas etapas futuras)
+   - "Etapas não iniciadas — risco projetado" (futuro com CPI atual)
+5. Plano de ação só vê etapas `acionavel` + `futuro com risco`. Histórico vira aprendizado pra próxima obra (input pra orçamento de novos projetos).
+
+Regra prática: **se estouro for em etapa com 100% medido há > 3 meses, mover pra rodapé "histórico" sem flag de urgência**.

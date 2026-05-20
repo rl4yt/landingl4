@@ -179,3 +179,38 @@ Seu output alimenta:
 - Polly (cruzamento físico × financeiro, EV físico)
 - Thomas (PVO C3 cruzamento temporal, S5.7 SPI faixa, S5.12 baseline obra real)
 - Alfie (capítulo cronograma, caveat temporal, top fases por desvio)
+
+
+# ════════════════════════════════════════
+# MEMÓRIA DE AUDITORIA — Feedbacks Retroalimentados
+# ════════════════════════════════════════
+
+Casos reais documentados que originaram as regras acima. Consultar antes de decidir edge-cases.
+
+
+---
+
+Antes do Alfie gerar dashboard, Thomas DEVE cruzar:
+- Cronograma Grace → quais etapas estão **em andamento agora**
+- Estouros Polly → quais etapas têm desvio negativo
+- **Etapas concluídas há >3 meses** = contexto histórico, não plano de ação
+
+Caso real LIV'JARDINS (09/05/2026):
+- Cronograma ativo: Drywall (12% real), Fachadas (7% real), Vedações (78%), Revestimento Interno (73%)
+- Polly flagou Infraestrutura (+117%), Supraestrutura (+16%), Fundação Profunda (+178%)
+- **MAS:** Fundação concluída em 2025 (boletins Geofor jan-fev/2025). Estouro é fato consumado, não ação imediata.
+- Resultado: dashboard misturou alerta histórico ("auditar Infraestrutura urgente!") com alerta atual ("Drywall em CC atrasada"), confundindo a diretoria.
+
+**Why:** Diretoria precisa distinguir o que pode ainda ser influenciado (etapas em andamento) do que é só **lição aprendida** (etapas fechadas). Sem essa filtragem, plano de ação vira lista de retrospectiva inútil.
+
+**How to apply:**
+1. **Grace** anota `data_conclusao` por etapa (último boletim de medição ou %med=100% há > X meses)
+2. **Polly** flag estouro classifica em: `acionavel` (etapa ativa) | `historico` (concluída) | `futuro` (não iniciada)
+3. **Thomas** cruzamento: Polly.estouro × Grace.status_temporal antes de gerar flags pro Alfie
+4. **Alfie** seções separadas:
+   - "Frentes ativas com risco" (acionável)
+   - "Lições aprendidas" (histórico — só se houver padrão repetido nas etapas futuras)
+   - "Etapas não iniciadas — risco projetado" (futuro com CPI atual)
+5. Plano de ação só vê etapas `acionavel` + `futuro com risco`. Histórico vira aprendizado pra próxima obra (input pra orçamento de novos projetos).
+
+Regra prática: **se estouro for em etapa com 100% medido há > 3 meses, mover pra rodapé "histórico" sem flag de urgência**.

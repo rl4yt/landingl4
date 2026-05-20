@@ -127,3 +127,93 @@ Dados brutos → /freddie (você) → JSON limpo → /polly /grace /michael → 
 ```
 
 Você é o primeiro nó. Se você falha, a cascata inteira falha.
+
+
+# ════════════════════════════════════════
+# MEMÓRIA DE AUDITORIA — Feedbacks Retroalimentados
+# ════════════════════════════════════════
+
+Casos reais documentados que originaram as regras acima. Consultar antes de decidir edge-cases.
+
+
+---
+
+Antes de mandar JSON pra Polly/Thomas, Freddie valida soma extraída contra rodapé de "Total da obra"/"Total da unidade construtiva" do próprio relatório Sienge.
+
+Casos reais LIV'JARDINS (que aconteceram nesta auditoria):
+
+**Bug 1 — Custo por Nível:**
+- Extraí AC = R$ 6.396.318 somando só pais L1
+- Total da obra (rodapé) = R$ 7.204.999,65
+- Diff = R$ 808.681,46 (item 00.001 ADM DE OBRA em unidade construtiva sem header nominal)
+- CPI errou de 0,738 pra 0,831; EAC errou em R$ 1,5M
+
+**Bug 2 — Curva ABC:**
+- Primeira soma: R$ 20.200.181 = 2× BAC
+- Soma correta após filtro adequado: R$ 10.100.090,59 = bate com Total
+- Causa: extração somou linhas de header/agregação além das linhas de serviço
+
+**Why:** Sem validação contra rodapé, Polly trabalha com dado errado e Thomas gera flags fantasma. Auditoria perde credibilidade.
+
+**How to apply:**
+1. Antes de retornar JSON, ler última linha "Total da obra" / "Total geral" do arquivo
+2. Comparar com soma das linhas extraídas
+3. Se diff > R$ 100 → bloquear extração e flagar discrepância: "extraído R$ X, total reportado R$ Y, diff R$ Z"
+4. Em "Custo por Nível" Sienge: ler até linha **"Total da obra"** independente de unidade construtiva (pode ter ADM/Logística sem header)
+5. Em "Curva ABC": filtrar só linhas com `código numérico` E `quantidade > 0` E `preço unitário > 0`. Excluir headers, totais parciais e linhas em branco.
+
+Regra de ouro: **soma extraída ≠ rodapé reportado = bug, não anomalia da obra**.
+
+
+---
+
+Sienge "Custo por Nível" pode ter múltiplas unidades construtivas no mesmo arquivo, separadas por linha "Total da unidade construtiva" e nova "Obra/Unidade construtiva" header.
+
+Caso real LIV'JARDINS (relatório 08/05/2026):
+- Unidade 1: CUSTOS DIRETOS — etapas 01–22 (R$ 7,35M orçado, R$ 3,75M real)
+- Unidade 2: CUSTOS INDIRETOS — itens 01.001 a 01.020 (R$ 2,75M orçado, R$ 2,65M real)
+- Unidade 3: SEM NOME — apenas 00.001 ADM DE OBRA (orçado R$ 0, real R$ 808.681,46) ← FÁCIL DE PERDER
+- **Total da obra (linha 185):** orçado R$ 10.100.090,59 · realizado R$ 7.204.999,65
+
+Minha primeira extração capturou só Unidade 1+2 e perdeu R$ 808k de ADM. CPI errou de 0,738 pra 0,831. EAC errou em R$ 1,5M.
+
+**Why:** ADM/Logística sem orçado é prática comum em Sienge quando esses itens vieram pós-orçamento original. Capturar só os pais nominados ignora a realidade contábil.
+
+**How to apply (Freddie):**
+1. Ler o arquivo até linha "Total da obra" — esse é o ground truth do AC e BAC.
+2. Capturar **todas as linhas com código numérico** independente de unidade construtiva.
+3. Validar: soma dos pais L1 (extraídos) deve bater com "Total da obra". Se não bater → tem unidade fantasma sem header → reverter pra extração linha-a-linha até linha "Total da obra".
+
+**How to apply (Polly):**
+1. Quando AC do Freddie ≠ "Total da obra" do relatório → erro de extração, não pode prosseguir.
+2. Itens com orçado R$ 0 e realizado > 0 = **item não previsto no orçamento original** → flag separada (não estouro, é ESQUECIMENTO ORÇAMENTÁRIO).
+
+Caso real itens não orçados encontrados:
+- 00.001 ADM DE OBRA: R$ 808.681 sem orçado
+- 01.020 EQUIPE DE LOGÍSTICA: R$ 44.786 sem orçado
+
+Total esquecido no orçamento original: **R$ 853.467** que deveria estar nos indiretos desde o início.
+
+
+---
+
+Sienge tem múltiplas formas de agregar custos:
+- **Curva ABC de Serviços**: agrupa por código de serviço/insumo (concreto FCK 35, aço CA-50 12,5mm, etc.)
+- **Custo por Nível**: agrupa por etapa WBS L1/L2 (Supraestrutura, Vedações, etc.)
+
+Itens podem cair em buckets diferentes nos dois relatórios. Não dá pra somar palavras-chave da Curva ABC esperando bater com L1 do Custo por Nível.
+
+Caso real LIV'JARDINS Supraestrutura:
+- Custo por Nível ON 04 orçado: R$ 1.774.212
+- Curva ABC itens "supra" (concreto + forma + armadura + escoramento + protensão): R$ 2.113.789
+- Diff: +R$ 339k (~ 19% acima)
+- Causa provável: itens de "Locação Escoramento", "Plataforma Piscina" e "Mão de obra mensalista" caem em Indireto/Equipamentos no Custo por Nível mas em "supra" pela palavra-chave Curva ABC.
+
+**Why:** Tentar validar Custo por Nível somando Curva ABC produz "estouros fantasmas" ou "sobras fantasmas" quando categorização difere.
+
+**How to apply:**
+1. Custo por Nível é a fonte de verdade para EVM (BAC/EV/AC por etapa).
+2. Curva ABC é a fonte de verdade para análise de SERVIÇOS (qual insumo concentra custo).
+3. NÃO somar Curva ABC por palavra-chave esperando bater com L1 do Custo por Nível.
+4. Para auditar etapa específica: pedir export filtrado de Sienge com WBS = ON da etapa (não usar busca textual).
+5. Se diff entre soma Curva ABC e L1 Custo por Nível > 10% → é categorização diferente, não bug. Documentar a diferença, não tratar como erro.
