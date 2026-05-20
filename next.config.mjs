@@ -1,9 +1,13 @@
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    outputFileTracingIncludes: {
-      '/api/**': ['./agents/**/*.md'],
-    },
+  outputFileTracingRoot: __dirname,
+  outputFileTracingIncludes: {
+    '/api/**': ['./agents/**/*.md'],
   },
 }
 
