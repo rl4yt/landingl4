@@ -1,0 +1,4422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>L4 Engenharia — Auditoria de Obras IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+/* ───────────────────────────────────────────────────────────────
+   TOKENS
+   ─────────────────────────────────────────────────────────────── */
+:root {
+  --bg:        #FFFFFF;
+  --fg:        #0A0A0A;
+  --mute:      #666666;
+  --mute-2:    #999999;
+  --hair:      #E5E5E5;
+  --alt:       #FAFAFA;
+  --crit:      #B91C1C;
+  --ok:        #166534;
+
+  --sans:  -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Helvetica, Arial, sans-serif;
+  --mono:  ui-monospace, 'JetBrains Mono', 'IBM Plex Mono', SFMono-Regular, Menlo, monospace;
+  --serif: 'Source Serif 4', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
+  --paper: #F5F4F0;
+
+  --sidebar: 220px;
+  --header:  56px;
+  --max:     1280px;
+  --gut:     24px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin:0; padding:0; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+*:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+/* Type utilities */
+.mono  { font-family: var(--mono); }
+.sans  { font-family: var(--sans); }
+.serif { font-family: var(--serif); }
+.caps { text-transform: uppercase; letter-spacing: 0.16em; font-family: var(--mono); font-weight: 500; }
+.caps-lg { text-transform: uppercase; letter-spacing: 0.32em; font-family: var(--mono); font-weight: 500; }
+.caps-xl { text-transform: uppercase; letter-spacing: 0.5em; font-family: var(--mono); font-weight: 500; }
+.micro { font-size: 11px; }
+.label { font-size: 12px; }
+.body  { font-size: 14px; }
+.sub   { font-size: 16px; font-weight: 600; }
+.h-sec { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.disp  { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; }
+.mute  { color: var(--mute); }
+.mute-2{ color: var(--mute-2); }
+.crit  { color: var(--crit); }
+.ok    { color: var(--ok); }
+
+/* ───────────────────────────────────────────────────────────────
+   LAYOUT
+   ─────────────────────────────────────────────────────────────── */
+.app { display: grid; grid-template-columns: var(--sidebar) 1fr; min-height: 100vh; }
+.sidebar {
+  background: var(--bg);
+  border-right: 1px solid var(--hair);
+  position: sticky; top: 0; align-self: start;
+  height: 100vh; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.main { display: flex; flex-direction: column; min-width: 0; }
+.header {
+  height: var(--header);
+  border-bottom: 1px solid var(--hair);
+  display: flex; align-items: center;
+  padding: 0 32px;
+  gap: 24px;
+  position: sticky; top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+.view {
+  padding: 32px 48px 64px;
+  max-width: var(--max);
+  width: 100%;
+  flex: 1;
+}
+
+/* ─── Sidebar ─── */
+.sb-brand {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--hair);
+  display: flex; align-items: center; gap: 12px;
+}
+.sb-brand .logo svg { display: block; }
+.sb-brand .wordmark {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.5em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+.sb-section {
+  padding: 20px 20px 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  color: var(--mute-2);
+  text-transform: uppercase;
+}
+.sb-nav { display: flex; flex-direction: column; }
+.sb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px 10px 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg);
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  user-select: none;
+}
+.sb-item:hover { background: var(--alt); }
+.sb-item.active { border-left-color: var(--fg); font-weight: 600; }
+.sb-item .num { color: var(--mute-2); font-weight: 400; }
+.sb-section.sb-context {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--hair);
+  text-transform: none;
+  letter-spacing: 0.16em;
+  color: var(--mute);
+}
+.sb-section.sb-context .mono {
+  color: var(--fg);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 10px;
+}
+#sb-nav-obra .sb-item { padding-left: 28px; }
+#sb-nav-obra .sb-item .num { font-size: 14px; line-height: 1; color: var(--mute-2); }
+.sb-foot {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--hair);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--mute);
+  letter-spacing: 0.12em;
+  line-height: 1.6;
+}
+.sb-foot .blink::after {
+  content: "▌";
+  display: inline-block;
+  margin-left: 4px;
+  animation: blink 1s steps(2) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ─── Header ─── */
+.hd-crumb {
+  display: flex; align-items: baseline; gap: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+.hd-crumb .sep { color: var(--mute-2); }
+.hd-crumb .obra { color: var(--fg); }
+.hd-meta {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.hd-meta .now { color: var(--fg); }
+.hd-meta .user { color: var(--fg); }
+.hd-meta .logout {
+  border: none; background: none; padding: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--mute);
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+}
+.hd-meta .logout:hover { color: var(--fg); border-bottom-color: var(--fg); }
+
+/* ─── Buttons ─── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px;
+  background: var(--fg);
+  color: var(--bg);
+  border: 1px solid var(--fg);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border-radius: 0;
+  cursor: pointer;
+  transition: background 100ms linear, color 100ms linear;
+}
+.btn:hover { background: var(--bg); color: var(--fg); }
+.btn-ghost {
+  background: var(--bg);
+  color: var(--fg);
+}
+.btn-ghost:hover { background: var(--alt); color: var(--fg); }
+.btn-sm { padding: 6px 12px; font-size: 10px; }
+.btn-link {
+  background: none; border: none; padding: 0;
+  color: var(--fg);
+  border-bottom: 1px solid var(--fg);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* ─── Inputs ─── */
+.fld { display: flex; flex-direction: column; gap: 6px; }
+.fld label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.fld input, .fld select {
+  border: none;
+  border-bottom: 1px solid var(--fg);
+  padding: 8px 0;
+  font-size: 14px;
+  font-family: var(--sans);
+  background: transparent;
+  color: var(--fg);
+  border-radius: 0;
+}
+.fld input:focus, .fld select:focus { outline: none; border-bottom-width: 2px; padding-bottom: 7px; }
+
+/* ─── Tables ─── */
+table.t {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.t th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--fg);
+  white-space: nowrap;
+}
+table.t td {
+  padding: 12px;
+  border-bottom: 1px solid var(--hair);
+  vertical-align: middle;
+  height: 44px;
+}
+table.t tr.click { cursor: pointer; }
+table.t tr.click:hover td { background: var(--alt); }
+table.t td.num,
+table.t th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+table.t td.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+table.t .end { text-align: right; }
+
+/* ─── Badges ─── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--hair);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  background: var(--bg);
+}
+.badge.b-ok      { color: var(--ok);   border-color: var(--ok); }
+.badge.b-crit    { color: var(--crit); border-color: var(--crit); }
+.badge.b-dark    { color: var(--bg);   background: var(--fg); border-color: var(--fg); }
+
+/* ─── Chips (filters) ─── */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--hair);
+  padding: 6px 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+  background: var(--bg);
+  cursor: pointer;
+  border-radius: 0;
+}
+.chip:hover { background: var(--alt); }
+.chip.on { border-color: var(--fg); color: var(--fg); }
+
+/* ─── Hairlines ─── */
+.hr { height: 1px; background: var(--hair); border: 0; margin: 24px 0; }
+.hr-thick { height: 1px; background: var(--fg); border: 0; margin: 24px 0; }
+
+/* ───────────────────────────────────────────────────────────────
+   EDITORIAL / DASHBOARD
+   ─────────────────────────────────────────────────────────────── */
+.serif-h {
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.06;
+}
+.serif-h-1 { font-size: 44px; }
+.serif-h-2 { font-size: 30px; }
+.serif-h-3 { font-size: 22px; }
+
+.dash-head {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--fg);
+}
+.dash-head h1 { font-family: var(--serif); font-weight: 600; font-size: 48px; margin: 0; letter-spacing: -0.02em; line-height: 1.02; }
+.dash-head .sub { font-family: var(--serif); font-style: italic; font-size: 17px; color: var(--mute); margin-top: 6px; }
+.dash-head .right { text-align: right; font-family: var(--mono); font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--mute); line-height: 1.8; }
+
+/* tooltip for jargon */
+.tip { position: relative; border-bottom: 1px dotted currentColor; cursor: help; }
+.tip:hover::after, .tip:focus::after,
+.tip:hover::before, .tip:focus::before { opacity: 1; transform: translateX(-50%) translateY(0); }
+.tip::after {
+  content: attr(data-tip);
+  position: absolute; left: 50%; bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+  background: var(--fg); color: #fff;
+  font-family: var(--sans); font-weight: 400; font-size: 11px;
+  letter-spacing: 0.01em; line-height: 1.35;
+  padding: 7px 10px; white-space: nowrap;
+  pointer-events: none; opacity: 0; z-index: 50;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.tip::before {
+  content: ""; position: absolute; left: 50%; bottom: calc(100% + 2px);
+  transform: translateX(-50%) translateY(4px);
+  border: 5px solid transparent; border-top-color: var(--fg);
+  pointer-events: none; opacity: 0; z-index: 50;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+/* Source status panel */
+.source-panel {
+  margin-top: 28px;
+  border-top: 1px solid var(--fg);
+  border-bottom: 1px solid var(--fg);
+}
+.source-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 140px 200px 120px;
+  gap: 18px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--hair);
+}
+.source-row:last-child { border-bottom: 0; }
+.source-row .g { font-family: var(--mono); font-size: 14px; line-height: 1; text-align: center; }
+.source-row .g.ok   { color: var(--ok); }
+.source-row .g.wait { color: var(--mute-2); }
+.source-row .g.miss { color: var(--crit); }
+.source-row .name { font-weight: 500; font-size: 15px; }
+.source-row .desc { font-family: var(--mono); font-size: 11px; color: var(--mute); letter-spacing: 0.04em; margin-top: 2px; }
+.source-row .ver  { font-family: var(--mono); font-size: 12px; color: var(--mute); letter-spacing: 0.06em; }
+.source-row .ts   { font-family: var(--mono); font-size: 12px; color: var(--mute); }
+.source-row .st   { font-family: var(--mono); font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; text-align: right; }
+.source-row .st.ok   { color: var(--ok); }
+.source-row .st.wait { color: var(--mute); }
+.source-row .st.miss { color: var(--crit); }
+
+.banner {
+  margin-top: 28px;
+  padding: 18px 22px;
+  border-top: 1px solid var(--fg);
+  border-bottom: 1px solid var(--hair);
+  display: flex; align-items: baseline; gap: 24px;
+  background: var(--alt);
+}
+.banner .lbl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--crit); }
+.banner.ok .lbl { color: var(--ok); }
+.banner .txt { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--fg); flex: 1; }
+.banner .act { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; }
+
+/* Editorial KPI grid (Tela 3 v2) */
+.ekpi-grid {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px;
+}
+.ekpi { border-top: 1px solid var(--fg); padding-top: 14px; }
+.ekpi.crit { border-top-color: var(--crit); }
+.ekpi .lbl {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--mute);
+}
+.ekpi.crit .lbl { color: var(--crit); }
+.ekpi .val {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 34px; letter-spacing: -0.015em;
+  margin-top: 10px; line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.ekpi.crit .val { color: var(--crit); }
+.ekpi .delta { font-family: var(--mono); font-size: 11px; color: var(--mute); margin-top: 8px; letter-spacing: 0.04em; }
+
+.idx-row {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px;
+}
+.idx-card {
+  border: 1px solid var(--hair);
+  padding: 22px 24px;
+}
+.idx-card .head {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.idx-card .lbl {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--mute);
+}
+.idx-card .val {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 46px; letter-spacing: -0.02em;
+  margin-top: 10px; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.idx-card.crit .val { color: var(--crit); }
+.idx-card .note { margin-top: 8px; font-size: 13px; color: var(--mute); }
+
+/* Section header (editorial) */
+.dash-sec { margin-top: 56px; }
+.dash-sec-h {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--fg);
+}
+.dash-sec-h h2 { font-family: var(--sans); font-weight: 600; font-size: 18px; margin: 0; letter-spacing: -0.005em; color: var(--fg); }
+.dash-sec-h .meta { font-family: var(--mono); font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--mute); }
+.dash-sec-h .meta.crit { color: var(--crit); }
+
+/* Item rows with bar */
+.eta-list { display: flex; flex-direction: column; }
+.eta-row {
+  display: grid;
+  grid-template-columns: 1fr 220px 100px 100px;
+  gap: 20px;
+  align-items: center;
+  padding: 16px 0 16px 16px;
+  border-bottom: 1px solid var(--hair);
+  border-left: 3px solid var(--fg);
+}
+.eta-row.crit { border-left-color: var(--crit); }
+.eta-row.ok   { border-left-color: var(--ok); }
+.eta-row .name { font-weight: 500; }
+.eta-row .desc { font-family: var(--mono); font-size: 11px; color: var(--mute); margin-top: 2px; letter-spacing: 0.04em; }
+.eta-row .barwrap { display: flex; flex-direction: column; gap: 6px; }
+.eta-row .b { height: 2px; background: var(--hair); position: relative; }
+.eta-row .b > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--fg); transition: width 900ms cubic-bezier(.22,1,.36,1); }
+.eta-row.crit .b > i { background: var(--crit); }
+.eta-row.ok   .b > i { background: var(--ok); }
+.eta-row .bcap { font-family: var(--mono); font-size: 10px; color: var(--mute); letter-spacing: 0.12em; }
+.eta-row .v { font-family: var(--mono); font-size: 14px; font-variant-numeric: tabular-nums; text-align: right; font-weight: 500; }
+.eta-row.crit .v { color: var(--crit); }
+.eta-row.ok   .v { color: var(--ok); }
+.eta-row .tag {
+  text-align: right;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--mute);
+}
+.eta-row.crit .tag { color: var(--crit); }
+.eta-row.ok   .tag { color: var(--ok); }
+
+/* Editorial action card */
+.act-card {
+  display: grid;
+  grid-template-columns: 60px 1fr 200px;
+  gap: 32px;
+  padding: 26px 0;
+  border-top: 1px solid var(--fg);
+}
+.act-card + .act-card { border-top-color: var(--hair); }
+.act-card .a-id {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.28em;
+  color: var(--mute); text-transform: uppercase;
+}
+.act-card .verb {
+  display: inline-block;
+  background: var(--fg); color: #fff;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 3px 9px;
+}
+.act-card h4 {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 22px; margin: 6px 0 0;
+  letter-spacing: -0.01em;
+}
+.act-card .desc { font-size: 14px; color: var(--mute); margin-top: 10px; max-width: 56ch; line-height: 1.55; }
+.act-card .ameta {
+  margin-top: 14px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.04em; color: var(--mute);
+  display: flex; gap: 18px; flex-wrap: wrap;
+}
+.act-card .ameta strong { color: var(--fg); font-weight: 500; }
+.act-card .impact { text-align: right; }
+.act-card .impact .lbl {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--mute);
+}
+.act-card .impact .v {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 30px; color: var(--ok);
+  margin-top: 8px; letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+}
+.act-card .impact .vsub { font-size: 12px; color: var(--mute); margin-top: 2px; }
+
+/* Empty placeholder */
+.empty-block {
+  padding: 28px 24px;
+  border: 1px dashed var(--hair);
+  background: var(--bg);
+  margin-top: 14px;
+}
+.empty-block .ttl { font-family: var(--mono); font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--mute); }
+.empty-block .txt { font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--mute); margin-top: 8px; max-width: 56ch; }
+.empty-block .cta { margin-top: 14px; }
+
+/* Mode chips (state simulator) */
+.state-chips {
+  display: inline-flex; gap: 0;
+  border: 1px solid var(--fg);
+}
+.state-chips button {
+  background: var(--bg); border: 0;
+  padding: 7px 14px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--mute);
+  border-right: 1px solid var(--fg);
+  cursor: pointer;
+}
+.state-chips button:last-child { border-right: 0; }
+.state-chips button.on { background: var(--fg); color: #fff; }
+.state-chips button:hover:not(.on) { background: var(--alt); color: var(--fg); }
+
+/* ─── KPI grid ─── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--hair);
+  border-left: 1px solid var(--hair);
+}
+.kpi {
+  padding: 20px 22px 22px;
+  border-right: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+  display: flex; flex-direction: column; gap: 8px;
+  min-height: 132px;
+}
+.kpi .lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.kpi .val {
+  font-family: var(--mono);
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.kpi .val.big { font-size: 44px; }
+.kpi .sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--mute);
+  text-transform: uppercase;
+  font-weight: 400;
+  margin-top: auto;
+}
+
+/* Meta grid */
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.meta-cell {
+  padding: 14px 20px 14px 0;
+  border-right: 1px solid var(--hair);
+}
+.meta-cell:last-child { border-right: 0; }
+.meta-cell:not(:first-child) { padding-left: 20px; }
+.meta-cell .lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin-bottom: 6px;
+}
+.meta-cell .val {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Sections */
+.sec { margin-top: 48px; }
+.sec-h {
+  display: flex; align-items: baseline; gap: 16px;
+  margin-bottom: 14px;
+}
+.sec-h h2 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.sec-h .sub-l {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.sec-h .sub-l.crit { color: var(--crit); }
+
+/* Esquecimento box */
+.note {
+  border-left: 2px solid var(--crit);
+  padding: 14px 18px;
+  background: var(--bg);
+  font-family: var(--sans);
+  margin-top: 14px;
+}
+.note ul { margin: 8px 0 0; padding-left: 0; list-style: none; }
+.note ul li {
+  display: flex; justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--hair);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.note ul li:last-child { border-bottom: 0; }
+.note ul li .lbl { font-family: var(--sans); color: var(--fg); }
+.note .total {
+  display: flex; justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--fg);
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+/* Lições aprendidas */
+.lessons {
+  background: var(--alt);
+  border: 1px solid var(--hair);
+  padding: 22px 26px;
+  color: var(--mute);
+}
+.lessons .nota {
+  font-style: italic;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--mute-2);
+  margin-top: 16px;
+  letter-spacing: 0.04em;
+}
+.lessons table.t th { color: var(--mute); border-color: var(--mute); }
+.lessons table.t td { color: var(--mute); border-color: var(--hair); }
+
+/* Plano de ação */
+.action {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 24px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--hair);
+}
+.action:last-child { border-bottom: 0; }
+.action .num {
+  font-family: var(--mono);
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.action h4 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
+.action .desc { font-family: var(--mono); font-size: 13px; color: var(--mute); line-height: 1.55; max-width: 64ch; }
+.action .meta {
+  margin-top: 14px;
+  display: flex; gap: 24px; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--mute);
+}
+.action .meta strong { color: var(--fg); font-weight: 500; margin-left: 6px; }
+
+/* Caveat box */
+.caveat {
+  background: var(--alt);
+  border: 1px solid var(--hair);
+  padding: 16px 20px;
+  margin-top: 24px;
+}
+.caveat .lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin-bottom: 6px;
+}
+.caveat .txt { font-family: var(--sans); font-size: 13px; color: var(--fg); }
+.caveat .ids { font-family: var(--mono); }
+
+/* ─── Tabs ─── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--hair);
+  margin: 16px 0 24px;
+  overflow-x: auto;
+}
+.tab {
+  padding: 14px 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+  background: none; border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab:hover { color: var(--fg); }
+.tab.on { color: var(--fg); border-bottom-color: var(--fg); }
+
+/* ─── Drop zone ─── */
+.drop {
+  border: 1px dashed var(--fg);
+  padding: 56px 24px;
+  text-align: center;
+  background: var(--bg);
+}
+.drop .label {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+.drop .formats {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin-top: 14px;
+}
+.drop.over { background: var(--alt); }
+
+.progress {
+  margin-top: 18px;
+  display: flex; align-items: center; gap: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.bar {
+  flex: 1;
+  height: 2px;
+  background: var(--hair);
+  position: relative;
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--fg);
+  transition: width 240ms linear;
+}
+
+/* ─── Pipeline ─── */
+.pipe-list { border-top: 1px solid var(--hair); }
+.pipe-row {
+  display: grid;
+  grid-template-columns: 48px 1fr 220px 120px 36px;
+  align-items: center;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--hair);
+  cursor: pointer;
+  position: relative;
+}
+.pipe-row .idx {
+  font-family: var(--mono); font-size: 13px; color: var(--mute);
+  padding-left: 8px;
+}
+.pipe-row .name { font-family: var(--mono); font-size: 13px; letter-spacing: 0.32em; text-transform: uppercase; font-weight: 500; }
+.pipe-row .desc {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--mute);
+  margin-top: 4px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.pipe-row .status {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+}
+.pipe-row .time { font-family: var(--mono); font-size: 12px; color: var(--mute); font-variant-numeric: tabular-nums; }
+.pipe-row .chev { font-family: var(--mono); color: var(--mute); text-align: right; padding-right: 8px; transition: transform 200ms; }
+.pipe-row.open .chev { transform: rotate(90deg); }
+.pipe-row .stem {
+  position: absolute; left: 23px; bottom: -1px; top: 50%;
+  width: 1px; background: var(--fg);
+}
+.pipe-row:last-child .stem { display: none; }
+.pipe-row .glyph {
+  display: inline-flex; width: 14px; height: 14px;
+  align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 12px;
+}
+.spin {
+  display: inline-block; width: 10px; height: 10px;
+  background: var(--fg);
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: 0.25; } }
+.pipe-out {
+  display: none;
+  margin: -1px 0 0 48px;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+  padding: 16px 18px;
+  background: var(--alt);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  max-height: 280px;
+  overflow: auto;
+  white-space: pre;
+}
+.pipe-row.open + .pipe-out { display: block; }
+.pipe-out .k { font-weight: 600; }
+.pipe-out .v { font-weight: 400; color: var(--fg); }
+
+.fan {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--hair);
+}
+.fan .pipe-row {
+  border-right: 1px solid var(--hair);
+  padding: 18px 16px;
+  grid-template-columns: 32px 1fr 28px;
+}
+.fan .pipe-row:last-child { border-right: 0; }
+.fan-label {
+  border-top: 1px solid var(--hair);
+  padding: 10px 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--mute);
+  display: flex; gap: 8px; align-items: center;
+}
+
+.arrow-down {
+  display: flex; justify-content: center;
+  padding: 6px 0;
+  font-family: var(--mono); color: var(--fg);
+}
+
+/* Login */
+.login-wrap {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 80px 24px 64px;
+}
+.login-form {
+  width: 100%;
+  max-width: 360px;
+  display: flex; flex-direction: column; gap: 24px;
+  margin-top: 32px;
+}
+.login-wrap .brand {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.login-wrap .brand .wm {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+}
+.login-wrap .access {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin-top: 24px;
+}
+.login-wrap .div {
+  width: 100%;
+  max-width: 360px;
+  height: 1px;
+  background: var(--hair);
+  margin-top: 18px;
+}
+.login-wrap .sub {
+  margin-top: 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.login-wrap .sub a { border-bottom: 1px solid var(--fg); }
+
+/* Dossiê */
+.toolbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: 24px;
+}
+.toolbar .id-tag {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.doss {
+  border: 1px solid var(--hair);
+  padding: 48px 56px;
+  background: var(--bg);
+}
+.doss h1 { font-size: 28px; margin: 0 0 4px; font-weight: 600; }
+.doss .doss-sub { font-family: var(--mono); font-size: 12px; color: var(--mute); letter-spacing: 0.16em; text-transform: uppercase; }
+.doss .quote {
+  border-left: 2px solid var(--fg);
+  padding: 8px 16px;
+  font-style: italic;
+  font-family: var(--sans);
+  color: var(--fg);
+  margin: 24px 0;
+  max-width: 64ch;
+}
+.doss-foot {
+  margin-top: 32px;
+  padding: 14px 0;
+  border-top: 1px solid var(--hair);
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+
+/* PVO selo */
+.pvo {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.pvo.ok { color: var(--ok); }
+.pvo.crit { color: var(--crit); }
+
+/* Filters row */
+.filters {
+  display: flex; align-items: center; gap: 16px;
+  flex-wrap: wrap;
+  margin: 16px 0 24px;
+  padding: 14px 0;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.filters .search {
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--fg);
+  padding: 4px 0;
+  min-width: 240px;
+}
+.filters .search input {
+  border: 0; outline: 0; background: transparent;
+  width: 100%; font-size: 13px;
+  font-family: var(--sans);
+}
+.filters .search .ico { color: var(--mute); font-family: var(--mono); }
+.filters .sel {
+  border: 0;
+  border-bottom: 1px solid var(--fg);
+  padding: 4px 18px 4px 0;
+  background: transparent;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  appearance: none;
+  cursor: pointer;
+}
+
+/* Section row header (page title) */
+.page-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 6px;
+}
+.page-head h1 { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.02em; }
+.page-head .count {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--mute);
+  margin-left: 12px;
+}
+.page-sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin-bottom: 12px;
+}
+
+/* Generic helpers */
+.row { display: flex; align-items: center; gap: 12px; }
+.row.between { justify-content: space-between; }
+.spacer { flex: 1; }
+.fade { animation: fadein 200ms ease-out; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+/* Hide router-controlled views */
+.view[hidden] { display: none; }
+
+/* Hash-active sidebar item: handled via JS */
+
+/* ───────────────────────────────────────────────────────────────
+   DOSSIÊ EDITORIAL (Tela 6)
+   ─────────────────────────────────────────────────────────────── */
+.view-doss {
+  background: var(--paper);
+  padding: 0;
+  max-width: none;
+  width: 100%;
+  flex: 1;
+  min-height: calc(100vh - var(--header));
+}
+.view-doss[hidden] { display: none; }
+.doss-toolbar {
+  position: sticky; top: var(--header);
+  z-index: 8;
+  background: var(--paper);
+  padding: 14px 48px;
+  margin: 0;
+  border-bottom: 1px solid var(--hair);
+}
+.doss-wrap {
+  max-width: 920px;
+  margin: 32px auto;
+  background: var(--bg);
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,0.18);
+}
+.doss-page {
+  padding: 56px 64px;
+  border-bottom: 1px solid var(--hair);
+  page-break-after: always;
+  break-after: page;
+}
+.doss-page:last-child { border-bottom: 0; }
+
+/* Cover */
+.doss-cover {
+  border-bottom: 2px solid var(--fg) !important;
+  position: relative;
+  min-height: 760px;
+}
+.doss-top { display: flex; align-items: flex-start; justify-content: space-between; }
+.doss-mark {
+  width: 36px; height: 36px;
+  background: var(--fg);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-weight: 700; font-size: 13px;
+}
+.doss-mark.sm { width: 28px; height: 28px; font-size: 11px; }
+.doss-cover-meta {
+  margin-top: 100px;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 36px;
+  border-top: 1px solid var(--hair);
+  padding-top: 24px;
+}
+.doss-cover-foot {
+  margin-top: 90px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 32px;
+}
+
+/* TOC */
+.doss-toc { list-style: none; padding: 0; margin: 0; }
+.doss-toc li {
+  display: grid;
+  grid-template-columns: 36px 1fr 280px 60px;
+  align-items: baseline;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--hair);
+}
+.doss-toc li:last-child { border-bottom: 1px solid var(--hair); }
+.doss-toc .n {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.28em;
+  color: var(--mute-2); text-transform: uppercase;
+}
+.doss-toc .t { font-family: var(--serif); font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.doss-toc .d { font-size: 14px; color: var(--mute); }
+.doss-toc .p {
+  text-align: right;
+  font-family: var(--mono); font-size: 12px; color: var(--mute-2);
+  letter-spacing: 0.06em;
+}
+
+/* Capítulo */
+.doss-cap-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  border-bottom: 1px solid var(--fg);
+  padding-bottom: 18px;
+}
+
+/* KPIs editoriais */
+.doss-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+.doss-kpis.kpi3 { grid-template-columns: repeat(3, 1fr); }
+.doss-kpis > div { border-top: 1px solid var(--fg); padding-top: 12px; }
+.doss-kpis > div.crit { border-top-color: var(--crit); }
+.doss-kpis .lbl {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--mute);
+}
+.doss-kpis > div.crit .lbl { color: var(--crit); }
+.doss-kpis .val {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 34px; letter-spacing: -0.015em;
+  margin-top: 10px; line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.doss-kpis > div.crit .val { color: var(--crit); }
+.doss-kpis .cap {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--mute);
+  margin-top: 8px;
+}
+
+/* IDC / VAC cards */
+.doss-idx { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.doss-idx > div { border: 1px solid var(--hair); padding: 24px 26px; }
+.doss-idx .head { display: flex; justify-content: space-between; align-items: baseline; }
+.doss-idx .lbl {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--mute);
+}
+.doss-idx .val {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 56px; letter-spacing: -0.02em;
+  margin-top: 14px; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.doss-idx .val.crit { color: var(--crit); }
+.doss-idx .note { font-size: 14px; color: var(--mute); margin-top: 10px; }
+
+/* Doss table */
+.doss-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.doss-table th {
+  text-align: left;
+  font-family: var(--mono); font-weight: 500;
+  font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--mute);
+  padding: 14px 0;
+  border-bottom: 1px solid var(--fg);
+}
+.doss-table td { padding: 14px 0; border-bottom: 1px solid var(--hair); }
+.doss-table td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.doss-table th.num { text-align: right; }
+.doss-table tr.tot td { background: var(--alt); border-bottom: 1px solid var(--fg); }
+
+/* Etapas com barra */
+.doss-eta { display: flex; flex-direction: column; gap: 14px; }
+.row-eta {
+  display: grid;
+  grid-template-columns: 1fr 240px 110px 110px;
+  gap: 20px;
+  align-items: center;
+  padding: 12px 0 12px 18px;
+  border-left: 4px solid var(--fg);
+}
+.row-eta.crit { border-left-color: var(--crit); }
+.row-eta.wait { border-left-color: var(--mute-2); }
+.row-eta.ok   { border-left-color: var(--ok); }
+.row-eta .n   { font-weight: 600; font-size: 15px; }
+.row-eta .m   { font-size: 12px; color: var(--mute); margin-top: 2px; }
+.row-eta .bar .b { height: 6px; background: var(--hair); border-radius: 999px; overflow: hidden; }
+.row-eta .bar .b > i { display: block; height: 100%; background: var(--fg); border-radius: 999px; }
+.row-eta.crit .bar .b > i { background: var(--crit); }
+.row-eta.wait .bar .b > i { background: var(--mute); }
+.row-eta.ok   .bar .b > i { background: var(--ok); }
+.row-eta .bar .cap {
+  font-family: var(--mono); font-size: 10px; color: var(--mute);
+  letter-spacing: 0.12em; margin-top: 6px; text-transform: uppercase;
+}
+.row-eta .d {
+  text-align: right; font-family: var(--mono); font-size: 18px;
+  font-variant-numeric: tabular-nums; font-weight: 600;
+}
+.row-eta.crit .d { color: var(--crit); }
+.row-eta.wait .d { color: var(--mute); }
+.row-eta.ok   .d { color: var(--ok); }
+.row-eta .tag {
+  text-align: right;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--mute);
+}
+.row-eta.crit .tag { color: var(--crit); }
+.row-eta.ok   .tag { color: var(--ok); }
+
+.doss-quote {
+  background: var(--alt);
+  border-left: 4px solid var(--fg);
+  padding: 22px 26px;
+}
+
+/* Suprimentos */
+.doss-supply { display: flex; flex-direction: column; gap: 18px; }
+.row-sup { border: 1px solid var(--hair); padding: 22px 24px; }
+.row-sup.crit { background: rgba(185,28,28,0.04); border-color: rgba(185,28,28,0.25); }
+.row-sup.wait { background: var(--alt); }
+.row-sup .head { display: flex; justify-content: space-between; align-items: baseline; }
+.row-sup .head .n { font-weight: 600; font-size: 18px; }
+.row-sup .grid { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.row-sup .grid .lbl {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--mute);
+}
+.row-sup .grid .val {
+  font-family: var(--mono); font-weight: 600;
+  font-size: 15px; margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.row-sup .grid .val.crit { color: var(--crit); }
+.row-sup .b {
+  margin-top: 16px;
+  height: 3px; background: var(--hair); position: relative;
+  border-radius: 999px; overflow: hidden;
+}
+.row-sup .b > i { display: block; height: 100%; background: var(--fg); border-radius: 999px; }
+.row-sup.crit .b > i { background: var(--crit); }
+.row-sup.wait .b > i { background: var(--mute); }
+
+/* Ações */
+.doss-actions { display: flex; flex-direction: column; }
+.row-act {
+  display: grid;
+  grid-template-columns: 56px 1fr 220px;
+  gap: 28px;
+  padding: 28px 0;
+  border-top: 1px solid var(--hair);
+}
+.row-act.first { border-top: 1px solid var(--fg); }
+.row-act .aid {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.28em;
+  color: var(--mute-2); text-transform: uppercase;
+}
+.row-act .verb {
+  display: inline-block;
+  background: var(--fg); color: #fff;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 4px 9px;
+}
+.row-act .desc { font-size: 14px; color: var(--mute); margin-top: 12px; max-width: 56ch; line-height: 1.55; }
+.row-act .mt {
+  margin-top: 14px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.04em; color: var(--mute);
+}
+.row-act .imp { text-align: right; }
+.row-act .imp .lbl {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--mute);
+}
+.row-act .imp .val {
+  font-family: var(--serif); font-weight: 600;
+  font-size: 30px; color: var(--ok);
+  margin-top: 8px; letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+}
+.row-act .imp .cap { font-size: 12px; color: var(--mute); margin-top: 2px; }
+
+.doss-total {
+  margin-top: 48px;
+  background: var(--fg); color: #fff;
+  padding: 32px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px;
+}
+
+.doss-sign {
+  margin-top: 56px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  border-top: 1px solid var(--hair);
+  padding-top: 36px;
+}
+.doss-sign .line { height: 56px; border-bottom: 1px solid var(--fg); margin-bottom: 10px; }
+
+.doss-foot-final {
+  margin-top: 48px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   DASHBOARD V3 — Crumb + Stepper + Header + Grupos + Footer
+   ─────────────────────────────────────────────────────────────── */
+
+/* WORKSPACE BAR — container global do crumb + stepper */
+.workspace-bar {
+  padding: 24px 48px 0;
+  max-width: var(--max);
+  width: 100%;
+  background: var(--bg);
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: 0;
+}
+.workspace-bar .obra-stepper {
+  margin-bottom: 24px;
+}
+@media (max-width: 900px) {
+  .workspace-bar { padding: 16px 20px 0; }
+}
+
+/* CRUMB DA OBRA */
+.obra-crumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin-bottom: 24px;
+}
+.obra-crumb .crumb-back {
+  color: var(--mute);
+  transition: color 120ms ease;
+}
+.obra-crumb .crumb-back:hover { color: var(--fg); }
+.obra-crumb .crumb-sep { color: var(--mute-2); }
+.obra-crumb .crumb-now { color: var(--fg); font-weight: 600; }
+
+/* STEPPER — 4 passos horizontais */
+.obra-stepper {
+  display: grid;
+  grid-template-columns: 1fr 24px 1fr 24px 1fr 24px 1fr;
+  align-items: stretch;
+  border: 1px solid var(--hair);
+  background: var(--bg);
+  margin-bottom: 48px;
+  overflow: hidden;
+}
+.obra-stepper .step {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  color: var(--mute);
+  position: relative;
+  text-decoration: none;
+  transition: background 120ms ease;
+  min-width: 0;
+}
+.obra-stepper .step:hover {
+  background: var(--alt);
+}
+.obra-stepper .step-n {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--mute-2);
+  letter-spacing: -0.02em;
+}
+.obra-stepper .step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.obra-stepper .step-name {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.005em;
+}
+.obra-stepper .step-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--mute);
+}
+.obra-stepper .step-sub.ok { color: var(--ok); }
+.obra-stepper .step-mark {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ok);
+}
+.obra-stepper .step.done .step-n {
+  color: var(--fg);
+}
+.obra-stepper .step.active {
+  background: var(--fg);
+  color: var(--bg);
+}
+.obra-stepper .step.active .step-n,
+.obra-stepper .step.active .step-name,
+.obra-stepper .step.active .step-sub {
+  color: var(--bg);
+}
+.obra-stepper .step.active:hover {
+  background: var(--fg);
+}
+.obra-stepper .step.blocked {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.obra-stepper .step.blocked .step-name { font-weight: 500; }
+
+/* setas entre passos */
+.obra-stepper .step-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--mute-2);
+  background: var(--alt);
+  border-left: 1px solid var(--hair);
+  border-right: 1px solid var(--hair);
+}
+
+/* HEADER DA OBRA — eyebrow + título + grid 4 metadados */
+.obra-head {
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--hair);
+  margin-bottom: 64px;
+}
+.obra-head .oh-id {
+  margin-bottom: 12px;
+}
+.obra-head .oh-title {
+  font-family: var(--serif);
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin: 0;
+  color: var(--fg);
+}
+.obra-head .oh-sub {
+  font-family: var(--sans);
+  font-size: 15px;
+  color: var(--mute);
+  margin: 8px 0 32px;
+}
+.obra-head .oh-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--hair);
+  padding-top: 24px;
+}
+.obra-head .oh-meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 24px;
+}
+.obra-head .oh-meta > div + div {
+  border-left: 1px solid var(--hair);
+  padding-left: 24px;
+}
+.obra-head .oh-meta .v {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--fg);
+  letter-spacing: -0.005em;
+}
+
+/* DASH GROUP — wrapper que agrupa seções relacionadas */
+.dash-group {
+  margin-bottom: 96px;
+}
+.dash-group:last-of-type {
+  margin-bottom: 64px;
+}
+
+/* GROUP EYEBROW — cabeçalho de grupo no estilo editorial */
+.group-eyebrow {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: baseline;
+  gap: 24px;
+  padding-bottom: 20px;
+  margin-bottom: 32px;
+  border-bottom: 2px solid var(--fg);
+}
+.group-eyebrow .ge-num {
+  font-family: var(--mono);
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--mute-2);
+}
+.group-eyebrow .ge-title {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--fg);
+}
+.group-eyebrow .ge-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+  text-align: right;
+  font-weight: 500;
+}
+
+/* SEÇÕES DENTRO DO GRUPO — espaçamento padronizado */
+.dash-group .dash-sec {
+  margin-top: 48px;
+}
+.dash-group .dash-sec:first-of-type {
+  margin-top: 0;
+}
+
+/* FOOTER TÉCNICO — caveat + ID + DEV toggle */
+.dash-foot {
+  margin-top: 80px;
+  padding-top: 32px;
+  border-top: 1px solid var(--hair);
+}
+.dash-foot .foot-id {
+  margin-top: 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--mute);
+}
+.dash-foot .dev-toggle {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px dashed var(--hair);
+}
+.dash-foot .dev-toggle summary {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--mute-2);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  padding: 8px 0;
+}
+.dash-foot .dev-toggle summary::-webkit-details-marker { display: none; }
+.dash-foot .dev-toggle summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform 120ms ease;
+  margin-right: 4px;
+}
+.dash-foot .dev-toggle[open] summary::before {
+  transform: rotate(90deg);
+}
+.dash-foot .dev-toggle summary:hover {
+  color: var(--fg);
+}
+
+/* Responsive: stack metadata + grupos + stepper */
+@media (max-width: 900px) {
+  .obra-head .oh-title { font-size: 32px; }
+  .obra-head .oh-meta { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .obra-head .oh-meta > div + div { border-left: 0; padding-left: 0; }
+  .group-eyebrow { grid-template-columns: 40px 1fr; }
+  .group-eyebrow .ge-num { font-size: 22px; }
+  .group-eyebrow .ge-title { font-size: 20px; }
+  .group-eyebrow .ge-meta {
+    grid-column: 1 / -1;
+    text-align: left;
+    margin-top: 6px;
+  }
+  .dash-group { margin-bottom: 64px; }
+
+  /* Stepper vertical em mobile */
+  .obra-stepper {
+    grid-template-columns: 1fr;
+  }
+  .obra-stepper .step {
+    border-top: 1px solid var(--hair);
+  }
+  .obra-stepper .step:first-child { border-top: 0; }
+  .obra-stepper .step-arrow {
+    border-left: 0;
+    border-right: 0;
+    border-top: 1px solid var(--hair);
+    padding: 4px 0;
+  }
+  .obra-stepper .step-arrow::before {
+    content: "↓";
+  }
+  .obra-stepper .step-arrow:empty::after { content: ""; }
+  .obra-stepper .step-arrow {
+    font-size: 0;
+  }
+  .obra-stepper .step-arrow::after {
+    content: "↓";
+    font-size: 13px;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SANDBOX BANNER + SALDO BAR
+   ─────────────────────────────────────────────────────────────── */
+.sandbox-banner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  border: 1px solid var(--fg);
+  background: var(--bg);
+}
+.sandbox-banner .sb-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 6px;
+  color: var(--fg);
+}
+.sandbox-banner .sb-sub {
+  font-size: 13px;
+  color: var(--mute);
+  margin-top: 6px;
+  max-width: 640px;
+  line-height: 1.5;
+}
+
+.saldo-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--alt);
+  border: 1px solid var(--hair);
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+.saldo-bar .mono { font-family: var(--mono); font-weight: 600; font-size: 14px; }
+.saldo-bar .sep { color: var(--mute-2); }
+.saldo-bar .spacer { flex: 1; }
+.saldo-bar .btn-link {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid var(--fg);
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+.saldo-bar .btn-link:hover { background: var(--fg); color: var(--bg); }
+
+/* ───────────────────────────────────────────────────────────────
+   PLANOS
+   ─────────────────────────────────────────────────────────────── */
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 1px solid var(--hair);
+  margin-top: 24px;
+}
+.plan {
+  padding: 32px 28px;
+  border-right: 1px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+.plan:last-child { border-right: 0; }
+.plan-popular {
+  background: var(--fg);
+  color: var(--bg);
+}
+.plan-popular .plan-feat li,
+.plan-popular .plan-unit { color: rgba(255,255,255,0.65); }
+.plan-tag {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  background: var(--bg);
+  color: var(--fg);
+  padding: 4px 10px;
+  border: 1px solid var(--bg);
+}
+.plan-name {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.plan-popular .plan-name { color: rgba(255,255,255,0.7); }
+.plan-credits {
+  font-family: var(--mono);
+  font-size: 16px;
+  margin-top: 4px;
+}
+.plan-credits .num {
+  font-family: var(--mono);
+  font-size: 48px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin-right: 8px;
+}
+.plan-price {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.plan-unit {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.plan-feat {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--hair);
+  padding-top: 16px;
+}
+.plan-popular .plan-feat { border-top-color: rgba(255,255,255,0.15); }
+.plan-feat li {
+  font-size: 13px;
+  color: var(--mute);
+  padding-left: 18px;
+  position: relative;
+  line-height: 1.4;
+}
+.plan-feat li::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  font-family: var(--mono);
+  color: var(--mute-2);
+}
+.plan-popular .plan-feat li::before { color: rgba(255,255,255,0.55); }
+.plan .btn { margin-top: auto; align-self: flex-start; }
+.plan-popular .btn {
+  background: var(--bg);
+  color: var(--fg);
+}
+.plan-popular .btn:hover { background: transparent; color: var(--bg); border-color: var(--bg); }
+
+.plan-enterprise {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+  border: 1px dashed var(--hair);
+  margin-top: 24px;
+}
+
+.plan-faq {
+  margin-top: 64px;
+}
+.plan-faq h3 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.plan-faq ul {
+  padding: 16px 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.plan-faq li { line-height: 1.5; color: var(--mute); }
+.plan-faq li strong { color: var(--fg); font-weight: 500; }
+
+@media (max-width: 900px) {
+  .plans-grid { grid-template-columns: 1fr; }
+  .plan { border-right: 0; border-bottom: 1px solid var(--hair); }
+  .plan:last-child { border-bottom: 0; }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   CHECKOUT
+   ─────────────────────────────────────────────────────────────── */
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 0;
+  border: 1px solid var(--hair);
+  margin-top: 24px;
+}
+.ck-form {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-right: 1px solid var(--hair);
+}
+.ck-form h3 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+}
+.ck-form .fld { display: flex; flex-direction: column; gap: 6px; }
+.ck-form .fld label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.ck-form .fld input {
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--hair);
+  background: transparent;
+  color: var(--fg);
+}
+.ck-form .fld input:focus { outline: 0; border-bottom-color: var(--fg); }
+.ck-pay {
+  margin-top: 12px;
+  width: 100%;
+  padding: 14px 0;
+  font-size: 14px;
+}
+.ck-secure {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--mute-2);
+}
+.ck-summary {
+  padding: 32px;
+  background: var(--alt);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ck-summary h4 {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--mute);
+  margin: 0 0 4px;
+}
+.ck-line { display: flex; justify-content: space-between; font-size: 13px; color: var(--mute); }
+.ck-line .mono { color: var(--fg); }
+.ck-line.total { font-size: 18px; font-weight: 600; color: var(--fg); padding-top: 4px; }
+.ck-line.total .mono { font-size: 20px; }
+.ck-divider { border-top: 1px solid var(--hair); margin: 8px 0; }
+.ck-note {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--mute);
+  margin-top: 16px;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 900px) {
+  .checkout-grid { grid-template-columns: 1fr; }
+  .ck-form { border-right: 0; border-bottom: 1px solid var(--hair); }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   CONFIRMAÇÃO
+   ─────────────────────────────────────────────────────────────── */
+.confirma-wrap {
+  max-width: 600px;
+  margin: 64px auto;
+  text-align: center;
+}
+.confirma-mark {
+  width: 72px;
+  height: 72px;
+  border: 2px solid var(--ok);
+  color: var(--ok);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 600;
+  margin: 0 auto 24px;
+}
+.confirma-wrap h1 {
+  font-family: var(--serif);
+  font-size: 36px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.confirma-card {
+  margin-top: 40px;
+  border: 1px solid var(--hair);
+  text-align: left;
+}
+.cf-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--hair);
+  align-items: center;
+}
+.cf-line:last-child { border-bottom: 0; }
+.cf-line .mono { font-size: 14px; }
+
+/* ───────────────────────────────────────────────────────────────
+   NOVA OBRA
+   ─────────────────────────────────────────────────────────────── */
+.no-form { max-width: 720px; margin-top: 16px; }
+.no-section {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--hair);
+}
+.no-section:last-of-type { border-bottom: 0; }
+.no-section h3 {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.no-section .req {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--crit);
+}
+.no-section .opt {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.no-form .fld { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.no-form label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mute);
+}
+.no-form input {
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--hair);
+  background: transparent;
+  color: var(--fg);
+}
+.no-form input:focus { outline: 0; border-bottom-color: var(--fg); }
+
+/* ───────────────────────────────────────────────────────────────
+   CONFIG TABS + EQUIPE + FATURAMENTO
+   ─────────────────────────────────────────────────────────────── */
+.cfg-pane { margin-top: 16px; }
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border: 1px solid var(--hair);
+  margin-top: 16px;
+}
+.role-card {
+  padding: 24px;
+  border-right: 1px solid var(--hair);
+}
+.role-card:last-child { border-right: 0; }
+.role-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  background: var(--fg);
+  color: var(--bg);
+  padding: 4px 10px;
+}
+.role-name {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 12px 0 8px;
+}
+.role-card p { font-size: 13px; line-height: 1.5; color: var(--mute); margin: 0; }
+
+.bill-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 1px solid var(--hair);
+  margin-top: 16px;
+}
+.bill-kpi {
+  padding: 24px;
+  border-right: 1px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bill-kpi:last-child { border-right: 0; }
+.bill-kpi.action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--alt);
+}
+.bill-v {
+  font-family: var(--mono);
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.bill-v .bill-u {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--mute);
+}
+
+@media (max-width: 900px) {
+  .role-grid { grid-template-columns: 1fr; }
+  .role-card { border-right: 0; border-bottom: 1px solid var(--hair); }
+  .role-card:last-child { border-bottom: 0; }
+  .bill-summary { grid-template-columns: 1fr 1fr; }
+  .bill-kpi { border-right: 0; border-bottom: 1px solid var(--hair); }
+  .sandbox-banner { grid-template-columns: 1fr; }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   AGENTES + CONFIG + HISTÓRICO
+   ─────────────────────────────────────────────────────────────── */
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  border: 1px solid var(--hair);
+  margin-top: 24px;
+}
+.ag-card {
+  padding: 24px;
+  border-right: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ag-card:nth-child(2n) { border-right: 0; }
+.ag-card:nth-last-child(-n+2) { border-bottom: 0; }
+.ag-head { display: flex; align-items: flex-start; gap: 16px; }
+.ag-num {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--mute-2);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.ag-id { display: flex; flex-direction: column; gap: 4px; }
+.ag-name {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--fg);
+}
+.ag-status {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--mute);
+}
+.ag-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mute);
+  margin: 0;
+}
+.ag-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--hair);
+}
+.ag-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+.ag-endpoint {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--mute-2);
+  padding-top: 8px;
+  border-top: 1px solid var(--hair);
+}
+@media (max-width: 900px) {
+  .agents-grid { grid-template-columns: 1fr; }
+  .ag-card { border-right: 0; }
+}
+
+/* Config list */
+.cfg-list {
+  margin-top: 24px;
+  border-top: 1px solid var(--hair);
+}
+.cfg-row {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--hair);
+  align-items: baseline;
+}
+.cfg-row .cfg-k {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cfg-row .cfg-name {
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--fg);
+}
+.cfg-row .cfg-v {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--mute);
+}
+.cfg-row .cfg-v.mono { font-family: var(--mono); }
+@media (max-width: 900px) {
+  .cfg-row { grid-template-columns: 1fr; gap: 8px; }
+}
+
+/* ─── PRINT ─── */
+@page { size: A4; margin: 18mm; }
+@media print {
+  .sidebar, .header, .toolbar, .doss-toolbar { display: none !important; }
+  .app { display: block; }
+  .view { padding: 0; max-width: none; }
+  .view-doss { background: #fff !important; }
+  .doss-wrap { box-shadow: none; margin: 0; max-width: none; }
+  .doss-page { border-bottom: 0; padding: 0 0 24mm; }
+  body { font-size: 11pt; }
+  .doss { border: 0; padding: 0; }
+}
+
+/* Responsive — coarse fallback */
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .view { padding: 24px 20px 48px; }
+  .kpi-grid, .meta-grid { grid-template-columns: repeat(2, 1fr); }
+  .pipe-row { grid-template-columns: 36px 1fr 90px 28px; }
+  .pipe-row .time { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─────────────────────────────────────────────────────────────
+     LOGIN VIEW (own layout, full-bleed)
+     ───────────────────────────────────────────────────────────── -->
+<div id="view-login" class="view-login" hidden>
+  <div class="login-wrap">
+    <div class="brand">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <circle cx="32" cy="32" r="26" stroke="#0A0A0A" stroke-width="1.75"/>
+        <circle cx="32" cy="32" r="14" stroke="#0A0A0A" stroke-width="1.75"/>
+        <path d="M32 6 A26 26 0 0 1 58 32 L32 32 Z" fill="#0A0A0A"/>
+        <circle cx="32" cy="32" r="2" fill="#0A0A0A"/>
+      </svg>
+      <div class="wm">L4 ENGENHARIA</div>
+    </div>
+    <div class="access">ACESSO RESTRITO</div>
+    <div class="div"></div>
+
+    <form id="login-form" class="login-form" autocomplete="off">
+      <div class="fld">
+        <label for="li-email">E-mail</label>
+        <input id="li-email" type="email" required placeholder="seu.email@construtora.com.br" />
+      </div>
+      <div class="fld">
+        <label for="li-pass">Senha</label>
+        <input id="li-pass" type="password" required placeholder="••••••••" />
+      </div>
+
+      <div class="row between" style="margin-top: 12px;">
+        <span class="caps micro mute">v0.9.4 · pre-release</span>
+        <button class="btn" type="submit">Entrar →</button>
+      </div>
+    </form>
+
+    <div class="sub">
+      <a href="#cadastro">Cadastrar nova conta</a>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────
+     APP SHELL (sidebar + header + main)
+     ───────────────────────────────────────────────────────────── -->
+<div id="app-shell" class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <span class="logo">
+        <svg width="32" height="32" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <circle cx="32" cy="32" r="26" stroke="#0A0A0A" stroke-width="1.75"/>
+          <circle cx="32" cy="32" r="14" stroke="#0A0A0A" stroke-width="1.75"/>
+          <path d="M32 6 A26 26 0 0 1 58 32 L32 32 Z" fill="#0A0A0A"/>
+          <circle cx="32" cy="32" r="2" fill="#0A0A0A"/>
+        </svg>
+      </span>
+      <span class="wordmark">L4</span>
+    </div>
+
+    <div class="sb-section">Workspace</div>
+    <nav class="sb-nav" id="sb-nav">
+      <a class="sb-item" data-route="obras" href="#obras"><span class="num">01</span> Obras</a>
+      <a class="sb-item" data-route="historico" href="#historico"><span class="num">02</span> Histórico</a>
+      <a class="sb-item" data-route="agentes" href="#agentes"><span class="num">03</span> Agentes</a>
+      <a class="sb-item" data-route="config" href="#config"><span class="num">04</span> Configurações</a>
+    </nav>
+
+    <div class="sb-section sb-context" id="sb-section-obra" hidden>
+      Obra: <span id="sb-obra-name" class="mono">Residencial Demo</span>
+    </div>
+    <nav class="sb-nav" id="sb-nav-obra" hidden>
+      <a class="sb-item" data-route="upload" href="#upload"><span class="num">·</span> Documentos</a>
+      <a class="sb-item" data-route="pipeline" href="#pipeline/run-2026-0520-a"><span class="num">·</span> Pipeline</a>
+      <a class="sb-item" data-route="obra" href="#obra/residencial-demo"><span class="num">·</span> Dashboard</a>
+      <a class="sb-item" data-route="relatorio" href="#relatorio/run-2026-0520-a"><span class="num">·</span> Dossiê</a>
+    </nav>
+
+    <div class="sb-foot">
+      <div>L4-CORE v0.9.4</div>
+      <div>VPS <span class="ok">●</span> ONLINE</div>
+      <div class="blink">monitorando</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <header class="header">
+      <div class="hd-crumb">
+        <span class="obra" id="hd-obra">RESIDENCIAL DEMO</span>
+        <span class="sep">/</span>
+        <span class="mute" id="hd-route">DASHBOARD</span>
+      </div>
+      <div class="hd-meta">
+        <span>DATA-BASE <span class="now" id="hd-date">20/05/2026</span></span>
+        <span>·</span>
+        <span class="user" id="hd-user">eng@construtora</span>
+        <button class="logout" id="btn-logout">SAIR</button>
+      </div>
+    </header>
+
+    <!-- ════════════════════════════════════════════════════════════
+         WORKSPACE BAR — crumb + stepper de 4 passos da obra
+         Aparece quando route ∈ {obra, upload, pipeline, relatorio}
+         ════════════════════════════════════════════════════════════ -->
+    <div id="workspace-bar" class="workspace-bar" hidden>
+      <div class="obra-crumb">
+        <a href="#obras" class="crumb-back">← Obras</a>
+        <span class="crumb-sep">/</span>
+        <span class="crumb-now" id="ws-obra-name">Residencial Demo</span>
+      </div>
+
+      <nav class="obra-stepper" aria-label="Fluxo de auditoria" id="ws-stepper">
+        <a href="#upload" class="step done" data-step="documentos">
+          <span class="step-n">01</span>
+          <span class="step-body">
+            <span class="step-name">Documentos</span>
+            <span class="step-sub">6 fontes auditadas</span>
+          </span>
+          <span class="step-mark">✓</span>
+        </a>
+        <span class="step-arrow">→</span>
+        <a href="#pipeline/run-2026-0520-a" class="step done" data-step="pipeline">
+          <span class="step-n">02</span>
+          <span class="step-body">
+            <span class="step-name">Pipeline</span>
+            <span class="step-sub ok">PVO 27/27 ✓</span>
+          </span>
+          <span class="step-mark">✓</span>
+        </a>
+        <span class="step-arrow">→</span>
+        <a href="#obra/residencial-demo" class="step" data-step="dashboard">
+          <span class="step-n">03</span>
+          <span class="step-body">
+            <span class="step-name">Dashboard</span>
+            <span class="step-sub">leitura · 20/05</span>
+          </span>
+        </a>
+        <span class="step-arrow">→</span>
+        <a href="#relatorio/run-2026-0520-a" class="step ready" data-step="dossie">
+          <span class="step-n">04</span>
+          <span class="step-body">
+            <span class="step-name">Dossiê</span>
+            <span class="step-sub">pronto para publicar</span>
+          </span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- VIEWS -->
+
+    <!-- ────────── TELA 2: OBRAS ────────── -->
+    <section id="view-obras" class="view fade" hidden>
+
+      <div class="page-head">
+        <div>
+          <h1>Obras auditáveis <span class="count mono" id="obras-count">(02)</span></h1>
+          <div class="page-sub">Inventário · CPI / SPI / data-base</div>
+        </div>
+        <button class="btn" id="btn-nova-obra" onclick="location.hash='#nova-obra'">+ Nova obra</button>
+      </div>
+
+      <div class="filters">
+        <div class="search">
+          <span class="ico">⌕</span>
+          <input id="obras-search" placeholder="Buscar por nome, ID ou chave GPHY..." />
+        </div>
+        <select class="sel" id="obras-fase">
+          <option>FASE · TODAS</option>
+          <option>EXECUÇÃO</option>
+          <option>ENTREGA</option>
+          <option>PÓS-OBRA</option>
+        </select>
+        <div class="spacer"></div>
+        <div class="chips" id="obras-chips">
+          <button class="chip on" data-st="all">Todas</button>
+          <button class="chip" data-st="crit">Crítico</button>
+          <button class="chip" data-st="atencao">Atenção</button>
+          <button class="chip" data-st="ok">No prazo</button>
+        </div>
+      </div>
+
+      <table class="t" id="obras-table">
+        <thead>
+          <tr>
+            <th style="width: 110px;">ID</th>
+            <th>Nome</th>
+            <th style="width: 220px;">Chave GPHY</th>
+            <th class="num" style="width: 90px;">CPI</th>
+            <th class="num" style="width: 90px;">SPI</th>
+            <th class="num" style="width: 130px;">Data-base</th>
+            <th style="width: 32px;"></th>
+          </tr>
+        </thead>
+        <tbody id="obras-tbody"></tbody>
+      </table>
+    </section>
+
+    <!-- ────────── TELA: NOVA OBRA ────────── -->
+    <section id="view-nova-obra" class="view fade" hidden>
+      <div class="page-head">
+        <div>
+          <h1>Nova obra</h1>
+          <div class="page-sub">Preencha nome obrigatório · demais campos podem ficar pra depois</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="location.hash='#obras'">← Cancelar</button>
+      </div>
+
+      <form id="no-form" class="no-form">
+        <div class="no-section">
+          <h3>Identificação <span class="req">obrigatório</span></h3>
+          <div class="fld">
+            <label>Nome da obra</label>
+            <input type="text" id="no-nome" placeholder="Ex: Residencial Beira-Rio" required />
+          </div>
+        </div>
+
+        <div class="no-section">
+          <h3>Detalhes <span class="opt">opcional · preencha depois se quiser</span></h3>
+          <div class="row" style="gap: 16px; flex-wrap: wrap;">
+            <div class="fld" style="flex: 1; min-width: 240px;">
+              <label>Endereço</label>
+              <input type="text" placeholder="Rua, número · cidade/UF" />
+            </div>
+            <div class="fld" style="flex: 1; min-width: 200px;">
+              <label>Engenheiro responsável</label>
+              <input type="text" placeholder="Nome do responsável" />
+            </div>
+          </div>
+          <div class="row" style="gap: 16px; flex-wrap: wrap;">
+            <div class="fld" style="flex: 1; min-width: 180px;">
+              <label>Data de início</label>
+              <input type="date" />
+            </div>
+            <div class="fld" style="flex: 1; min-width: 180px;">
+              <label>Entrega contratual</label>
+              <input type="date" />
+            </div>
+            <div class="fld" style="flex: 1; min-width: 180px;">
+              <label>BAC estimado</label>
+              <input type="text" placeholder="R$ 0,00" inputmode="decimal" />
+            </div>
+          </div>
+        </div>
+
+        <div class="no-section">
+          <h3>Integrações <span class="opt">opcional · acelera coleta de dados</span></h3>
+          <div class="row" style="gap: 16px; flex-wrap: wrap;">
+            <div class="fld" style="flex: 1; min-width: 240px;">
+              <label>Código Sienge da obra</label>
+              <input type="text" placeholder="Ex: 1042" />
+            </div>
+            <div class="fld" style="flex: 1; min-width: 240px;">
+              <label>WhatsApp grupo da obra</label>
+              <input type="text" placeholder="+55 73 9 0000-0000" />
+            </div>
+          </div>
+        </div>
+
+        <div class="row between" style="margin-top: 32px; align-items: center;">
+          <span class="caps micro mute">Obra fica acessível imediatamente após criação</span>
+          <button type="submit" class="btn">Criar obra →</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ────────── TELA: HISTÓRICO ────────── -->
+    <section id="view-historico" class="view fade" hidden>
+      <div class="page-head">
+        <div>
+          <h1>Histórico de auditorias <span class="count mono" id="hist-count">(04)</span></h1>
+          <div class="page-sub">Todas as runs de pipeline · ordenado por data</div>
+        </div>
+      </div>
+
+      <table class="t" style="margin-top: 24px;">
+        <thead>
+          <tr>
+            <th>Data · hora</th>
+            <th>Obra</th>
+            <th class="num">Duração</th>
+            <th>PVO</th>
+            <th class="num">CPI</th>
+            <th class="num">SPI</th>
+            <th>Dossiê</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="click" onclick="location.hash='#relatorio/run-2026-0520-a'">
+            <td class="mono">20/05/2026 · 14:08</td>
+            <td>Residencial Demo</td>
+            <td class="num mono">07m 38s</td>
+            <td><span class="ok mono">27/27 ✓</span></td>
+            <td class="num crit">0,738</td>
+            <td class="num crit">0,74</td>
+            <td class="mono mute">L4-DOSS-2026-0520 →</td>
+          </tr>
+          <tr class="click">
+            <td class="mono">18/05/2026 · 09:42</td>
+            <td>Edifício Norte</td>
+            <td class="num mono">05m 12s</td>
+            <td><span class="ok mono">27/27 ✓</span></td>
+            <td class="num">0,940</td>
+            <td class="num">0,97</td>
+            <td class="mono mute">L4-DOSS-2026-0518 →</td>
+          </tr>
+          <tr class="click">
+            <td class="mono">06/05/2026 · 18:21</td>
+            <td>Residencial Demo</td>
+            <td class="num mono">08m 04s</td>
+            <td><span class="crit mono">24/27 ⚠</span></td>
+            <td class="num crit">0,711</td>
+            <td class="num crit">0,68</td>
+            <td class="mono mute">L4-DOSS-2026-0506 →</td>
+          </tr>
+          <tr class="click">
+            <td class="mono">22/04/2026 · 11:05</td>
+            <td>Pavilhão Exatas</td>
+            <td class="num mono">06m 47s</td>
+            <td><span class="ok mono">27/27 ✓</span></td>
+            <td class="num">0,920</td>
+            <td class="num">0,98</td>
+            <td class="mono mute">L4-DOSS-2026-0422 →</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ────────── TELA: AGENTES ────────── -->
+    <section id="view-agentes" class="view fade" hidden>
+      <div class="page-head">
+        <div>
+          <h1>Agentes <span class="count mono">(06)</span></h1>
+          <div class="page-sub">Pipeline: Freddie → Polly + Grace + Michael → Thomas → Alfie</div>
+        </div>
+      </div>
+
+      <div class="agents-grid" id="agents-grid"></div>
+    </section>
+
+    <!-- ────────── TELA: CONFIG ────────── -->
+    <section id="view-config" class="view fade" hidden>
+      <div class="page-head">
+        <div>
+          <h1>Configurações</h1>
+          <div class="page-sub">Perfil · equipe · faturamento</div>
+        </div>
+      </div>
+
+      <div class="tabs" id="cfg-tabs">
+        <button class="tab on" data-tab="perfil">Perfil & sistema</button>
+        <button class="tab" data-tab="equipe">Equipe & convites</button>
+      </div>
+
+      <!-- ─── PERFIL & SISTEMA ─── -->
+      <div class="cfg-pane" data-pane="perfil">
+        <div class="cfg-list">
+          <div class="cfg-row">
+            <div class="cfg-k">
+              <div class="caps micro mute">Perfil</div>
+              <div class="cfg-name">Usuário ativo</div>
+            </div>
+            <div class="cfg-v">eng@construtora.com.br · ENG · Brava Construtora</div>
+          </div>
+          <div class="cfg-row">
+            <div class="cfg-k">
+              <div class="caps micro mute">Integração</div>
+              <div class="cfg-name">Supabase</div>
+            </div>
+            <div class="cfg-v"><span class="ok">●</span> conectado · aibemaisphshawlcozyf.supabase.co</div>
+          </div>
+          <div class="cfg-row">
+            <div class="cfg-k">
+              <div class="caps micro mute">Integração</div>
+              <div class="cfg-name">VPS FastAPI</div>
+            </div>
+            <div class="cfg-v"><span class="ok">●</span> online · 187.127.29.117:8000 · 4 endpoints</div>
+          </div>
+          <div class="cfg-row">
+            <div class="cfg-k">
+              <div class="caps micro mute">LLM</div>
+              <div class="cfg-name">Modelo Gemini</div>
+            </div>
+            <div class="cfg-v mono">gemini-2.5-flash · free tier · 1.500 req/dia</div>
+          </div>
+          <div class="cfg-row">
+            <div class="cfg-k">
+              <div class="caps micro mute">Sistema</div>
+              <div class="cfg-name">Versão</div>
+            </div>
+            <div class="cfg-v mono">L4-CORE v0.9.4 · pre-release</div>
+          </div>
+          <div class="cfg-row">
+            <div class="cfg-k">
+              <div class="caps micro mute">Sessão</div>
+              <div class="cfg-name">Sair da conta</div>
+            </div>
+            <div class="cfg-v">
+              <button class="btn btn-ghost btn-sm" onclick="localStorage.removeItem('l4_user'); location.hash='#login';">Sair →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── EQUIPE & CONVITES ─── -->
+      <div class="cfg-pane" data-pane="equipe" hidden>
+        <div class="row between" style="margin-bottom: 16px;">
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 600;">Membros da empresa <span class="mono mute" style="margin-left: 8px;">(4)</span></h3>
+            <div class="caps micro mute" style="margin-top: 4px; letter-spacing: 0.16em;">Convidados não pagam · sua empresa absorve o custo</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('invite-modal').hidden=false;">+ Convidar membro</button>
+        </div>
+
+        <table class="t">
+          <thead>
+            <tr>
+              <th>Membro</th>
+              <th>Papel</th>
+              <th>Obras visíveis</th>
+              <th>Entrou em</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Romell L4</strong><div class="mono micro mute">eng@construtora.com.br</div></td>
+              <td><span class="badge b-dark">ENG · ADMIN</span></td>
+              <td class="mono">todas</td>
+              <td class="mono mute">20/05/2026</td>
+              <td class="end mono mute">você</td>
+            </tr>
+            <tr>
+              <td><strong>R. Sampaio</strong><div class="mono micro mute">sampaio@construtora.com.br</div></td>
+              <td><span class="badge">ENG</span></td>
+              <td class="mono">Residencial Demo · Edifício Norte</td>
+              <td class="mono mute">15/05/2026</td>
+              <td class="end"><button class="btn-link">Editar</button></td>
+            </tr>
+            <tr>
+              <td><strong>M. Tavares</strong><div class="mono micro mute">cliente@empresa.com.br</div></td>
+              <td><span class="badge">CLI</span></td>
+              <td class="mono">Residencial Demo</td>
+              <td class="mono mute">12/05/2026</td>
+              <td class="end"><button class="btn-link">Editar</button></td>
+            </tr>
+            <tr>
+              <td><strong>Almoxarifado</strong><div class="mono micro mute">almox@construtora.com.br</div></td>
+              <td><span class="badge">COL</span></td>
+              <td class="mono">todas (upload-only)</td>
+              <td class="mono mute">10/05/2026</td>
+              <td class="end"><button class="btn-link">Editar</button></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin-top: 40px; font-size: 16px; font-weight: 600;">Convites pendentes <span class="mono mute" style="margin-left: 8px;">(2)</span></h3>
+        <table class="t" style="margin-top: 12px;">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Papel proposto</th>
+              <th>Enviado em</th>
+              <th>Expira</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">novo.eng@construtora.com.br</td>
+              <td><span class="badge">ENG</span></td>
+              <td class="mono mute">19/05/2026</td>
+              <td class="mono mute">26/05/2026</td>
+              <td class="end"><button class="btn-link">Reenviar</button><button class="btn-link mute" style="margin-left: 12px;">Revogar</button></td>
+            </tr>
+            <tr>
+              <td class="mono">cliente2@incorporadora.com.br</td>
+              <td><span class="badge">CLI</span></td>
+              <td class="mono mute">18/05/2026</td>
+              <td class="mono mute">25/05/2026</td>
+              <td class="end"><button class="btn-link">Reenviar</button><button class="btn-link mute" style="margin-left: 12px;">Revogar</button></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin-top: 40px; font-size: 16px; font-weight: 600;">Significado dos papéis</h3>
+        <div class="role-grid">
+          <div class="role-card">
+            <div class="role-tag">ENG</div>
+            <div class="role-name">Engenheiro</div>
+            <p>Cria obras, sobe documentos, executa pipeline, vê todas as métricas, exporta dossiê. Único que pode convidar membros e ver faturamento (se ADMIN).</p>
+          </div>
+          <div class="role-card">
+            <div class="role-tag">CLI</div>
+            <div class="role-name">Cliente</div>
+            <p>Leitura apenas. Vê obras que receber acesso. Acessa Dashboard e Dossiê. Não sobe arquivos nem dispara pipeline.</p>
+          </div>
+          <div class="role-card">
+            <div class="role-tag">COL</div>
+            <div class="role-name">Colaborador</div>
+            <p>Sobe documentos (NFs, diário, boletins). Não vê Dashboard nem dossiê. Útil pra almoxarifado, mestre de obras, equipe de campo.</p>
+          </div>
+        </div>
+      </div>
+
+          </section>
+
+    <!-- ────────── TELA 3: DASHBOARD DA OBRA ────────── -->
+    <section id="view-obra" class="view fade" hidden>
+
+      <!-- ════════════════════════════════════════════════════════
+           HEADER DA OBRA
+           ════════════════════════════════════════════════════════ -->
+      <header class="obra-head">
+        <div class="oh-id">
+          <span class="caps micro mute" style="letter-spacing: 0.32em;">OBR-001 · CHAVE GPHY-7T4Q-DEM</span>
+        </div>
+        <h1 class="oh-title">Residencial Demo</h1>
+        <p class="oh-sub">60 unidades · 3 torres · Ilhéus, BA</p>
+        <div class="oh-meta">
+          <div><span class="caps micro mute">Data-base</span><span class="mono v">20/05/2026</span></div>
+          <div><span class="caps micro mute">Período</span><span class="mono v">Abril/2026</span></div>
+          <div><span class="caps micro mute">Eng. resp.</span><span class="mono v">R. Sampaio</span></div>
+          <div><span class="caps micro mute">Selo PVO</span><span class="mono v ok" style="font-weight:600;" id="audit-state">27/27 ✓</span></div>
+        </div>
+      </header>
+
+      <!-- ════════════════════════════════════════════════════════
+           GRUPO 1 · AUDITORIA ATUAL (Fontes + Indicadores)
+           ════════════════════════════════════════════════════════ -->
+      <div class="dash-group">
+        <div class="group-eyebrow">
+          <span class="ge-num">01</span>
+          <span class="ge-title">Auditoria atual</span>
+          <span class="ge-meta">Snapshot 20/05/2026 · EVM convergente</span>
+        </div>
+
+        <!-- ─── FONTES AUDITADAS ─── -->
+        <section class="dash-sec">
+          <div class="dash-sec-h">
+            <h2>Fontes auditadas</h2>
+            <span class="meta" id="src-meta">— · —</span>
+          </div>
+          <div class="source-panel" id="src-panel"></div>
+          <div id="src-banner"></div>
+        </section>
+
+        <!-- ─── INDICADORES (gated) ─── -->
+        <section class="dash-sec" data-needs="orcamento,boletins" id="sec-kpi">
+        <div class="dash-sec-h">
+          <h2>Indicadores</h2>
+          <span class="meta">EVM · convergente · base contratual</span>
+        </div>
+        <div class="ekpi-grid">
+          <div class="ekpi">
+            <div class="lbl"><span class="tip" data-tip="Budget at Completion · orçamento total">BAC</span></div>
+            <div class="val countup" data-end="10100090.59" data-fmt="brl-short">—</div>
+            <div class="delta">Orçamento total contratado</div>
+          </div>
+          <div class="ekpi">
+            <div class="lbl"><span class="tip" data-tip="Actual Cost · custo realizado até a data-base">AC</span></div>
+            <div class="val countup" data-end="7204999.65" data-fmt="brl-short">—</div>
+            <div class="delta">71,3% executado financeiro</div>
+          </div>
+          <div class="ekpi crit">
+            <div class="lbl">EAC <span class="tip" data-tip="Estimate at Completion · custo final projetado">projetado</span></div>
+            <div class="val countup" data-end="13686144" data-fmt="brl-short">—</div>
+            <div class="delta">+R$ 3,59 M vs BAC</div>
+          </div>
+          <div class="ekpi crit">
+            <div class="lbl"><span class="tip" data-tip="Variance at Completion · BAC − EAC">VAC</span></div>
+            <div class="val countup" data-end="-3586053" data-fmt="brl-short">—</div>
+            <div class="delta">Estouro projetado se nada mudar</div>
+          </div>
+        </div>
+
+        <div class="idx-row">
+          <div class="idx-card crit">
+            <div class="head">
+              <span class="lbl"><span class="tip" data-tip="Cost Performance Index · EV/AC">CPI</span> · custo</span>
+              <span class="badge b-crit">CRÍTICO</span>
+            </div>
+            <div class="val countup" data-end="0.738" data-fmt="dec3">0,000</div>
+            <div class="note">Cada R$ 1,00 gasto entrega R$ 0,74 de obra. Convergente entre Sienge (0,738) e Físico (0,742). Benchmark CBIC: 0,92.</div>
+          </div>
+          <div class="idx-card crit">
+            <div class="head">
+              <span class="lbl"><span class="tip" data-tip="Schedule Performance Index · EV/PV">SPI</span> · prazo</span>
+              <span class="badge b-crit">CRÍTICO</span>
+            </div>
+            <div class="val countup" data-end="0.74" data-fmt="dec2">0,00</div>
+            <div class="note">136 dias de atraso vs entrega contratual (04/01/2026). Base contratual — não baseline replanejado.</div>
+          </div>
+        </div>
+      </section>
+      </div><!-- /dash-group #01 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           GRUPO 2 · RISCOS DETECTADOS (Ativo + Futuro + Esquecimento)
+           ════════════════════════════════════════════════════════ -->
+      <div class="dash-group">
+        <div class="group-eyebrow">
+          <span class="ge-num">02</span>
+          <span class="ge-title">Riscos detectados</span>
+          <span class="ge-meta">8 frentes · −R$ 1,30 M projetado · −R$ 871 k esquecido</span>
+        </div>
+
+        <!-- ─── RISCO ATIVO ─── -->
+        <section class="dash-sec" data-needs="orcamento,boletins" id="sec-risco-ativo">
+        <div class="dash-sec-h">
+          <h2>Risco ativo</h2>
+          <span class="meta crit">4 etapas · CPI &lt; 0,95</span>
+        </div>
+        <div class="eta-list">
+          <div class="eta-row crit">
+            <div>
+              <div class="name">Estrutura · Pilares torre B</div>
+              <div class="desc">FRENTE CRÍTICA · CR R$ 589.412 / ORÇ R$ 412.880</div>
+            </div>
+            <div class="barwrap">
+              <div class="b"><i style="width: 70%;"></i></div>
+              <div class="bcap">CPI ETAPA 0,701</div>
+            </div>
+            <div class="v">−R$ 176k</div>
+            <div class="tag">crítico</div>
+          </div>
+          <div class="eta-row crit">
+            <div>
+              <div class="name">Vedação · Drywall pavimento técnico</div>
+              <div class="desc">CR R$ 301.092 / ORÇ R$ 218.500</div>
+            </div>
+            <div class="barwrap">
+              <div class="b"><i style="width: 73%;"></i></div>
+              <div class="bcap">CPI ETAPA 0,726</div>
+            </div>
+            <div class="v">−R$ 83k</div>
+            <div class="tag">crítico</div>
+          </div>
+          <div class="eta-row crit">
+            <div>
+              <div class="name">Hidráulica · Prumadas frias</div>
+              <div class="desc">CR R$ 241.788 / ORÇ R$ 186.300</div>
+            </div>
+            <div class="barwrap">
+              <div class="b"><i style="width: 77%;"></i></div>
+              <div class="bcap">CPI ETAPA 0,771</div>
+            </div>
+            <div class="v">−R$ 55k</div>
+            <div class="tag">crítico</div>
+          </div>
+          <div class="eta-row crit">
+            <div>
+              <div class="name">Esquadrias · Alumínio fachada sul</div>
+              <div class="desc">PROJEÇÃO CPI GLOBAL · etapa sem boletim fechado</div>
+            </div>
+            <div class="barwrap">
+              <div class="b"><i style="width: 81%;"></i></div>
+              <div class="bcap">CPI GLOBAL 0,814</div>
+            </div>
+            <div class="v">−R$ 114k</div>
+            <div class="tag">crítico</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── RISCO FUTURO ─── -->
+      <section class="dash-sec" data-needs="cronograma,orcamento" id="sec-risco-futuro">
+        <div class="dash-sec-h">
+          <h2>Risco futuro</h2>
+          <span class="meta">Etapas não iniciadas · projeção EAC global</span>
+        </div>
+        <table class="t" style="margin-top: 14px;">
+          <thead>
+            <tr>
+              <th>Etapa</th>
+              <th class="num">Orçado</th>
+              <th class="num">EAC global</th>
+              <th class="num">Excesso projetado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Acabamento · Porcelanato áreas comuns</td><td class="num">684.220,00</td><td class="num">927.236,87</td><td class="num crit">−243.016</td></tr>
+            <tr><td>Pintura · Fachada principal</td><td class="num">312.900,00</td><td class="num">424.075,07</td><td class="num crit">−111.175</td></tr>
+            <tr><td>Paisagismo · Jardins coletivos</td><td class="num">198.500,00</td><td class="num">269.024,39</td><td class="num crit">−70.524</td></tr>
+            <tr><td>Elevadores · Comissionamento</td><td class="num">541.000,00</td><td class="num">733.198,73</td><td class="num crit">−192.198</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ─── ESQUECIMENTO ORÇAMENTÁRIO ─── -->
+      <section class="dash-sec" data-needs="orcamento,nf-lanc" id="sec-esquecimento">
+        <div class="dash-sec-h">
+          <h2>Esquecimento orçamentário</h2>
+          <span class="meta crit">orçado = 0 · realizado &gt; 0</span>
+        </div>
+        <div class="note" style="margin-top: 14px;">
+          <ul>
+            <li><span class="lbl">ADM obra · Comunicação e papelaria</span><span>R$ 312.490,12</span></li>
+            <li><span class="lbl">Logística · Aluguel grua complementar</span><span>R$ 284.018,77</span></li>
+            <li><span class="lbl">Tratamentos acústicos · Salão festas</span><span>R$ 161.500,00</span></li>
+            <li><span class="lbl">Locação container vestiário extra</span><span>R$ 113.202,11</span></li>
+          </ul>
+          <div class="total"><span>Total não previsto</span><span>R$ 871.211,00</span></div>
+        </div>
+      </section>
+      </div><!-- /dash-group #02 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           GRUPO 3 · DECISÕES (Plano de Ação + Lições)
+           ════════════════════════════════════════════════════════ -->
+      <div class="dash-group">
+        <div class="group-eyebrow">
+          <span class="ge-num">03</span>
+          <span class="ge-title">Decisões</span>
+          <span class="ge-meta">3 ações priorizadas · 3 lições históricas</span>
+        </div>
+
+        <!-- ─── PLANO DE AÇÃO (só com PVO) ─── -->
+        <section class="dash-sec" data-needs="pvo" id="sec-plano">
+        <div class="dash-sec-h">
+          <h2>Plano de ação</h2>
+          <span class="meta">3 movimentos · priorizado por impacto / esforço</span>
+        </div>
+
+        <div class="act-card">
+          <div class="a-id">A01</div>
+          <div>
+            <span class="verb">renegociar</span>
+            <h4>Lote de concreto — torre B</h4>
+            <p class="desc">Comparativo de 3 fornecedores indica margem de 6–8% no contrato vigente. Janela de renegociação: 5 dias úteis antes do próximo pedido.</p>
+            <div class="ameta">
+              <span>RESP <strong>SUPRIMENTOS</strong></span>
+              <span>PRAZO <strong>27/05/2026</strong></span>
+              <span>ESFORÇO <strong>BAIXO</strong></span>
+            </div>
+          </div>
+          <div class="impact">
+            <div class="lbl">Impacto financeiro</div>
+            <div class="v">+R$ 180k</div>
+            <div class="vsub">economia projetada</div>
+          </div>
+        </div>
+
+        <div class="act-card">
+          <div class="a-id">A02</div>
+          <div>
+            <span class="verb">antecipar</span>
+            <h4>Compra de aço CA-50 12,5 mm</h4>
+            <p class="desc">Pedido emergencial evita parada de 4 dias na concretagem dos pilares da torre B. Custo do frete expresso é absorvido pela perda evitada.</p>
+            <div class="ameta">
+              <span>RESP <strong>SUPRIMENTOS + ENG. OBRA</strong></span>
+              <span>PRAZO <strong>30/05/2026</strong></span>
+              <span>ESFORÇO <strong>MÉDIO</strong></span>
+            </div>
+          </div>
+          <div class="impact">
+            <div class="lbl">Impacto financeiro</div>
+            <div class="v">+R$ 95k</div>
+            <div class="vsub">perda evitada · 4d parada</div>
+          </div>
+        </div>
+
+        <div class="act-card">
+          <div class="a-id">A03</div>
+          <div>
+            <span class="verb">realocar</span>
+            <h4>Equipe de alvenaria — torre A → torre B</h4>
+            <p class="desc">Frente da torre A está adiantada e libera capacidade. Realocação de 3 equipes recupera 9 dias do caminho crítico sem custo adicional de mão de obra.</p>
+            <div class="ameta">
+              <span>RESP <strong>ENG. DE CAMPO</strong></span>
+              <span>PRAZO <strong>IMEDIATO</strong></span>
+              <span>ESFORÇO <strong>BAIXO</strong></span>
+            </div>
+          </div>
+          <div class="impact">
+            <div class="lbl">Impacto cronograma</div>
+            <div class="v">+9 dias</div>
+            <div class="vsub">caminho crítico recuperado</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 28px; background: var(--fg); color: #fff; padding: 24px 28px; display: flex; justify-content: space-between; align-items: baseline; gap: 24px;">
+          <div>
+            <div class="caps micro" style="color: rgba(255,255,255,0.55); letter-spacing: 0.32em;">SE AS 3 AÇÕES FOREM EXECUTADAS EM 14 DIAS</div>
+            <div class="serif-h serif-h-2" style="margin-top: 10px; color: #fff;">+ R$ 275 k recuperados &nbsp;·&nbsp; + 9 dias no cronograma</div>
+          </div>
+          <button class="btn btn-ghost" style="background: transparent; color: #fff; border-color: #fff;" onclick="location.hash='#relatorio/run-2026-0520-a'">Ver dossiê →</button>
+        </div>
+      </section>
+
+      <!-- ─── LIÇÕES (sempre que histórico existe) ─── -->
+      <section class="dash-sec" data-needs="historico" id="sec-licoes">
+        <div class="dash-sec-h">
+          <h2 style="color: var(--mute);">Lições aprendidas</h2>
+          <span class="meta">Etapas históricas · calibração de próximas obras</span>
+        </div>
+        <div class="lessons" style="margin-top: 14px;">
+          <table class="t">
+            <thead>
+              <tr>
+                <th>Etapa concluída</th>
+                <th class="num">Orçado</th>
+                <th class="num">Realizado</th>
+                <th class="num">Δ Final</th>
+                <th>Causa raiz</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Fundação · Estaca hélice contínua</td><td class="num">1.224.000</td><td class="num">1.418.012</td><td class="num">−15,9%</td><td>Subsolo divergente de sondagem inicial</td></tr>
+              <tr><td>Movimento de terra</td><td class="num">488.000</td><td class="num">552.190</td><td class="num">−13,2%</td><td>Chuva prolongada março/24</td></tr>
+              <tr><td>Estrutura · Torre A</td><td class="num">3.114.500</td><td class="num">3.298.760</td><td class="num">−5,9%</td><td>Atraso aço CA-50 fornecedor primário</td></tr>
+            </tbody>
+          </table>
+          <div class="nota">Não compõe plano de ação — referência para projetos futuros.</div>
+        </div>
+      </section>
+      </div><!-- /dash-group #03 -->
+
+      <!-- ════════════════════════════════════════════════════════
+           RODAPÉ TÉCNICO (Caveat + ID + DEV controls colapsados)
+           ════════════════════════════════════════════════════════ -->
+      <footer class="dash-foot">
+        <!-- ─── CAVEAT TEMPORAL ─── -->
+        <div class="caveat" id="dash-caveat">
+          <div class="lbl">Caveat temporal</div>
+          <div class="txt">Snapshot referente ao período <span class="ids">2024-03-15 → 2026-05-20</span> · planilha Sienge <span class="ids">SI-2026-05-EXP-04</span> · cronograma fechado em <span class="ids">2026-05-19 18:42 BRT</span>. Próxima medição quinzenal prevista para <span class="ids">03/06/2026</span>.</div>
+        </div>
+
+        <div class="foot-id">
+          <span class="caps micro" style="letter-spacing: 0.32em;">L4-DOSS-2026-0520</span>
+          <span class="mute" style="margin-left:12px;">gerado por ALFIE · PVO 27/27 ✓</span>
+        </div>
+
+        <details class="dev-toggle">
+          <summary>[DEV] Simular preenchimento de dados</summary>
+          <div class="row" style="gap: 16px; margin-top: 12px; align-items: center;">
+            <div class="state-chips" id="state-chips">
+              <button data-state="completo" class="on">Completo</button>
+              <button data-state="parcial">Parcial</button>
+              <button data-state="vazio">Vazio</button>
+            </div>
+            <span class="caps micro mute">testa renderização do dashboard com volume variável</span>
+          </div>
+        </details>
+      </footer>
+    </section>
+
+    <!-- ────────── TELA 4: UPLOAD ────────── -->
+    <section id="view-upload" class="view fade" hidden>
+      <div class="page-head">
+        <div>
+          <h1>Documentos da obra</h1>
+          <div class="page-sub">Residencial Demo · OBR-001 · processamento automático Gemini ao subir</div>
+        </div>
+      </div>
+
+      <div class="tabs" id="upload-tabs">
+        <button class="tab on" data-tab="orcamento">Orçamento</button>
+        <button class="tab" data-tab="cronograma">Cronograma</button>
+        <button class="tab" data-tab="boletins">Boletins</button>
+        <button class="tab" data-tab="nf-rec">NFs recebidas</button>
+        <button class="tab" data-tab="nf-lanc">NFs lançadas</button>
+        <button class="tab" data-tab="diario">Diário</button>
+      </div>
+
+      <div id="upload-content"></div>
+    </section>
+
+    <!-- ────────── TELA 5: PIPELINE ────────── -->
+    <section id="view-pipeline" class="view fade" hidden>
+      <div class="page-head">
+        <div>
+          <h1>Pipeline de auditoria</h1>
+          <div class="page-sub mono">RUN-2026-0520-A · RESIDENCIAL DEMO · INICIADO 20/05/2026 14:08:22 BRT</div>
+        </div>
+        <div class="row" style="gap: 10px;">
+          <button class="btn btn-ghost btn-sm" id="btn-pipe-reset">Reiniciar</button>
+          <button class="btn btn-sm" id="btn-pipe-run">▶ Executar pipeline</button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <span class="caps micro">Status</span>
+        <span class="mono micro" id="pipe-status">AGUARDANDO INÍCIO</span>
+        <div class="spacer"></div>
+        <span class="caps micro mute">Tempo total</span>
+        <span class="mono micro" id="pipe-elapsed">00:00.0</span>
+      </div>
+
+      <div id="pipe-mount"></div>
+
+      <div class="row" style="margin-top: 32px; justify-content: flex-end;">
+        <button class="btn" id="btn-ver-dossie" disabled style="opacity: 0.35; cursor: not-allowed;">Ver dossiê →</button>
+      </div>
+    </section>
+
+    <!-- ────────── TELA 6: DOSSIÊ ────────── -->
+    <section id="view-relatorio" class="view-doss" hidden>
+      <div class="toolbar doss-toolbar">
+        <button class="btn btn-ghost btn-sm" onclick="window.print()">Imprimir / PDF</button>
+        <button class="btn btn-ghost btn-sm" id="btn-dl-html">Download HTML</button>
+        <button class="btn btn-sm" id="btn-canva">Exportar Canva</button>
+        <span class="id-tag" id="doss-id">L4-DOSS-2026-0520</span>
+      </div>
+
+      <div class="doss-wrap">
+
+        <!-- ═════ CAPA ═════ -->
+        <section class="doss-page doss-cover">
+          <div class="doss-top">
+            <div class="row" style="gap: 12px; align-items: center;">
+              <span class="doss-mark"><span class="mono">L4</span></span>
+              <span class="caps micro" style="letter-spacing: 0.32em;">Engenharia</span>
+            </div>
+            <div class="right caps micro" style="letter-spacing: 0.28em; color: var(--mute); text-align: right;">
+              CONFIDENCIAL<br>
+              <span style="display: inline-block; margin-top: 4px;">DOC Nº L4-DOSS-2026-0520</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 96px;">
+            <p class="caps micro mute" style="letter-spacing: 0.32em;">Dossiê executivo de controladoria</p>
+            <h1 class="serif-h" style="font-size: 80px; margin-top: 22px; line-height: 1; font-weight: 600;">Residencial Demo</h1>
+            <p class="serif" style="margin-top: 16px; font-size: 26px; font-style: italic; color: var(--mute);">60 unidades · 3 torres · Ilhéus, BA</p>
+          </div>
+
+          <div class="doss-cover-meta">
+            <div>
+              <div class="caps micro mute" style="letter-spacing: 0.28em;">Período</div>
+              <div class="serif" style="margin-top: 8px; font-size: 17px; font-weight: 500;">Maio / 2026</div>
+              <div class="micro mute" style="margin-top: 2px;">Data-base 20/05/2026</div>
+            </div>
+            <div>
+              <div class="caps micro mute" style="letter-spacing: 0.28em;">Cliente</div>
+              <div class="serif" style="margin-top: 8px; font-size: 17px; font-weight: 500;">Construtora Exemplo S.A.</div>
+              <div class="micro mute" style="margin-top: 2px;">CNPJ ██.███.███/0001-██</div>
+            </div>
+            <div>
+              <div class="caps micro mute" style="letter-spacing: 0.28em;">Controladoria</div>
+              <div class="serif" style="margin-top: 8px; font-size: 17px; font-weight: 500;">R. Sampaio</div>
+              <div class="micro mute" style="margin-top: 2px;">L4 Engenharia</div>
+            </div>
+          </div>
+
+          <div class="doss-cover-foot">
+            <div class="serif" style="font-style: italic; color: var(--mute); max-width: 380px; line-height: 1.55; font-size: 15px;">
+              "O dossiê é a fotografia auditável da obra. Toda métrica é rastreável até a nota fiscal."
+            </div>
+            <div class="caps micro mute" style="text-align: right; letter-spacing: 0.28em; line-height: 1.9;">
+              04 capítulos<br>
+              14 páginas<br>
+              1 plano de ação
+            </div>
+          </div>
+        </section>
+
+        <!-- ═════ SUMÁRIO ═════ -->
+        <section class="doss-page">
+          <p class="caps micro mute" style="letter-spacing: 0.32em;">Sumário</p>
+          <h2 class="serif-h serif-h-2" style="margin-top: 10px; font-size: 36px;">O que está neste dossiê</h2>
+
+          <ol class="doss-toc" style="margin-top: 40px;">
+            <li>
+              <span class="n">01</span>
+              <span class="t">Auditoria Financeira</span>
+              <span class="d"><span class="tip" data-tip="Earned Value Management · gestão por valor agregado">EVM</span> · estouros por centro</span>
+              <span class="p">p. 03</span>
+            </li>
+            <li>
+              <span class="n">02</span>
+              <span class="t">Análise de Cronograma</span>
+              <span class="d"><span class="tip" data-tip="Schedule Performance Index · EV / PV">SPI</span> por etapa · caminho crítico</span>
+              <span class="p">p. 06</span>
+            </li>
+            <li>
+              <span class="n">03</span>
+              <span class="t">Mapa de Suprimentos</span>
+              <span class="d">Antecipação de ruptura · horizonte 14 dias</span>
+              <span class="p">p. 09</span>
+            </li>
+            <li>
+              <span class="n">04</span>
+              <span class="t">Plano de Ação</span>
+              <span class="d">3 movimentos cirúrgicos</span>
+              <span class="p">p. 12</span>
+            </li>
+          </ol>
+
+          <div style="margin-top: 64px; border-top: 1px solid var(--fg); padding-top: 22px;">
+            <p class="caps micro mute" style="letter-spacing: 0.32em;">Resumo de uma frase</p>
+            <p class="serif" style="margin-top: 14px; font-size: 26px; line-height: 1.35; font-weight: 300;">
+              Obra com <strong style="font-weight: 600;">estouro projetado de R$ 3,59 M</strong> e
+              <strong style="font-weight: 600;">136 dias de atraso</strong> no caminho crítico. Três movimentos
+              cirúrgicos podem recuperar <strong style="font-weight: 600;">R$ 275 k e 9 dias</strong> nos próximos 14 dias.
+            </p>
+          </div>
+        </section>
+
+        <!-- ═════ CAP 01 — FINANCEIRO ═════ -->
+        <section class="doss-page">
+          <div class="doss-cap-head">
+            <div>
+              <p class="caps micro mute" style="letter-spacing: 0.28em;">Capítulo 01 / 04</p>
+              <h2 class="serif-h" style="font-size: 42px; margin-top: 6px;">Auditoria Financeira</h2>
+            </div>
+            <div class="caps micro crit" style="letter-spacing: 0.28em;">▲ atenção</div>
+          </div>
+
+          <div class="doss-kpis" style="margin-top: 36px;">
+            <div>
+              <div class="lbl"><span class="tip" data-tip="Orçamento No Término · valor total contratado">ONT</span></div>
+              <div class="val">R$ 10,1 M</div>
+              <div class="cap">Orçamento total</div>
+            </div>
+            <div>
+              <div class="lbl"><span class="tip" data-tip="Custo Realizado · quanto foi efetivamente gasto">CR</span></div>
+              <div class="val">R$ 7,2 M</div>
+              <div class="cap">Custo realizado</div>
+            </div>
+            <div>
+              <div class="lbl"><span class="tip" data-tip="Valor Agregado · quanto de obra foi efetivamente entregue">VA</span></div>
+              <div class="val">R$ 5,3 M</div>
+              <div class="cap">Valor agregado</div>
+            </div>
+            <div class="crit">
+              <div class="lbl"><span class="tip" data-tip="Estimativa No Término · custo final projetado">ENT</span> projetado</div>
+              <div class="val">R$ 13,7 M</div>
+              <div class="cap">+ R$ 3,6 M vs orçado</div>
+            </div>
+          </div>
+
+          <div class="doss-idx" style="margin-top: 48px;">
+            <div>
+              <div class="head">
+                <span class="lbl"><span class="tip" data-tip="Índice de Desempenho de Custo · EV / AC">IDC</span> · custo</span>
+                <span class="badge b-crit">crítico</span>
+              </div>
+              <div class="val">0,74</div>
+              <div class="note">Cada R$ 1,00 gasto entrega R$ 0,74 de obra. Benchmark CBIC alto-padrão: 0,92.</div>
+            </div>
+            <div>
+              <div class="head">
+                <span class="lbl"><span class="tip" data-tip="Variação No Término · BAC − EAC">VAC</span> · variação no término</span>
+                <span class="badge b-crit">crítico</span>
+              </div>
+              <div class="val crit">−R$ 3,6 M</div>
+              <div class="note">Estouro projetado se nada mudar. Ver plano de ação capítulo 04.</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 56px;">
+            <p class="caps micro mute" style="letter-spacing: 0.28em;">Estouros por centro de custo</p>
+            <table class="doss-table" style="margin-top: 14px;">
+              <thead>
+                <tr><th>Centro</th><th class="num">Orçado</th><th class="num">Realizado</th><th class="num">Δ</th><th class="num">%</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Estrutura · Pilares torre B</td><td class="num">412.880</td><td class="num">589.412</td><td class="num crit"><strong>+176.532</strong></td><td class="num crit">+42,7%</td></tr>
+                <tr><td>Vedação · Drywall pavto. técnico</td><td class="num">218.500</td><td class="num">301.092</td><td class="num crit"><strong>+82.592</strong></td><td class="num crit">+37,8%</td></tr>
+                <tr><td>Hidráulica · Prumadas frias</td><td class="num">186.300</td><td class="num">241.788</td><td class="num crit"><strong>+55.488</strong></td><td class="num crit">+29,8%</td></tr>
+                <tr><td>Esquadrias · Alumínio fachada sul</td><td class="num">498.100</td><td class="num">612.044</td><td class="num crit"><strong>+113.944</strong></td><td class="num crit">+22,9%</td></tr>
+                <tr class="tot"><td><strong>Total</strong></td><td class="num"><strong>1.315.780</strong></td><td class="num"><strong>1.744.336</strong></td><td class="num crit"><strong>+428.556</strong></td><td class="num crit"><strong>+32,6%</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ═════ CAP 02 — CRONOGRAMA ═════ -->
+        <section class="doss-page">
+          <div class="doss-cap-head">
+            <div>
+              <p class="caps micro mute" style="letter-spacing: 0.28em;">Capítulo 02 / 04</p>
+              <h2 class="serif-h" style="font-size: 42px; margin-top: 6px;">Análise de Cronograma</h2>
+            </div>
+            <div class="caps micro crit" style="letter-spacing: 0.28em;">−136 dias</div>
+          </div>
+
+          <div class="doss-kpis kpi3" style="margin-top: 36px;">
+            <div>
+              <div class="lbl"><span class="tip" data-tip="Schedule Performance Index · EV/PV">SPI</span> global</div>
+              <div class="val">0,74</div>
+              <div class="cap">Benchmark setor: 0,91</div>
+            </div>
+            <div class="crit">
+              <div class="lbl">Atraso · caminho crítico</div>
+              <div class="val">−136 d</div>
+              <div class="cap">Vs linha base contratual</div>
+            </div>
+            <div>
+              <div class="lbl">Frentes críticas</div>
+              <div class="val">3 / 4</div>
+              <div class="cap"><span class="tip" data-tip="Schedule Performance Index">SPI</span> &lt; 0,9</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 48px;">
+            <p class="caps micro mute" style="letter-spacing: 0.28em;">Etapas em andamento</p>
+            <div class="doss-eta" style="margin-top: 16px;">
+              <div class="row-eta crit">
+                <div>
+                  <div class="n">Estrutura · Pilares torre B</div>
+                  <div class="m">Frente crítica · linha base 22/abr</div>
+                </div>
+                <div class="bar"><div class="b"><i style="width: 70%;"></i></div><div class="cap">SPI 0,70</div></div>
+                <div class="d"><strong>−82 d</strong></div>
+                <div class="tag">crítico</div>
+              </div>
+              <div class="row-eta crit">
+                <div>
+                  <div class="n">Vedação · Drywall pavto. técnico</div>
+                  <div class="m">Frente crítica · linha base 18/abr</div>
+                </div>
+                <div class="bar"><div class="b"><i style="width: 73%;"></i></div><div class="cap">SPI 0,73</div></div>
+                <div class="d"><strong>−54 d</strong></div>
+                <div class="tag">crítico</div>
+              </div>
+              <div class="row-eta wait">
+                <div>
+                  <div class="n">Hidráulica · Prumadas torre A</div>
+                  <div class="m">Frente secundária</div>
+                </div>
+                <div class="bar"><div class="b"><i style="width: 86%;"></i></div><div class="cap">SPI 0,86</div></div>
+                <div class="d"><strong>−18 d</strong></div>
+                <div class="tag">atenção</div>
+              </div>
+              <div class="row-eta ok">
+                <div>
+                  <div class="n">Cobertura · Torre A</div>
+                  <div class="m">Frente concluída</div>
+                </div>
+                <div class="bar"><div class="b"><i style="width: 100%;"></i></div><div class="cap">SPI 1,02</div></div>
+                <div class="d"><strong>+3 d</strong></div>
+                <div class="tag">no prazo</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="doss-quote" style="margin-top: 48px;">
+            <p class="caps micro mute" style="letter-spacing: 0.28em;">Leitura</p>
+            <p class="serif" style="margin-top: 8px; font-size: 19px; line-height: 1.4;">
+              O caminho crítico está concentrado em <strong>Pilares torre B</strong> (−82 d) e
+              <strong>Drywall pavto. técnico</strong> (−54 d). Realocação de equipe entre frentes pode recuperar
+              9 dias sem custo adicional — ver plano de ação <span class="mono" style="font-size: 16px;">A03</span>.
+            </p>
+          </div>
+        </section>
+
+        <!-- ═════ CAP 03 — SUPRIMENTOS ═════ -->
+        <section class="doss-page">
+          <div class="doss-cap-head">
+            <div>
+              <p class="caps micro mute" style="letter-spacing: 0.28em;">Capítulo 03 / 04</p>
+              <h2 class="serif-h" style="font-size: 42px; margin-top: 6px;">Mapa de Suprimentos</h2>
+            </div>
+            <div class="caps micro crit" style="letter-spacing: 0.28em;">3 rupturas em 14 d</div>
+          </div>
+
+          <p class="serif" style="margin-top: 22px; font-size: 17px; color: var(--mute); max-width: 64ch; line-height: 1.5;">
+            Antecipação de ruptura por material crítico. Cruzamento entre cronograma de consumo previsto e estoque em obra + pedidos em trânsito (NF-e SEFAZ × Sienge).
+          </p>
+
+          <div class="doss-supply" style="margin-top: 32px;">
+            <div class="row-sup crit">
+              <div class="head">
+                <div class="n">Cimento CP-II</div>
+                <span class="badge b-crit">alta severidade</span>
+              </div>
+              <div class="grid">
+                <div><div class="lbl">Gap</div><div class="val">280 sacos</div></div>
+                <div><div class="lbl">Ruptura em</div><div class="val crit">6 dias</div></div>
+                <div><div class="lbl">Frente afetada</div><div class="val">Estrutura T. B</div></div>
+              </div>
+              <div class="b"><i style="width: 86%;"></i></div>
+            </div>
+
+            <div class="row-sup crit">
+              <div class="head">
+                <div class="n">Aço CA-50 12,5 mm</div>
+                <span class="badge b-crit">alta severidade</span>
+              </div>
+              <div class="grid">
+                <div><div class="lbl">Gap</div><div class="val">4,2 ton</div></div>
+                <div><div class="lbl">Ruptura em</div><div class="val crit">9 dias</div></div>
+                <div><div class="lbl">Frente afetada</div><div class="val">Pilares T. B</div></div>
+              </div>
+              <div class="b"><i style="width: 73%;"></i></div>
+            </div>
+
+            <div class="row-sup wait">
+              <div class="head">
+                <div class="n">Bloco cerâmico 14×19×29</div>
+                <span class="badge">atenção</span>
+              </div>
+              <div class="grid">
+                <div><div class="lbl">Gap</div><div class="val">8.500 unid</div></div>
+                <div><div class="lbl">Ruptura em</div><div class="val">11 dias</div></div>
+                <div><div class="lbl">Frente afetada</div><div class="val">Alvenaria T. B</div></div>
+              </div>
+              <div class="b"><i style="width: 60%;"></i></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═════ CAP 04 — PLANO DE AÇÃO ═════ -->
+        <section class="doss-page">
+          <div class="doss-cap-head">
+            <div>
+              <p class="caps micro mute" style="letter-spacing: 0.28em;">Capítulo 04 / 04</p>
+              <h2 class="serif-h" style="font-size: 42px; margin-top: 6px;">Plano de Ação</h2>
+            </div>
+            <div class="caps micro ok" style="letter-spacing: 0.28em;">3 movimentos</div>
+          </div>
+
+          <p class="serif" style="margin-top: 22px; font-size: 17px; color: var(--mute); max-width: 64ch; line-height: 1.5;">
+            Três intervenções priorizadas por impacto / esforço. Impacto financeiro estimado e responsável sugerido. Validar com diretoria nos próximos 7 dias.
+          </p>
+
+          <div class="doss-actions" style="margin-top: 36px;">
+            <div class="row-act first">
+              <div class="aid">A01</div>
+              <div>
+                <div class="row" style="gap: 12px; align-items: baseline;">
+                  <span class="verb">renegociar</span>
+                  <span class="serif" style="font-size: 22px; font-weight: 600;">lote de concreto · torre B</span>
+                </div>
+                <p class="desc">Comparativo de 3 fornecedores indica margem de 6–8% no contrato vigente. Janela de renegociação: 5 dias úteis antes do próximo pedido.</p>
+                <div class="mt">RESP.: Suprimentos · PRAZO: 7 dias · ESFORÇO: baixo</div>
+              </div>
+              <div class="imp">
+                <div class="lbl">Impacto financeiro</div>
+                <div class="val">+R$ 180 k</div>
+                <div class="cap">economia projetada</div>
+              </div>
+            </div>
+
+            <div class="row-act">
+              <div class="aid">A02</div>
+              <div>
+                <div class="row" style="gap: 12px; align-items: baseline;">
+                  <span class="verb">antecipar</span>
+                  <span class="serif" style="font-size: 22px; font-weight: 600;">compra aço CA-50</span>
+                </div>
+                <p class="desc">Pedido emergencial evita parada de 4 dias na concretagem dos pilares torre B. Custo do frete expresso é absorvido pela perda evitada.</p>
+                <div class="mt">RESP.: Suprimentos + eng. obra · PRAZO: 3 dias · ESFORÇO: médio</div>
+              </div>
+              <div class="imp">
+                <div class="lbl">Impacto financeiro</div>
+                <div class="val">+R$ 95 k</div>
+                <div class="cap">perda evitada · 4 d parada</div>
+              </div>
+            </div>
+
+            <div class="row-act">
+              <div class="aid">A03</div>
+              <div>
+                <div class="row" style="gap: 12px; align-items: baseline;">
+                  <span class="verb">realocar</span>
+                  <span class="serif" style="font-size: 22px; font-weight: 600;">equipe alvenaria T. A → T. B</span>
+                </div>
+                <p class="desc">Frente da torre A está adiantada e libera capacidade. Realocação de 3 equipes recupera 9 dias do caminho crítico sem custo adicional de mão de obra.</p>
+                <div class="mt">RESP.: Eng. de campo · PRAZO: imediato · ESFORÇO: baixo</div>
+              </div>
+              <div class="imp">
+                <div class="lbl">Impacto cronograma</div>
+                <div class="val">+9 dias</div>
+                <div class="cap">caminho crítico recuperado</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="doss-total">
+            <div>
+              <p class="caps micro" style="color: rgba(255,255,255,0.55); letter-spacing: 0.32em;">Se as 3 ações forem executadas</p>
+              <p class="serif" style="margin-top: 12px; font-size: 30px; font-weight: 600; color: #fff;">+ R$ 275 k recuperados &nbsp;·&nbsp; + 9 dias no cronograma</p>
+            </div>
+            <div class="caps micro" style="color: rgba(255,255,255,0.55); letter-spacing: 0.28em; text-align: right; line-height: 1.8;">
+              horizonte<br>14 dias
+            </div>
+          </div>
+
+          <!-- Assinaturas -->
+          <div class="doss-sign">
+            <div>
+              <div class="line"></div>
+              <div class="caps micro mute" style="letter-spacing: 0.28em;">R. Sampaio · L4 Engenharia</div>
+              <div class="micro mute" style="margin-top: 2px;">Controladoria responsável</div>
+            </div>
+            <div>
+              <div class="line"></div>
+              <div class="caps micro mute" style="letter-spacing: 0.28em;">Diretoria · construtora</div>
+              <div class="micro mute" style="margin-top: 2px;">Ciência e aprovação</div>
+            </div>
+          </div>
+
+          <div class="doss-foot-final">
+            <div class="row" style="gap: 10px; align-items: center;">
+              <span class="doss-mark sm"><span class="mono">L4</span></span>
+              <span class="caps micro" style="letter-spacing: 0.32em;">Engenharia</span>
+            </div>
+            <div class="caps micro mute" style="letter-spacing: 0.28em;">Confidencial · L4-DOSS-2026-0520 · 14 / 14</div>
+          </div>
+        </section>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────
+     APP SCRIPT
+     ───────────────────────────────────────────────────────────── -->
+<script>
+'use strict';
+
+const VPS = 'http://187.127.29.117:8000';
+const SUPA_URL = 'https://aibemaisphshawlcozyf.supabase.co';
+const SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpYmVtYWlzcGhzaGF3bGNvenlmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NTQxOTksImV4cCI6MjA5MjUzMDE5OX0.yWFQpJsSpQXDQ5NXlVmyWnU1xfjmBC9uDnv8nFEnQ5s';
+// Toggle: ?dev=1 na URL força DEV_MODE=true; sem flag tenta API real, cai pra mock se erro
+const DEV_MODE = (new URLSearchParams(location.search)).get('dev') === '1';
+
+// ─── REST helpers ─────────────────────────────────────────────
+async function supaGet(table, params = '') {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}${params}`, {
+    headers: {
+      'apikey': SUPA_ANON_KEY,
+      'Authorization': `Bearer ${STATE.jwt || SUPA_ANON_KEY}`,
+    },
+  });
+  if (!r.ok) throw new Error(`Supabase ${table}: ${r.status}`);
+  return r.json();
+}
+
+async function vpsGet(path) {
+  const r = await fetch(`${VPS}${path}`);
+  if (!r.ok) throw new Error(`VPS ${path}: ${r.status}`);
+  return r.json();
+}
+
+async function vpsPost(path, body) {
+  const r = await fetch(`${VPS}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(`VPS ${path}: ${r.status}`);
+  return r.json();
+}
+
+async function supaAuthLogin(email, password) {
+  const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_ANON_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error_description || data.msg || 'login falhou');
+  STATE.jwt = data.access_token;
+  STATE.auth = { email };
+  localStorage.setItem('l4_user', email);
+  localStorage.setItem('l4_jwt', data.access_token);
+  return data;
+}
+
+const STATE = {
+  auth: null,
+  jwt: null,
+  obras: [],
+  obraAtiva: 'residencial-demo',
+  run: null,
+  emailUser: 'eng@construtora.com.br',
+};
+
+// ─── Formatters
+const BRL = n => 'R$ ' + (Math.abs(n)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const BRL_SIGN = n => (n < 0 ? '−' : '') + BRL(n);
+const DEC = (n, d = 2) => n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const INT = n => Math.round(n).toLocaleString('pt-BR');
+
+// ─── Mock data
+const MOCK_OBRAS = [
+  { id: 'OBR-001', uuid: 'residencial-demo', nome: 'Residencial Demo',   gphy: 'GPHY-7T4Q-DEM', cpi: 0.738, spi: 0.74, db: '20/05/2026', status: 'crit'    },
+  { id: 'OBR-002', uuid: 'edificio-norte',   nome: 'Edifício Norte',     gphy: 'GPHY-9P2K-NOR', cpi: 0.94,  spi: 0.97, db: '18/05/2026', status: 'atencao' },
+];
+
+const AGENTS = [
+  { key: 'freddie',  name: 'FREDDIE',  desc: 'Higieniza dados Sienge, valida soma vs rodapé, bloqueia se Δ > R$ 100',                output: { source: 'sienge_export_v04.xlsx', rows: 2841, hash_check: 'OK', diff_rodape: 'R$ 0,00', warnings: 2, blocked: false } },
+  { key: 'polly',    name: 'POLLY',    desc: 'Auditora financeira EVM — CPI Sienge + CPI Físico, EAC, VAC, benchmark CBIC',         output: { cpi_sienge: 0.738, cpi_fisico: 0.742, eac: 13686144, vac: -3586053, cbic_bench: 0.92, status: 'crit_convergente' } },
+  { key: 'grace',    name: 'GRACE',    desc: 'SPI obra real — base contratual, não baseline replanejado, calcula dias atraso',       output: { spi: 0.74, dias_atraso: 136, base: 'contratual', replanejado: false, etapas_em_andamento: 11 } },
+  { key: 'michael',  name: 'MICHAEL',  desc: 'Suprimentos — cruzamento NF SEFAZ × Sienge, cobertura boletins/diretos, Contrato Mãe', output: { nfs_sem_match: 22, valor_sem_match: 129348.22, contratos_mae: 7, contratos_mae_valor: 877515.00 } },
+  { key: 'thomas',   name: 'THOMAS',   desc: 'Orquestrador + PVO bloqueante (27 checks · 6 camadas · loop até convergir)',           output: { pvo_checks: 27, pvo_aprovados: 27, camadas: 6, loops: 2, status: 'aprovado' } },
+  { key: 'alfie',    name: 'ALFIE',    desc: 'Sintetizador executivo — dossiê HTML A4 + outline Canva (só com PVO ✓)',                output: { dossier_id: 'L4-DOSS-2026-0520', formato: 'HTML A4', pages: 1, canva_outline: true } },
+];
+
+// ─── Routing
+function router() {
+  const hash = location.hash.slice(1) || 'login';
+  const [route, arg] = hash.split('/');
+
+  // Hide all primary views + login
+  ['view-login','view-obras','view-obra','view-upload','view-pipeline','view-relatorio','view-historico','view-agentes','view-config','view-nova-obra'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = true;
+  });
+  document.getElementById('app-shell').hidden = false;
+
+  let showId = null, crumb = '—';
+  if (route === 'login' || route === 'cadastro') {
+    document.getElementById('app-shell').hidden = true;
+    showId = 'view-login';
+    crumb = 'LOGIN';
+  } else if (route === 'obras') {
+    showId = 'view-obras'; crumb = 'OBRAS';
+    renderObras();
+  } else if (route === 'obra') {
+    showId = 'view-obra'; crumb = 'DASHBOARD';
+    renderObra();
+  } else if (route === 'upload') {
+    showId = 'view-upload'; crumb = 'DOCUMENTOS';
+    renderUpload('orcamento');
+  } else if (route === 'pipeline') {
+    showId = 'view-pipeline'; crumb = 'PIPELINE';
+    renderPipeline();
+  } else if (route === 'relatorio') {
+    showId = 'view-relatorio'; crumb = 'DOSSIÊ';
+  } else if (route === 'historico') {
+    showId = 'view-historico'; crumb = 'HISTÓRICO';
+  } else if (route === 'agentes') {
+    showId = 'view-agentes'; crumb = 'AGENTES';
+    renderAgentes();
+  } else if (route === 'config') {
+    showId = 'view-config'; crumb = 'CONFIGURAÇÕES';
+  } else if (route === 'nova-obra' || route === 'nova') {
+    showId = 'view-nova-obra'; crumb = 'NOVA OBRA';
+  } else {
+    showId = 'view-obra'; crumb = 'DASHBOARD';
+    location.hash = '#obra/residencial-demo';
+    renderObra();
+  }
+
+  if (showId) document.getElementById(showId).hidden = false;
+  document.getElementById('hd-route').textContent = crumb;
+  syncSidebar(route);
+  syncWorkspaceBar(route);
+  window.scrollTo(0, 0);
+}
+
+function syncSidebar(route) {
+  // sub-routes da obra (dashboard, upload, pipeline, relatorio) ainda contam como "obras"
+  const obraSubroutes = ['obra', 'upload', 'pipeline', 'relatorio'];
+  const inObra = obraSubroutes.includes(route);
+
+  // Global nav: "Obras" fica acesa quando dentro de sub-rota
+  const effectiveGlobal = inObra ? 'obras' : route;
+  document.querySelectorAll('#sb-nav .sb-item').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('data-route') === effectiveGlobal);
+  });
+
+  // Contextual nav (Documentos/Pipeline/Dashboard/Dossiê) — aparece só dentro da obra
+  document.getElementById('sb-section-obra').hidden = !inObra;
+  document.getElementById('sb-nav-obra').hidden = !inObra;
+  document.querySelectorAll('#sb-nav-obra .sb-item').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('data-route') === route);
+  });
+}
+
+// Workspace bar (crumb + stepper) — mostra apenas em rotas da obra
+function syncWorkspaceBar(route) {
+  const bar = document.getElementById('workspace-bar');
+  if (!bar) return;
+  const obraSubroutes = ['obra', 'upload', 'pipeline', 'relatorio'];
+  const inObra = obraSubroutes.includes(route);
+  bar.hidden = !inObra;
+  if (!inObra) return;
+
+  // Map route → step key
+  const routeToStep = {
+    'upload':    'documentos',
+    'pipeline':  'pipeline',
+    'obra':      'dashboard',
+    'relatorio': 'dossie',
+  };
+  const activeStep = routeToStep[route];
+  document.querySelectorAll('#ws-stepper .step').forEach(a => {
+    const step = a.getAttribute('data-step');
+    a.classList.toggle('active', step === activeStep);
+    a.removeAttribute('aria-current');
+    if (step === activeStep) a.setAttribute('aria-current', 'page');
+  });
+}
+
+// ─── TELA: Agentes (cards dos 6)
+async function renderAgentes() {
+  const mount = document.getElementById('agents-grid');
+  if (!mount) return;
+
+  let live = null;
+  if (!DEV_MODE) {
+    try {
+      live = await vpsGet('/agents');
+    } catch (err) {
+      console.warn('VPS /agents falhou, usando mock:', err.message);
+    }
+  }
+
+  mount.innerHTML = AGENTS.map((a, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    const liveAg = live?.agents?.find(x => x.name === a.key);
+    const onlineStatus = liveAg
+      ? `<span class="ok">●</span> ONLINE · ${liveAg.prompt_chars.toLocaleString('pt-BR')} chars`
+      : (live ? `<span class="crit">●</span> NÃO ENCONTRADO` : `<span class="mute-2">●</span> MOCK`);
+    const fields = Object.entries(a.output || {}).map(([k, v]) => {
+      const val = typeof v === 'number' ? (Math.abs(v) > 1000 ? INT(v) : DEC(v, 3)) : String(v);
+      return `<div class="ag-field"><span class="caps micro mute">${k}</span><span class="mono">${val}</span></div>`;
+    }).join('');
+    return `<div class="ag-card">
+      <div class="ag-head">
+        <span class="ag-num">${num}</span>
+        <div class="ag-id">
+          <div class="ag-name">${a.name}</div>
+          <div class="ag-status">${onlineStatus}</div>
+        </div>
+      </div>
+      <p class="ag-desc">${a.desc}</p>
+      <div class="ag-fields">${fields}</div>
+      <div class="ag-endpoint">POST ${VPS}/run-agent/${a.key}</div>
+    </div>`;
+  }).join('');
+}
+
+// Nova obra form submit
+document.addEventListener('submit', async e => {
+  if (e.target.id === 'no-form') {
+    e.preventDefault();
+    const nome = document.getElementById('no-nome').value.trim();
+    if (!nome) return;
+    if (DEV_MODE) {
+      alert('Obra "' + nome + '" criada (mock).');
+      location.hash = '#upload';
+      return;
+    }
+    try {
+      const r = await fetch(`${SUPA_URL}/rest/v1/l4_projetos`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_ANON_KEY,
+          'Authorization': `Bearer ${STATE.jwt || SUPA_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify({ nome_projeto: nome }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.message || 'erro');
+      const proj = Array.isArray(data) ? data[0] : data;
+      location.hash = '#obra/' + proj.id;
+    } catch (err) {
+      alert('Erro ao criar obra: ' + err.message);
+    }
+  }
+});
+
+// Config tabs
+document.addEventListener('click', e => {
+  if (e.target.matches('#cfg-tabs .tab')) {
+    document.querySelectorAll('#cfg-tabs .tab').forEach(t => t.classList.remove('on'));
+    e.target.classList.add('on');
+    const tab = e.target.dataset.tab;
+    document.querySelectorAll('.cfg-pane').forEach(p => {
+      p.hidden = p.dataset.pane !== tab;
+    });
+  }
+});
+
+// ─── TELA 2: Obras
+async function renderObras() {
+  const tbody = document.getElementById('obras-tbody');
+  const search = (document.getElementById('obras-search').value || '').toLowerCase();
+  const activeChip = document.querySelector('#obras-chips .chip.on')?.dataset.st || 'all';
+
+  let rawObras = MOCK_OBRAS;
+  if (!DEV_MODE) {
+    try {
+      const live = await supaGet('l4_projetos', '?select=id,nome_projeto,endereco_obra,data_inicio,data_fim,created_at');
+      // map Supabase schema → frontend schema (no CPI/SPI yet — they vêm de l4_evm_snapshots)
+      rawObras = live.map((p, i) => ({
+        id: 'OBR-' + String(i + 1).padStart(3, '0'),
+        uuid: p.id,
+        nome: p.nome_projeto || '(sem nome)',
+        gphy: '—',
+        cpi: 1.0,
+        spi: 1.0,
+        db: p.data_inicio ? new Date(p.data_inicio).toLocaleDateString('pt-BR') : '—',
+        status: 'ok',
+      }));
+    } catch (err) {
+      console.warn('Falha Supabase, usando mock:', err.message);
+    }
+  }
+
+  const rows = rawObras.filter(o => {
+    if (search && !(o.nome.toLowerCase().includes(search) || o.id.toLowerCase().includes(search) || (o.gphy || '').toLowerCase().includes(search))) return false;
+    if (activeChip !== 'all' && activeChip !== o.status) return false;
+    return true;
+  });
+
+  document.getElementById('obras-count').textContent = '(' + String(rows.length).padStart(2, '0') + ')';
+
+  tbody.innerHTML = rows.map(o => {
+    const cpiClass = o.cpi < 0.85 ? 'crit' : '';
+    const spiClass = o.spi < 0.85 ? 'crit' : '';
+    return `<tr class="click" onclick="location.hash='#obra/${o.uuid}'">
+      <td class="mono">${o.id}</td>
+      <td>${o.nome}</td>
+      <td class="mono mute">${o.gphy}</td>
+      <td class="num ${cpiClass}">${DEC(o.cpi, 3)}</td>
+      <td class="num ${spiClass}">${DEC(o.spi, 2)}</td>
+      <td class="num mute">${o.db}</td>
+      <td class="mono mute end">→</td>
+    </tr>`;
+  }).join('');
+}
+
+document.addEventListener('input', e => { if (e.target.id === 'obras-search') renderObras(); });
+document.addEventListener('click', e => {
+  if (e.target.matches('#obras-chips .chip')) {
+    document.querySelectorAll('#obras-chips .chip').forEach(c => c.classList.remove('on'));
+    e.target.classList.add('on');
+    renderObras();
+  }
+});
+
+// ─── Count-up animation
+function runCountUps() {
+  const els = document.querySelectorAll('.countup');
+  els.forEach(el => {
+    if (el.dataset.done) return;
+    const end = parseFloat(el.dataset.end);
+    const fmt = el.dataset.fmt;
+    const dur = 700;
+    const start = performance.now();
+    function fmtVal(v) {
+      if (fmt === 'brl')       return BRL_SIGN(v);
+      if (fmt === 'brl-short') return BRL_SHORT(v);
+      if (fmt === 'dec2')      return DEC(v, 2);
+      if (fmt === 'dec3')      return DEC(v, 3);
+      if (fmt === 'int')       return INT(v);
+      return DEC(v, 2);
+    }
+    function step(now) {
+      const t = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = fmtVal(end * eased);
+      if (t < 1) requestAnimationFrame(step);
+      else { el.textContent = fmtVal(end); el.dataset.done = '1'; }
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+function BRL_SHORT(n) {
+  const sign = n < 0 ? '−' : '';
+  const a = Math.abs(n);
+  if (a >= 1e9) return sign + 'R$ ' + DEC(a / 1e9, 2) + ' bi';
+  if (a >= 1e6) return sign + 'R$ ' + DEC(a / 1e6, 2) + ' M';
+  if (a >= 1e3) return sign + 'R$ ' + DEC(a / 1e3, 0) + ' k';
+  return sign + 'R$ ' + DEC(a, 0);
+}
+
+// ─── TELA 3: Dashboard (state-aware)
+const DASH_PRESETS = {
+  completo: {
+    label: '6/6 fontes atualizadas · auditoria completa',
+    cls: 'ok',
+    sources: {
+      orcamento:  { st: 'ok',   v: 'v04', ts: '20/05/2026 14:08', file: 'sienge_export_orc_2026-05.xlsx' },
+      cronograma: { st: 'ok',   v: 'v02', ts: '18/05/2026 11:32', file: 'cronograma_contratual_v02.mpp' },
+      boletins:   { st: 'ok',   v: 'v18', ts: '20/05/2026 13:44', file: 'boletim_medicao_05_2q.pdf' },
+      'nf-rec':   { st: 'ok',   v: 'v01', ts: '20/05/2026 14:00', file: 'lote_nfs_sefaz_2026-05.zip' },
+      'nf-lanc':  { st: 'ok',   v: 'v01', ts: '20/05/2026 13:51', file: 'sienge_nfs_lancadas.csv' },
+      diario:     { st: 'ok',   v: 'v97', ts: '19/05/2026 19:12', file: 'diario_obra_2026-05-19.pdf' },
+    },
+    pvo: true,
+    historico: true,
+  },
+  parcial: {
+    label: '4/6 fontes carregadas · auditoria parcial',
+    cls: 'wait',
+    sources: {
+      orcamento:  { st: 'ok',   v: 'v04', ts: '20/05/2026 14:08', file: 'sienge_export_orc_2026-05.xlsx' },
+      cronograma: { st: 'ok',   v: 'v02', ts: '18/05/2026 11:32', file: 'cronograma_contratual_v02.mpp' },
+      boletins:   { st: 'ok',   v: 'v18', ts: '20/05/2026 13:44', file: 'boletim_medicao_05_2q.pdf' },
+      'nf-rec':   { st: 'wait', v: '—',   ts: 'pendente SEFAZ',  file: 'aguardando lote de maio' },
+      'nf-lanc':  { st: 'ok',   v: 'v01', ts: '20/05/2026 13:51', file: 'sienge_nfs_lancadas.csv' },
+      diario:     { st: 'wait', v: '—',   ts: 'última 19/05',     file: 'aguardando diário 20/05' },
+    },
+    pvo: false,
+    historico: true,
+  },
+  vazio: {
+    label: 'Nenhuma fonte carregada · aguardando upload',
+    cls: 'miss',
+    sources: {
+      orcamento:  { st: 'miss', v: '—', ts: '—', file: '—' },
+      cronograma: { st: 'miss', v: '—', ts: '—', file: '—' },
+      boletins:   { st: 'miss', v: '—', ts: '—', file: '—' },
+      'nf-rec':   { st: 'miss', v: '—', ts: '—', file: '—' },
+      'nf-lanc':  { st: 'miss', v: '—', ts: '—', file: '—' },
+      diario:     { st: 'miss', v: '—', ts: '—', file: '—' },
+    },
+    pvo: false,
+    historico: false,
+  },
+};
+
+const SOURCE_LABELS = {
+  orcamento:  { n: 'Orçamento Sienge',     d: 'planilha exportada · 2.841 linhas' },
+  cronograma: { n: 'Cronograma contratual', d: 'baseline · MS Project · 387 atividades' },
+  boletins:   { n: 'Boletins de medição',  d: 'quinzenal · físico + financeiro' },
+  'nf-rec':   { n: 'NFs recebidas (SEFAZ)', d: 'lote XML · cruzamento entrada' },
+  'nf-lanc':  { n: 'NFs lançadas (Sienge)', d: 'CSV exportação · conciliação' },
+  diario:     { n: 'Diário de obra',        d: 'PDF/DOCX · contexto cualitativo' },
+};
+
+const SRC_GLYPH = { ok: '✓', wait: '◌', miss: '✗' };
+const SRC_LABEL = { ok: 'atualizado', wait: 'aguardando', miss: 'ausente' };
+
+STATE.dashMode = 'completo';
+
+function renderObra() {
+  // 1. paint state chips
+  document.querySelectorAll('#state-chips button').forEach(b => {
+    b.classList.toggle('on', b.dataset.state === STATE.dashMode);
+  });
+
+  const preset = DASH_PRESETS[STATE.dashMode];
+  const okCount = Object.values(preset.sources).filter(s => s.st === 'ok').length;
+  const total = Object.keys(preset.sources).length;
+
+  // 2. Selo PVO (no header da obra)
+  const stateEl = document.getElementById('audit-state');
+  if (preset.cls === 'ok')        { stateEl.textContent = '27/27 ✓';    stateEl.style.color = 'var(--ok)'; }
+  else if (preset.cls === 'wait') { stateEl.textContent = 'parcial';    stateEl.style.color = 'var(--fg)'; }
+  else                            { stateEl.textContent = 'pendente';   stateEl.style.color = 'var(--crit)'; }
+
+  // 3. sources panel
+  document.getElementById('src-meta').textContent = `${okCount}/${total} carregadas · data-base 20/05/2026`;
+  const panel = document.getElementById('src-panel');
+  panel.innerHTML = Object.entries(preset.sources).map(([k, s]) => {
+    const meta = SOURCE_LABELS[k];
+    return `<div class="source-row">
+      <div class="g ${s.st}">${SRC_GLYPH[s.st]}</div>
+      <div>
+        <div class="name">${meta.n}</div>
+        <div class="desc">${meta.d}</div>
+      </div>
+      <div class="ver">${s.v}</div>
+      <div class="ts">${s.ts}</div>
+      <div class="st ${s.st}">${SRC_LABEL[s.st]}</div>
+    </div>`;
+  }).join('');
+
+  // 4. banner
+  const banner = document.getElementById('src-banner');
+  if (preset.cls === 'ok' && preset.pvo) {
+    banner.innerHTML = `<div class="banner ok">
+      <span class="lbl">PVO 27/27 ✓</span>
+      <span class="txt">Auditoria atualizada. Próxima medição quinzenal prevista para 03/06/2026.</span>
+      <a class="act" href="#relatorio/run-2026-0520-a">Ver dossiê →</a>
+    </div>`;
+  } else if (preset.cls === 'vazio') {
+    banner.innerHTML = `<div class="banner">
+      <span class="lbl">Auditoria não iniciada</span>
+      <span class="txt">Nenhuma planilha foi carregada ainda. Suba o orçamento Sienge e o cronograma contratual para começar.</span>
+      <a class="act" href="#upload">Subir documentos →</a>
+    </div>`;
+  } else {
+    banner.innerHTML = `<div class="banner">
+      <span class="lbl">${total - okCount} fontes pendentes</span>
+      <span class="txt">Indicadores parciais já estão disponíveis. NFs SEFAZ e diário de hoje ainda não foram carregados — alguns checks ficam suspensos até a conciliação fechar.</span>
+      <a class="act" href="#upload">Complementar →</a>
+    </div>`;
+  }
+
+  // 5. conditional sections
+  document.querySelectorAll('#view-obra [data-needs]').forEach(sec => {
+    const needs = sec.dataset.needs.split(',').map(s => s.trim());
+    const missing = needs.filter(k => {
+      if (k === 'pvo')       return !preset.pvo;
+      if (k === 'historico') return !preset.historico;
+      return preset.sources[k] && preset.sources[k].st !== 'ok';
+    });
+
+    // remove previous placeholder
+    const prev = sec.nextElementSibling;
+    if (prev && prev.classList && prev.classList.contains('placeholder-for')) prev.remove();
+
+    if (missing.length === 0) {
+      sec.style.display = '';
+    } else {
+      sec.style.display = 'none';
+      const ph = document.createElement('div');
+      ph.className = 'dash-sec placeholder-for';
+      const title = sec.querySelector('h2')?.textContent || '';
+      const labels = missing.map(m => m === 'pvo' ? 'aprovação PVO' : m === 'historico' ? 'base histórica' : SOURCE_LABELS[m]?.n || m).join(' · ');
+      ph.innerHTML = `<div class="dash-sec-h"><h2 style="color: var(--mute);">${title}</h2><span class="meta">aguardando</span></div>
+        <div class="empty-block">
+          <div class="ttl">Bloqueado por:</div>
+          <div class="txt">${labels}</div>
+          <div class="cta"><a class="btn-link" href="#upload">Subir documentos →</a></div>
+        </div>`;
+      sec.parentNode.insertBefore(ph, sec.nextSibling);
+    }
+  });
+
+  // 6. caveat — only when something is loaded
+  document.getElementById('dash-caveat').style.display = (preset.cls === 'vazio') ? 'none' : '';
+
+  // 7. animate count-ups inside visible sections
+  document.querySelectorAll('#view-obra .countup').forEach(el => delete el.dataset.done);
+  document.querySelectorAll('#view-obra .countup').forEach(el => { el.textContent = '—'; });
+  if (preset.cls !== 'vazio') runCountUps();
+}
+
+document.addEventListener('click', e => {
+  if (e.target.matches('#state-chips button')) {
+    STATE.dashMode = e.target.dataset.state;
+    renderObra();
+  }
+});
+
+// ─── TELA 4: Upload
+const UPLOAD_DOCS = {
+  orcamento:  [{ v: 'v04', file: 'sienge_export_orc_2026-05.xlsx',     status: 'OK',      ts: '20/05/2026 14:08' },
+               { v: 'v03', file: 'sienge_export_orc_2026-04.xlsx',     status: 'OK',      ts: '22/04/2026 09:14' },
+               { v: 'v02', file: 'sienge_export_orc_2026-03.xlsx',     status: 'OK',      ts: '21/03/2026 17:02' }],
+  cronograma: [{ v: 'v02', file: 'cronograma_contratual_v02.mpp',      status: 'OK',      ts: '18/05/2026 11:32' },
+               { v: 'v01', file: 'cronograma_inicial_2024.mpp',        status: 'ARQUIVADO', ts: '15/03/2024 08:00' }],
+  boletins:   [{ v: 'v18', file: 'boletim_medicao_05-2026_2q.pdf',     status: 'OK',      ts: '20/05/2026 13:44' },
+               { v: 'v17', file: 'boletim_medicao_05-2026_1q.pdf',     status: 'OK',      ts: '06/05/2026 10:21' }],
+  'nf-rec':   [{ v: 'v01', file: 'lote_nfs_sefaz_2026-05.zip',          status: 'PROCESSANDO', ts: '20/05/2026 14:00' }],
+  'nf-lanc':  [{ v: 'v01', file: 'sienge_nfs_lancadas_2026-05.csv',    status: 'OK',      ts: '20/05/2026 13:51' }],
+  diario:     [{ v: 'v97', file: 'diario_obra_2026-05-19.pdf',         status: 'OK',      ts: '19/05/2026 19:12' },
+               { v: 'v96', file: 'diario_obra_2026-05-18.pdf',         status: 'OK',      ts: '18/05/2026 18:48' }],
+};
+
+const FORMATS = {
+  orcamento:  '.xlsx · .xls · exportação sienge',
+  cronograma: '.mpp · .xml (ms project) · .xlsx',
+  boletins:   '.pdf · .xlsx (boletim quinzenal medição)',
+  'nf-rec':   '.xml · .zip (lote SEFAZ NF-e)',
+  'nf-lanc':  '.csv · .xlsx (exportação sienge NF lançadas)',
+  diario:     '.pdf · .docx (diário de obra)',
+};
+
+function renderUpload(tab) {
+  document.querySelectorAll('#upload-tabs .tab').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
+  const c = document.getElementById('upload-content');
+  const items = UPLOAD_DOCS[tab] || [];
+  c.innerHTML = `
+    <div class="drop" id="drop-zone">
+      <div class="label">ARRASTAR ARQUIVO OU CLICAR PARA SELECIONAR</div>
+      <div class="formats">FORMATOS · ${FORMATS[tab]}</div>
+    </div>
+    <div class="progress" id="prog-wrap" style="display:none;">
+      <span class="mono micro" id="prog-label">FREDDIE validando<span class="blink" id="prog-blink"></span></span>
+      <div class="bar"><i id="prog-i"></i></div>
+      <span class="mono micro" id="prog-pct">0%</span>
+    </div>
+
+    <h3 style="margin: 40px 0 10px; font-size: 16px; font-weight: 600;">Versões anteriores
+      <span class="mono micro mute" style="margin-left: 10px; letter-spacing: 0.16em; text-transform: uppercase;">${items.length} arquivo${items.length === 1 ? '' : 's'}</span>
+    </h3>
+    <table class="t">
+      <thead>
+        <tr>
+          <th style="width: 70px;">Versão</th>
+          <th>Arquivo</th>
+          <th style="width: 140px;">Status</th>
+          <th style="width: 180px;">Timestamp</th>
+          <th class="end" style="width: 200px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map(d => `
+          <tr>
+            <td class="mono">${d.v}</td>
+            <td class="mono">${d.file}</td>
+            <td><span class="badge ${d.status === 'OK' ? 'b-ok' : d.status === 'PROCESSANDO' ? 'b-dark' : ''}">${d.status}</span></td>
+            <td class="mono mute">${d.ts}</td>
+            <td class="end mono micro">
+              <button class="btn-link" style="margin-right: 16px;">Re-processar</button>
+              <button class="btn-link" style="border-color: var(--mute); color: var(--mute);">Excluir</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // drop zone fake
+  const zone = document.getElementById('drop-zone');
+  zone.addEventListener('click', simulateUpload);
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('over'); simulateUpload(); });
+}
+
+function simulateUpload() {
+  const wrap = document.getElementById('prog-wrap');
+  const bar  = document.getElementById('prog-i');
+  const pct  = document.getElementById('prog-pct');
+  const lbl  = document.getElementById('prog-label');
+  wrap.style.display = 'flex';
+  let p = 0;
+  bar.style.width = '0%';
+  pct.textContent = '0%';
+  const id = setInterval(() => {
+    p += Math.random() * 11 + 4;
+    if (p >= 100) { p = 100; clearInterval(id); lbl.innerHTML = 'FREDDIE OK · pronto para pipeline'; }
+    bar.style.width = p + '%';
+    pct.textContent = Math.round(p) + '%';
+  }, 140);
+}
+
+document.addEventListener('click', e => {
+  if (e.target.matches('#upload-tabs .tab')) renderUpload(e.target.dataset.tab);
+});
+
+// ─── TELA 5: Pipeline
+function renderPipeline() {
+  const mount = document.getElementById('pipe-mount');
+  mount.innerHTML = `
+    <div class="pipe-list" id="pipe-freddie-wrap">
+      ${pipeRow(0, AGENTS[0])}
+      ${pipeOut(0)}
+    </div>
+
+    <div class="arrow-down">↓ fan-out paralelo</div>
+
+    <div class="fan" id="pipe-fan">
+      ${[1,2,3].map(i => `${pipeRowFan(i, AGENTS[i])}${pipeOut(i)}`).join('')}
+    </div>
+
+    <div class="arrow-down">↓ reconvergência</div>
+
+    <div class="pipe-list">
+      ${pipeRow(4, AGENTS[4])}
+      ${pipeOut(4)}
+      ${pipeRow(5, AGENTS[5])}
+      ${pipeOut(5)}
+    </div>
+  `;
+
+  // wire expand
+  mount.querySelectorAll('.pipe-row').forEach(r => {
+    r.addEventListener('click', () => r.classList.toggle('open'));
+  });
+}
+
+function pipeRow(idx, a) {
+  return `
+    <div class="pipe-row" data-i="${idx}">
+      <span class="stem"></span>
+      <span class="idx">${String(idx + 1).padStart(2, '0')}</span>
+      <div>
+        <div class="name">${a.name}</div>
+        <div class="desc">${a.desc}</div>
+      </div>
+      <div class="status" data-status="${idx}">
+        <span class="glyph">◯</span>
+        <span class="lbl">AGUARDANDO</span>
+      </div>
+      <span class="time" data-time="${idx}">—</span>
+      <span class="chev">›</span>
+    </div>
+  `;
+}
+function pipeRowFan(idx, a) {
+  return `
+    <div class="pipe-row" data-i="${idx}">
+      <span class="idx">${String(idx + 1).padStart(2, '0')}</span>
+      <div>
+        <div class="name">${a.name}</div>
+        <div class="desc">${a.desc}</div>
+        <div class="status" data-status="${idx}" style="margin-top: 10px;">
+          <span class="glyph">◯</span>
+          <span class="lbl">AGUARDANDO</span>
+          <span class="time" data-time="${idx}" style="margin-left: auto;">—</span>
+        </div>
+      </div>
+      <span class="chev">›</span>
+    </div>
+  `;
+}
+function pipeOut(idx) {
+  const a = AGENTS[idx];
+  const kvs = Object.entries(a.output).map(([k, v]) => {
+    let val = typeof v === 'number'
+      ? (Number.isInteger(v) ? INT(v) : DEC(v, 3))
+      : JSON.stringify(v);
+    return `  <span class="k">"${k}"</span>: <span class="v">${val}</span>,`;
+  }).join('\n');
+  return `<div class="pipe-out">{\n${kvs}\n  <span class="k">"agent"</span>: <span class="v">"${a.key}"</span>,\n  <span class="k">"model"</span>: <span class="v">"gemini-2.5-flash"</span>\n}</div>`;
+}
+
+let pipeTicker = null;
+function setStatus(idx, glyph, label, klass) {
+  const el = document.querySelector(`[data-status="${idx}"]`);
+  if (!el) return;
+  el.innerHTML = `<span class="glyph">${glyph}</span><span class="lbl">${label}</span>${el.querySelector('.time')?.outerHTML || ''}`;
+  if (klass === 'ok') el.style.color = 'var(--ok)';
+  else if (klass === 'crit') el.style.color = 'var(--crit)';
+  else el.style.color = '';
+  // fan rows wrap time inside .status so re-render of innerHTML may drop time element; re-add
+  const t = document.querySelector(`[data-time="${idx}"]`);
+  if (t && !el.contains(t)) {
+    // Time may already be removed; nothing
+  }
+}
+function setTime(idx, t) {
+  const el = document.querySelector(`[data-time="${idx}"]`);
+  if (el) el.textContent = t;
+}
+function fmtMs(ms) {
+  const s = ms / 1000;
+  return s.toFixed(s < 10 ? 1 : 1) + 's';
+}
+function fmtElapsed(ms) {
+  const total = ms / 1000;
+  const m = Math.floor(total / 60);
+  const s = (total - m * 60).toFixed(1);
+  return String(m).padStart(2,'0') + ':' + (s.padStart ? s.padStart(4,'0') : ('00'+s).slice(-4));
+}
+
+async function runPipeline() {
+  document.getElementById('btn-ver-dossie').disabled = true;
+  document.getElementById('btn-ver-dossie').style.opacity = '0.35';
+  document.getElementById('btn-ver-dossie').style.cursor = 'not-allowed';
+
+  const t0 = performance.now();
+  if (pipeTicker) clearInterval(pipeTicker);
+  pipeTicker = setInterval(() => {
+    document.getElementById('pipe-elapsed').textContent = fmtElapsed(performance.now() - t0);
+  }, 100);
+  document.getElementById('pipe-status').textContent = 'EXECUTANDO';
+
+  const seq = [
+    [0],
+    [1, 2, 3],
+    [4],
+    [5],
+  ];
+  for (const group of seq) {
+    await Promise.all(group.map(i => runAgent(i)));
+  }
+
+  document.getElementById('pipe-status').textContent = 'CONCLUÍDO · PVO 27/27 ✓';
+  document.getElementById('pipe-status').style.color = 'var(--ok)';
+  clearInterval(pipeTicker);
+  const btn = document.getElementById('btn-ver-dossie');
+  btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
+}
+
+function runAgent(idx) {
+  return new Promise(resolve => {
+    setStatus(idx, '<span class="spin"></span>', 'PROCESSANDO');
+    setTime(idx, '00.0s');
+    const start = performance.now();
+    const dur = 700 + Math.random() * 1200;
+    const ticker = setInterval(() => {
+      setTime(idx, fmtMs(performance.now() - start));
+    }, 80);
+    setTimeout(() => {
+      clearInterval(ticker);
+      setTime(idx, fmtMs(dur));
+      setStatus(idx, '✓', 'DONE', 'ok');
+      resolve();
+    }, dur);
+  });
+}
+
+document.addEventListener('click', e => {
+  if (e.target.id === 'btn-pipe-run') runPipeline();
+  if (e.target.id === 'btn-pipe-reset') { renderPipeline(); document.getElementById('pipe-status').textContent = 'AGUARDANDO INÍCIO'; document.getElementById('pipe-status').style.color = ''; document.getElementById('pipe-elapsed').textContent = '00:00.0'; }
+  if (e.target.id === 'btn-ver-dossie' && !e.target.disabled) location.hash = '#relatorio/run-2026-0520-a';
+});
+
+// ─── TELA 6: Dossiê actions
+document.addEventListener('click', e => {
+  if (e.target.id === 'btn-dl-html') {
+    const blob = new Blob(['<!doctype html><meta charset="utf-8"><title>L4-DOSS-2026-0520</title>' + document.querySelector('.doss').outerHTML], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'L4-DOSS-2026-0520.html';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+  if (e.target.id === 'btn-canva') {
+    alert('Exportação Canva em DEV_MODE — endpoint POST /canva/export pendente.');
+  }
+});
+
+// ─── Login form
+document.getElementById('login-form').addEventListener('submit', e => {
+  e.preventDefault();
+  STATE.auth = { email: document.getElementById('li-email').value || 'eng@construtora' };
+  localStorage.setItem('l4_user', STATE.auth.email);
+  document.getElementById('hd-user').textContent = STATE.auth.email.split('@')[0];
+  location.hash = '#obras';
+});
+
+document.getElementById('btn-logout').addEventListener('click', () => {
+  localStorage.removeItem('l4_user');
+  STATE.auth = null;
+  location.hash = '#login';
+});
+
+// ─── Boot
+(function boot() {
+  const saved = localStorage.getItem('l4_user');
+  const jwt = localStorage.getItem('l4_jwt');
+  if (saved) {
+    STATE.auth = { email: saved };
+    STATE.jwt = jwt;
+    STATE.emailUser = saved;
+    document.getElementById('hd-user').textContent = saved.split('@')[0];
+  } else if (!location.hash) {
+    location.hash = '#login';
+  }
+  if (!location.hash) location.hash = saved ? '#obras' : '#login';
+
+  // Date in header
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2,'0');
+  const mm = String(now.getMonth()+1).padStart(2,'0');
+  const yy = now.getFullYear();
+  document.getElementById('hd-date').textContent = `${dd}/${mm}/${yy}`;
+
+  router();
+})();
+
+window.addEventListener('hashchange', router);
+</script>
+
+</body>
+</html>
