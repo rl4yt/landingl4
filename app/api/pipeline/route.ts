@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { runPipeline, PipelineInput } from '@/lib/pipeline'
 
 export const runtime = 'nodejs'
-export const maxDuration = 800
+export const maxDuration = 300
 
 export async function POST(req: NextRequest) {
   try {
