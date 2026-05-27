@@ -3606,6 +3606,23 @@ async function supaGet(table, params = '') {
   if (!r.ok) throw new Error(`Supabase ${table}: ${r.status}`);
   return r.json();
 }
+async function supaPost(table, body) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_ANON_KEY, 'Authorization': `Bearer ${STATE.jwt || SUPA_ANON_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) { const t = await r.text(); throw new Error(`Supabase POST ${table}: ${r.status} · ${t.slice(0,200)}`); }
+  return r.json().catch(() => ({}));
+}
+async function supaPatch(table, params, body) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}${params}`, {
+    method: 'PATCH',
+    headers: { 'apikey': SUPA_ANON_KEY, 'Authorization': `Bearer ${STATE.jwt || SUPA_ANON_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) { const t = await r.text(); throw new Error(`Supabase PATCH ${table}: ${r.status} · ${t.slice(0,200)}`); }
+}
 
 async function vpsGet(path) {
   const r = await fetch(`${VPS}${path}`);
@@ -4129,73 +4146,246 @@ const FORMATS = {
   diario:     '.pdf · .docx (diário de obra)',
 };
 
+// Mapeamento tab → tipo no banco + formatos aceitos no input
+const TAB_TIPO = {
+  orcamento:  'orcamento',
+  cronograma: 'cronograma',
+  boletins:   'boletim_medicao',
+  'nf-rec':   'nota_fiscal',
+  'nf-lanc':  'nota_fiscal',
+  diario:     'nota_fiscal',
+};
+const TAB_ACCEPT = {
+  orcamento:  '.xlsx,.xls,.csv,.pdf,.json',
+  cronograma: '.xlsx,.xml,.json,.pdf',
+  boletins:   '.pdf,.xlsx,.csv',
+  'nf-rec':   '.xml,.pdf',
+  'nf-lanc':  '.csv,.xlsx,.pdf',
+  diario:     '.pdf,.txt',
+};
+
+// Polling: intervalo ativo enquanto há docs processando
+let _uploadPollTimer = null;
+function _startUploadPoll(obraId, tab) {
+  _stopUploadPoll();
+  _uploadPollTimer = setInterval(() => renderUploadHistory(obraId, tab), 5000);
+}
+function _stopUploadPoll() {
+  if (_uploadPollTimer) { clearInterval(_uploadPollTimer); _uploadPollTimer = null; }
+}
+
+// Carrega histórico real do Supabase e renderiza tabela
+async function renderUploadHistory(obraId, tab) {
+  const tipo = TAB_TIPO[tab];
+  const tbody = document.getElementById('upload-tbody');
+  if (!tbody) return;
+
+  let rows = [];
+  try {
+    rows = await supaGet('l4_documentos_obra',
+      `?project_id=eq.${obraId}&tipo=eq.${tipo}&select=id,versao,nome_arquivo_original,status,ia_output,created_at&order=versao.desc`);
+  } catch (e) {
+    console.warn('Erro ao carregar histórico:', e.message);
+  }
+
+  const hasProcessing = rows.some(r => r.status === 'processando');
+  if (hasProcessing) {
+    _startUploadPoll(obraId, tab);
+  } else {
+    _stopUploadPoll();
+  }
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="opacity:0.5;text-align:center;padding:20px;">Nenhum arquivo enviado ainda.</td></tr>';
+    return;
+  }
+
+  const statusBadge = s => {
+    const map = {
+      processando:       '<span class="badge b-dark">PROCESSANDO…</span>',
+      aguardando_preview:'<span class="badge" style="background:#D6A874;color:#1A1208;">AGUARDANDO OK</span>',
+      processado:        '<span class="badge b-ok">OK</span>',
+      erro:              '<span class="badge" style="background:#B91C1C22;color:#F87171;">ERRO</span>',
+    };
+    return map[s] || `<span class="badge">${s}</span>`;
+  };
+
+  tbody.innerHTML = rows.map(d => `
+    <tr>
+      <td class="mono">v${d.versao}</td>
+      <td class="mono">${d.nome_arquivo_original || '—'}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td class="mono mute">${d.created_at ? new Date(d.created_at).toLocaleString('pt-BR') : '—'}</td>
+      <td class="end mono micro">
+        ${d.status === 'aguardando_preview' && d.ia_output
+          ? `<button class="btn-link" onclick="showPreviewModal('${d.id}', '${tipo}')">Ver dados →</button>`
+          : ''}
+      </td>
+    </tr>`).join('');
+}
+
+// Modal de preview do ia_output
+function showPreviewModal(docId, tipo) {
+  const old = document.getElementById('upload-preview-modal'); if (old) old.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'upload-preview-modal';
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(10,8,6,0.82);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:24px;';
+
+  supaGet('l4_documentos_obra', `?id=eq.${docId}&select=ia_output,nome_arquivo_original`).then(rows => {
+    const doc = rows[0];
+    if (!doc || !doc.ia_output) { wrap.remove(); alert('Dados não disponíveis.'); return; }
+    const out = doc.ia_output;
+    let tableHtml = '';
+
+    if (tipo === 'cronograma' && Array.isArray(out.tarefas)) {
+      tableHtml = `<p style="margin:0 0 8px;opacity:0.7;font-size:12px;">${out.tarefas.length} tarefas · data ref: ${out.data_referencia || '—'}</p>
+      <div style="overflow:auto;max-height:340px;">
+      <table style="width:100%;font-size:11px;border-collapse:collapse;">
+        <thead><tr style="background:#1A1208;">${['WBS','Etapa','Início','Fim','%'].map(h=>`<th style="padding:6px 8px;text-align:left;white-space:nowrap;">${h}</th>`).join('')}</tr></thead>
+        <tbody>${out.tarefas.slice(0,50).map((t,i)=>`<tr style="background:${i%2?'rgba(255,255,255,0.02)':''}">
+          <td style="padding:4px 8px;font-family:monospace;">${t.wbs_id||''}</td>
+          <td style="padding:4px 8px;">${(t.nome_etapa||'').slice(0,60)}</td>
+          <td style="padding:4px 8px;font-family:monospace;">${t.inicio_planejado||'—'}</td>
+          <td style="padding:4px 8px;font-family:monospace;">${t.fim_planejado||'—'}</td>
+          <td style="padding:4px 8px;font-family:monospace;">${t.percentual_concluido??'—'}%</td>
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+    } else if (tipo === 'orcamento' && Array.isArray(out.itens)) {
+      tableHtml = `<p style="margin:0 0 8px;opacity:0.7;font-size:12px;">${out.itens.length} itens · total: ${out.total_geral||'—'}</p>
+      <div style="overflow:auto;max-height:340px;">
+      <table style="width:100%;font-size:11px;border-collapse:collapse;">
+        <thead><tr style="background:#1A1208;">${['Código','Descrição','Qtd','Un','Total'].map(h=>`<th style="padding:6px 8px;text-align:left;">${h}</th>`).join('')}</tr></thead>
+        <tbody>${out.itens.slice(0,50).map((t,i)=>`<tr style="background:${i%2?'rgba(255,255,255,0.02)':''}">
+          <td style="padding:4px 8px;font-family:monospace;">${t.codigo||''}</td>
+          <td style="padding:4px 8px;">${(t.descricao||'').slice(0,60)}</td>
+          <td style="padding:4px 8px;font-family:monospace;">${t.quantidade||''}</td>
+          <td style="padding:4px 8px;">${t.unidade||''}</td>
+          <td style="padding:4px 8px;font-family:monospace;">${t.valor_total||''}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+    } else {
+      tableHtml = `<pre style="font-size:11px;overflow:auto;max-height:340px;">${JSON.stringify(out,null,2)}</pre>`;
+    }
+
+    wrap.innerHTML = `<div style="background:#1A1208;color:#F4EFE7;border:1px solid rgba(244,239,231,0.14);max-width:780px;width:100%;padding:28px;max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+        <div>
+          <div style="font-family:monospace;font-size:11px;letter-spacing:0.2em;opacity:0.6;margin-bottom:4px;">DADOS EXTRAÍDOS</div>
+          <div style="font-size:14px;">${doc.nome_arquivo_original||''}</div>
+        </div>
+        <button onclick="document.getElementById('upload-preview-modal').remove()" style="background:transparent;border:none;color:#F4EFE7;cursor:pointer;font-size:18px;padding:0 0 0 16px;">✕</button>
+      </div>
+      ${tableHtml}
+      <div style="display:flex;gap:12px;margin-top:20px;">
+        <button onclick="confirmDoc('${docId}')" style="flex:1;padding:12px;background:#5A7A2A;color:#F4EFE7;border:none;cursor:pointer;font-family:monospace;font-size:11px;letter-spacing:0.2em;">CONFIRMAR E ENVIAR PARA PIPELINE</button>
+        <button onclick="document.getElementById('upload-preview-modal').remove()" style="padding:12px 20px;background:transparent;color:rgba(244,239,231,0.62);border:1px solid rgba(244,239,231,0.18);cursor:pointer;font-family:monospace;font-size:11px;">CANCELAR</button>
+      </div>
+    </div>`;
+    document.body.appendChild(wrap);
+    wrap.onclick = e => { if (e.target === wrap) wrap.remove(); };
+  }).catch(e => { wrap.remove(); alert('Erro: ' + e.message); });
+
+  document.body.appendChild(wrap);
+}
+
+async function confirmDoc(docId) {
+  try {
+    await supaPatch('l4_documentos_obra', `?id=eq.${docId}`, { status: 'processado' });
+    document.getElementById('upload-preview-modal')?.remove();
+    renderUpload(document.querySelector('#upload-tabs .tab.on')?.dataset.tab || 'orcamento');
+  } catch (e) { alert('Erro ao confirmar: ' + e.message); }
+}
+
+// Upload real para Supabase
+async function doUploadReal(obraId, tab, file) {
+  if (!obraId || ['residencial-demo','edificio-norte'].includes(obraId)) {
+    alert('Selecione uma obra real antes de enviar documentos.');
+    return;
+  }
+  const tipo = TAB_TIPO[tab];
+  try {
+    const existing = await supaGet('l4_documentos_obra',
+      `?project_id=eq.${obraId}&tipo=eq.${tipo}&select=versao&order=versao.desc&limit=1`);
+    const versao = (existing[0]?.versao || 0) + 1;
+    const safeName = file.name.replace(/\s+/g, '_').replace(/[^\w.\-]/g, '');
+    const path = `${obraId}/${tipo}/v${versao}_${safeName}`;
+
+    const upR = await fetch(`${SUPA_URL}/storage/v1/object/documentos-obra/${path}`, {
+      method: 'POST',
+      headers: { 'apikey': SUPA_ANON_KEY, 'Authorization': `Bearer ${STATE.jwt || SUPA_ANON_KEY}`, 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
+      body: file,
+    });
+    if (!upR.ok) { const t = await upR.text(); throw new Error('Storage: ' + upR.status + ' · ' + t.slice(0,150)); }
+
+    await supaPost('l4_documentos_obra', {
+      project_id: obraId, tipo, versao,
+      nome_arquivo_original: file.name,
+      storage_path: path,
+      content_type: file.type || 'application/octet-stream',
+      status: 'processando',
+      canal_origem: 'site',
+    });
+
+    renderUploadHistory(obraId, tab);
+    _startUploadPoll(obraId, tab);
+  } catch (e) {
+    alert('Erro no upload: ' + e.message);
+  }
+}
+
 function renderUpload(tab) {
+  _stopUploadPoll();
   document.querySelectorAll('#upload-tabs .tab').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
   const c = document.getElementById('upload-content');
-  const items = UPLOAD_DOCS[tab] || [];
+  const obraId = STATE.obraAtiva;
+  const isDemo = !obraId || ['residencial-demo','edificio-norte'].includes(obraId);
+
   c.innerHTML = `
     <div class="drop" id="drop-zone">
-      <div class="label">ARRASTAR ARQUIVO OU CLICAR PARA SELECIONAR</div>
+      <div class="label">${isDemo ? 'SELECIONE UMA OBRA REAL PARA ENVIAR ARQUIVOS' : 'ARRASTAR ARQUIVO OU CLICAR PARA SELECIONAR'}</div>
       <div class="formats">FORMATOS · ${FORMATS[tab]}</div>
     </div>
-    <div class="progress" id="prog-wrap" style="display:none;">
-      <span class="mono micro" id="prog-label">FREDDIE validando<span class="blink" id="prog-blink"></span></span>
-      <div class="bar"><i id="prog-i"></i></div>
-      <span class="mono micro" id="prog-pct">0%</span>
-    </div>
-
-    <h3 style="margin: 40px 0 10px; font-size: 16px; font-weight: 600;">Versões anteriores
-      <span class="mono micro mute" style="margin-left: 10px; letter-spacing: 0.16em; text-transform: uppercase;">${items.length} arquivo${items.length === 1 ? '' : 's'}</span>
-    </h3>
+    <h3 style="margin:40px 0 10px;font-size:16px;font-weight:600;">Versões anteriores</h3>
     <table class="t">
       <thead>
         <tr>
-          <th style="width: 70px;">Versão</th>
+          <th style="width:70px;">Versão</th>
           <th>Arquivo</th>
-          <th style="width: 140px;">Status</th>
-          <th style="width: 180px;">Timestamp</th>
-          <th class="end" style="width: 200px;">Ações</th>
+          <th style="width:160px;">Status</th>
+          <th style="width:180px;">Enviado em</th>
+          <th class="end" style="width:160px;">Ações</th>
         </tr>
       </thead>
-      <tbody>
-        ${items.map(d => `
-          <tr>
-            <td class="mono">${d.v}</td>
-            <td class="mono">${d.file}</td>
-            <td><span class="badge ${d.status === 'OK' ? 'b-ok' : d.status === 'PROCESSANDO' ? 'b-dark' : ''}">${d.status}</span></td>
-            <td class="mono mute">${d.ts}</td>
-            <td class="end mono micro">
-              <button class="btn-link" style="margin-right: 16px;">Re-processar</button>
-              <button class="btn-link" style="border-color: var(--mute); color: var(--mute);">Excluir</button>
-            </td>
-          </tr>`).join('')}
+      <tbody id="upload-tbody">
+        <tr><td colspan="5" style="opacity:0.5;text-align:center;padding:20px;">Carregando…</td></tr>
       </tbody>
     </table>
   `;
 
-  // drop zone fake
   const zone = document.getElementById('drop-zone');
-  zone.addEventListener('click', simulateUpload);
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
-  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('over'); simulateUpload(); });
-}
-
-function simulateUpload() {
-  const wrap = document.getElementById('prog-wrap');
-  const bar  = document.getElementById('prog-i');
-  const pct  = document.getElementById('prog-pct');
-  const lbl  = document.getElementById('prog-label');
-  wrap.style.display = 'flex';
-  let p = 0;
-  bar.style.width = '0%';
-  pct.textContent = '0%';
-  const id = setInterval(() => {
-    p += Math.random() * 11 + 4;
-    if (p >= 100) { p = 100; clearInterval(id); lbl.innerHTML = 'FREDDIE OK · pronto para pipeline'; }
-    bar.style.width = p + '%';
-    pct.textContent = Math.round(p) + '%';
-  }, 140);
+  if (!isDemo) {
+    zone.addEventListener('click', () => {
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = TAB_ACCEPT[tab] || '*';
+      inp.onchange = () => { if (inp.files?.[0]) doUploadReal(obraId, tab, inp.files[0]); };
+      inp.click();
+    });
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('over');
+      const f = e.dataTransfer.files?.[0];
+      if (f) doUploadReal(obraId, tab, f);
+    });
+    zone.style.cursor = 'pointer';
+    renderUploadHistory(obraId, tab);
+  } else {
+    zone.style.cursor = 'not-allowed';
+    zone.style.opacity = '0.5';
+    document.getElementById('upload-tbody').innerHTML =
+      '<tr><td colspan="5" style="opacity:0.5;text-align:center;padding:20px;">Selecione uma obra real para ver o histórico.</td></tr>';
+  }
 }
 
 document.addEventListener('click', e => {
