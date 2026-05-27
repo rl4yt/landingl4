@@ -1,0 +1,19 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/((?!john-).*)", "destination": "http://187.127.29.117:8000/$1" }
+  ],
+  "redirects": [
+    { "source": "/auditoria",        "destination": "/app", "permanent": false },
+    { "source": "/iniciar",          "destination": "/app", "permanent": false },
+    { "source": "/comecar",          "destination": "/app", "permanent": false },
+    { "source": "/workspace",        "destination": "/app", "permanent": false },
+    { "source": "/plataforma",       "destination": "/app", "permanent": false },
+    { "source": "/auto-diagnostico", "destination": "/diagnostico", "permanent": false },
+    { "source": "/landing",          "destination": "/", "permanent": false },
+    { "source": "/landing.html",     "destination": "/", "permanent": false },
+    { "source": "/john/login",       "destination": "/john/app/", "permanent": false },
+    { "source": "/john/cliente",     "destination": "/john/app/", "permanent": false },
+    { "source": "/john/instalar",    "destination": "/john/app/install", "permanent": false }
+  ]
+}

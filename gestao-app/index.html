@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestão L4 — Auditoria de Obras</title>
+<script>
+  (function(){
+    var ua = navigator.userAgent || '';
+    var isMobile = /iPhone|iPad|iPod|Android|Mobile|webOS|BlackBerry|Opera Mini|IEMobile/i.test(ua);
+    var forced = location.search.indexOf('desktop=1') !== -1;
+    if (isMobile && !forced) {
+      location.replace('/landing-mobile' + location.search + location.hash);
+    }
+  })();
+</script>
+<script>
+  // Configure Tailwind BEFORE the runtime loads
+  window.tailwind = window.tailwind || {};
+  window.tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          serif: ['Source Serif 4', 'Source Serif Pro', 'Georgia', 'serif'],
+        },
+        colors: {
+          'hero-bg': '#15110E',
+          'hero-bg-2': '#1F1A15',
+          'hero-fg': '#F4EFE7',
+          'hero-mute': 'rgba(244, 239, 231, 0.62)',
+          'hero-mute-2': 'rgba(244, 239, 231, 0.38)',
+          'hero-hair': 'rgba(244, 239, 231, 0.14)',
+          'hero-glass': 'rgba(244, 239, 231, 0.08)',
+          'crit-dark': '#ED7878',
+          'warn-dark': '#E8B354',
+          'ok-dark':   '#6DCB8E',
+          'accent':    '#D6A874',
+        }
+      }
+    }
+  }
+</script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+  /* hide scrollbars on horizontal nav of tabs on small screens */
+  .tabs-list::-webkit-scrollbar { display: none; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<style>
+  body, html { background: #15110E; color: #F4EFE7; }
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .grain-bg::after {
+    content: ""; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                      radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 3px 3px, 5px 5px;
+    mix-blend-mode: overlay; opacity: 0.4; pointer-events: none;
+  }
+  .accent-italic { font-style: italic; color: #D6A874; }
+</style>
+</head>
+<body class="bg-hero-bg text-hero-fg">
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <defs>
+    <symbol id="L4-solid" viewBox="0 0 124 88">
+      <g fill="currentColor" fill-rule="evenodd">
+        <rect x="8" y="8" width="15" height="59"/>
+        <rect x="24" y="68" width="64" height="12"/>
+        <path d="M 74 8 L 28 52 L 28 62 L 73 62 L 73 8 Z M 70 14 L 34 50 L 70 50 Z"/>
+        <rect x="74" y="8" width="14" height="59"/>
+        <rect x="96" y="68" width="12" height="12"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState } = React;
+
+const CALENDLY_URL = "https://calendar.app.google/MEkG8tsWszd2sXtn9";
+const WHATSAPP_NUMBER = "+5573998174140";
+const WHATSAPP_DISPLAY = "+55 73 99817-4140";
+const WAITLIST_EMAIL = "romell@bravaconstrutora.com";
+
+/* ----------------------------- ICONS (inline SVG) ----------------------------- */
+const Icon = ({ d, className = "h-5 w-5", strokeWidth = 1.75, children }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {children || <path d={d} />}
+  </svg>
+);
+const IconArrowRight = (p) => <Icon {...p}><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></Icon>;
+const IconUpload = (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></Icon>;
+const IconCpu = (p) => <Icon {...p}><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3"/></Icon>;
+const IconBars = (p) => <Icon {...p}><path d="M3 3v18h18"/><path d="M7 16V9"/><path d="M12 16V5"/><path d="M17 16v-4"/></Icon>;
+const IconAlert = (p) => <Icon {...p}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></Icon>;
+const IconTarget = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></Icon>;
+const IconTrendDown = (p) => <Icon {...p}><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></Icon>;
+const IconChat = (p) => <Icon {...p}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
+const IconChevron = (p) => <Icon {...p}><polyline points="6 9 12 15 18 9"/></Icon>;
+const IconCheck = (p) => <Icon {...p}><polyline points="20 6 9 17 4 12"/></Icon>;
+const IconShield = (p) => <Icon {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></Icon>;
+
+/* ----------------------------- DEMO DATA ----------------------------- */
+const demoData = {
+  obra: "Residencial Demo · 60 unid · 3 torres",
+  dataBase: "30/abr/2026",
+  bac: 24800000,
+  ac: 18420000,
+  ev: 16770000,
+  pv: 18250000,
+  diasDesvio: -38,
+  estouros: [
+    { centro: "Estrutura / Concreto", orcado: 4200000, realizado: 4900000 },
+    { centro: "Instalações Hidráulicas", orcado: 1800000, realizado: 2300000 },
+    { centro: "Esquadrias", orcado: 1100000, realizado: 1400000 },
+    { centro: "Revestimento Interno", orcado: 2400000, realizado: 2780000 }
+  ],
+  cronograma: [
+    { etapa: "Fundação Torre 3", spi: 0.78, dias: -22, critico: true },
+    { etapa: "Alvenaria Torre 2", spi: 0.84, dias: -14, critico: true },
+    { etapa: "Instalações Hidro Torre 1", spi: 0.91, dias: -8, critico: false },
+    { etapa: "Cobertura Torre 1", spi: 1.02, dias: 3, critico: false }
+  ],
+  rupturas: [
+    { material: "Cimento CP-II", gap: "280 sacos", dias: 6, severidade: "alta" },
+    { material: "Aço CA-50 12.5mm", gap: "4,2 ton", dias: 9, severidade: "alta" },
+    { material: "Bloco cerâmico 14×19×29", gap: "8.500 unid", dias: 11, severidade: "media" }
+  ],
+  acoes: [
+    { verbo: "Renegociar", alvo: "lote concreto Torre 3", impacto: "Economia projetada R$ 180k" },
+    { verbo: "Antecipar", alvo: "compra aço CA-50 (parada de 4 dias evitada)", impacto: "Evita perda R$ 95k" },
+    { verbo: "Realocar", alvo: "equipe alvenaria Torre 2 → Torre 1", impacto: "Recupera 9 dias do caminho crítico" }
+  ]
+};
+
+const cpi = demoData.ev / demoData.ac;
+const spi = demoData.ev / demoData.pv;
+const eac = demoData.bac / cpi;
+const vac = demoData.bac - eac;
+
+const fmtBRL = (n) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+/* ----------------------------- WORDMARK ----------------------------- */
+const Wordmark = ({ dark = false }) => (
+  <div className="flex items-center gap-3">
+    <svg viewBox="0 0 124 88" className="h-7" aria-hidden="true" style={{color: '#F4EFE7'}}>
+      <use href="#L4-solid"/>
+    </svg>
+  </div>
+);
+
+/* ----------------------------- NAV ----------------------------- */
+const Nav = () => (
+  <nav className="px-6 md:px-16 py-5 flex items-center justify-between bg-hero-bg/85 text-hero-fg sticky top-0 z-40 border-b border-hero-hair backdrop-blur supports-[backdrop-filter]:bg-hero-bg/70">
+    <Wordmark />
+    <div className="hidden md:flex items-center gap-8 font-mono text-[11px] tracking-[0.2em] uppercase text-hero-mute">
+      <a href="#dashboard" className="hover:text-hero-fg transition">A entrega</a>
+      <a href="#processo" className="hover:text-hero-fg transition">Processo</a>
+      <a href="#sobre" className="hover:text-hero-fg transition">Quem opera</a>
+      <a href="#faq" className="hover:text-hero-fg transition">FAQ</a>
+    </div>
+    <div className="flex items-center gap-3">
+      <a href="/app" className="hidden md:inline-flex items-center gap-2 border border-hero-hair text-hero-fg hover:bg-hero-fg/10 transition px-4 py-2.5 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+        Plataforma
+      </a>
+      <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+         className="inline-flex items-center gap-2 bg-hero-fg text-hero-bg hover:bg-white transition px-5 py-2.5 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+        Agendar Diagnóstico
+        <IconArrowRight className="h-3.5 w-3.5"/>
+      </a>
+    </div>
+  </nav>
+);
+
+/* ----------------------------- HERO ----------------------------- */
+const HeroSection = () => {
+  const dashRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const root = dashRef.current;
+    if (!root) return;
+
+    const elements = root.querySelectorAll('[data-reveal]');
+
+    const onMove = (e) => {
+      const radius = Math.min(window.innerWidth, window.innerHeight) / 2.8;
+      elements.forEach((el) => {
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        const intensity = Math.max(0, 1 - d / radius);
+        el.style.setProperty('--intensity', intensity.toFixed(3));
+      });
+    };
+
+    const onLeave = () => {
+      elements.forEach((el) => el.style.setProperty('--intensity', '0'));
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseleave', onLeave);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseleave', onLeave);
+    };
+  }, []);
+
+  return (
+    <section className="relative min-h-screen w-full bg-hero-bg text-hero-fg overflow-hidden flex items-center justify-center px-6 md:px-16 py-24">
+
+      {/* Phantom dashboard — full-bleed background, dimmed at rest, reveals on hover */}
+      <div ref={dashRef} className="phantom-dash" aria-hidden="true">
+        <style>{`
+          .phantom-dash {
+            position: absolute; inset: 0;
+            padding: 56px 64px;
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            gap: 28px;
+            pointer-events: none;
+            z-index: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #F4EFE7;
+          }
+          .phantom-dash [data-reveal] {
+            --intensity: 0;
+            opacity: calc(0.10 + var(--intensity) * 0.78);
+            filter: blur(calc((1 - var(--intensity)) * 1.5px));
+            transition: opacity 240ms ease, filter 240ms ease;
+          }
+          .pd-head {
+            display: flex; align-items: flex-end; justify-content: space-between;
+            padding-bottom: 18px;
+            border-bottom: 1px solid rgba(244,239,231,0.14);
+          }
+          .pd-h1 {
+            font-family: 'Source Serif 4', Georgia, serif;
+            font-weight: 500;
+            font-size: 44px;
+            letter-spacing: -0.02em;
+            line-height: 1;
+          }
+          .pd-meta {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 10px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: rgba(244,239,231,0.62);
+            text-align: right;
+            line-height: 1.7;
+          }
+          .pd-kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+          }
+          .pd-kpi { border-top: 1px solid rgba(244,239,231,0.14); padding-top: 12px; }
+          .pd-kpi.crit { border-top-color: #ED7878; }
+          .pd-kpi .lbl {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase;
+            color: rgba(244,239,231,0.62);
+          }
+          .pd-kpi.crit .lbl { color: #ED7878; }
+          .pd-kpi .val {
+            font-family: 'Source Serif 4', Georgia, serif;
+            font-weight: 500; font-size: 32px;
+            letter-spacing: -0.015em;
+            margin-top: 8px;
+            font-variant-numeric: tabular-nums;
+          }
+          .pd-kpi.crit .val { color: #ED7878; }
+          .pd-kpi .delta {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: rgba(244,239,231,0.62);
+            margin-top: 6px;
+            letter-spacing: 0.04em;
+          }
+          .pd-sec {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 32px;
+            align-items: start;
+          }
+          .pd-sec-h {
+            display: flex; justify-content: space-between; align-items: baseline;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(244,239,231,0.14);
+            margin-bottom: 14px;
+          }
+          .pd-sec-h h2 {
+            font-family: 'Source Serif 4', Georgia, serif;
+            font-weight: 500; font-size: 20px;
+            letter-spacing: -0.01em;
+            margin: 0;
+          }
+          .pd-sec-h .m {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: #ED7878;
+          }
+          .pd-row {
+            display: grid;
+            grid-template-columns: 1fr 100px 80px;
+            gap: 16px;
+            align-items: center;
+            padding: 10px 0 10px 14px;
+            border-left: 3px solid #ED7878;
+            border-bottom: 1px solid rgba(244,239,231,0.10);
+          }
+          .pd-row .name {
+            font-size: 13px;
+            font-weight: 500;
+          }
+          .pd-row .desc {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: rgba(244,239,231,0.62);
+            margin-top: 2px;
+            letter-spacing: 0.02em;
+          }
+          .pd-row .v {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: #ED7878;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+          }
+          .pd-row .tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: #ED7878;
+            text-align: right;
+          }
+          .pd-act {
+            padding: 16px 18px;
+            border-top: 1px solid rgba(244,239,231,0.14);
+          }
+          .pd-act:first-child { border-top: 1px solid rgba(244,239,231,0.28); }
+          .pd-act .verb {
+            display: inline-block;
+            background: #F4EFE7; color: #15110E;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+            padding: 3px 8px;
+            font-weight: 600;
+          }
+          .pd-act h4 {
+            font-family: 'Source Serif 4', Georgia, serif;
+            font-weight: 500; font-size: 17px;
+            margin: 6px 0 2px;
+            letter-spacing: -0.005em;
+          }
+          .pd-act .imp {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #6DCB8E;
+            margin-top: 4px;
+            letter-spacing: 0.04em;
+          }
+          .pd-vignette {
+            position: absolute; inset: 0;
+            background: radial-gradient(60% 50% at 50% 50%, rgba(15,12,9,0.85) 0%, rgba(15,12,9,0.4) 60%, transparent 100%);
+            pointer-events: none;
+            z-index: 1;
+          }
+          @media (max-width: 900px) {
+            .phantom-dash { padding: 28px 24px; }
+            .pd-kpis { grid-template-columns: repeat(2, 1fr); }
+            .pd-sec { grid-template-columns: 1fr; }
+          }
+        `}</style>
+
+        {/* Phantom dashboard header */}
+        <div className="pd-head">
+          <div data-reveal>
+            <div style={{fontFamily:'JetBrains Mono, monospace', fontSize:'10px', letterSpacing:'0.32em', textTransform:'uppercase', color:'rgba(244,239,231,0.62)'}}>
+              OBR-001 · GPHY-7T4Q-DEM · DATA-BASE 20/05/2026
+            </div>
+            <div className="pd-h1" style={{marginTop:'8px'}}>Residencial Demo</div>
+          </div>
+          <div data-reveal className="pd-meta">
+            ENG. RESP. R. SAMPAIO<br/>
+            PERÍODO ABRIL/2026<br/>
+            PVO 27/27 ✓
+          </div>
+        </div>
+
+        {/* KPI strip */}
+        <div className="pd-kpis">
+          <div className="pd-kpi" data-reveal>
+            <div className="lbl">BAC</div>
+            <div className="val">R$ 10,1 M</div>
+            <div className="delta">Orçamento contratado</div>
+          </div>
+          <div className="pd-kpi" data-reveal>
+            <div className="lbl">AC</div>
+            <div className="val">R$ 7,20 M</div>
+            <div className="delta">71,3% executado</div>
+          </div>
+          <div className="pd-kpi crit" data-reveal>
+            <div className="lbl">EAC projetado</div>
+            <div className="val">R$ 13,7 M</div>
+            <div className="delta">+R$ 3,59 M vs BAC</div>
+          </div>
+          <div className="pd-kpi crit" data-reveal>
+            <div className="lbl">VAC</div>
+            <div className="val">−R$ 3,59 M</div>
+            <div className="delta">Estouro se nada mudar</div>
+          </div>
+        </div>
+
+        {/* Risco ativo + Plano de ação */}
+        <div className="pd-sec">
+
+          <div data-reveal>
+            <div className="pd-sec-h">
+              <h2>Risco ativo</h2>
+              <span className="m">4 etapas · CPI &lt; 0,95</span>
+            </div>
+            <div>
+              <div className="pd-row" data-reveal>
+                <div>
+                  <div className="name">Estrutura · Pilares torre B</div>
+                  <div className="desc">CR R$ 589.412 / ORÇ R$ 412.880 · CPI 0,701</div>
+                </div>
+                <div className="v">−R$ 176k</div>
+                <div className="tag">crítico</div>
+              </div>
+              <div className="pd-row" data-reveal>
+                <div>
+                  <div className="name">Vedação · Drywall pavimento técnico</div>
+                  <div className="desc">CR R$ 301.092 / ORÇ R$ 218.500 · CPI 0,726</div>
+                </div>
+                <div className="v">−R$ 83k</div>
+                <div className="tag">crítico</div>
+              </div>
+              <div className="pd-row" data-reveal>
+                <div>
+                  <div className="name">Hidráulica · Prumadas frias</div>
+                  <div className="desc">CR R$ 241.788 / ORÇ R$ 186.300 · CPI 0,771</div>
+                </div>
+                <div className="v">−R$ 55k</div>
+                <div className="tag">crítico</div>
+              </div>
+              <div className="pd-row" data-reveal>
+                <div>
+                  <div className="name">Esquadrias · Alumínio fachada sul</div>
+                  <div className="desc">PROJEÇÃO CPI GLOBAL 0,814 · sem boletim</div>
+                </div>
+                <div className="v">−R$ 114k</div>
+                <div className="tag">crítico</div>
+              </div>
+            </div>
+          </div>
+
+          <div data-reveal>
+            <div className="pd-sec-h">
+              <h2>Plano de ação</h2>
+              <span className="m" style={{color:'rgba(244,239,231,0.62)'}}>3 movimentos</span>
+            </div>
+            <div className="pd-act" data-reveal>
+              <span className="verb">renegociar</span>
+              <h4>Lote de concreto — torre B</h4>
+              <div className="imp">+R$ 180k · economia projetada</div>
+            </div>
+            <div className="pd-act" data-reveal>
+              <span className="verb">antecipar</span>
+              <h4>Compra de aço CA-50 12,5 mm</h4>
+              <div className="imp">+R$ 95k · perda evitada</div>
+            </div>
+            <div className="pd-act" data-reveal>
+              <span className="verb">realocar</span>
+              <h4>Equipe alvenaria torre A → B</h4>
+              <div className="imp">+9 dias · caminho crítico</div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Center vignette to keep headline legible */}
+        <div className="pd-vignette"></div>
+      </div>
+
+      {/* Center overlay */}
+      <div className="relative z-10 max-w-3xl mx-auto text-center">
+        <p className="font-mono text-[10px] tracking-[0.4em] uppercase text-hero-mute mb-8 inline-flex items-center gap-3">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(214,168,116,0.7)]"></span>
+          Controladoria de obras · Gestão L4
+        </p>
+
+        <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-[-0.02em] leading-[1.05] text-balance">
+          Auditar a obra antes que <em className="hero-mark text-accent" style={{fontStyle:'italic'}}>o estouro</em> vire prejuízo.
+        </h1>
+        <style>{`
+          .hero-mark {
+            position: relative;
+            display: inline-block;
+            white-space: nowrap;
+          }
+          .hero-mark::before {
+            content: "";
+            position: absolute;
+            left: -3%;
+            right: -3%;
+            bottom: 0.06em;
+            height: 0.42em;
+            background: linear-gradient(90deg, transparent 0%, rgba(214, 168, 116, 0.32) 8%, rgba(214, 168, 116, 0.42) 50%, rgba(214, 168, 116, 0.32) 92%, transparent 100%);
+            border-radius: 2px;
+            z-index: -1;
+            transform-origin: left center;
+            animation: heroMarkDraw 1100ms cubic-bezier(0.22, 1, 0.36, 1) 380ms both,
+                       heroMarkPulse 3.6s ease-in-out 1700ms infinite;
+          }
+          @keyframes heroMarkDraw {
+            0%   { transform: scaleX(0); opacity: 0; }
+            40%  { opacity: 1; }
+            100% { transform: scaleX(1); opacity: 1; }
+          }
+          @keyframes heroMarkPulse {
+            0%, 100% { filter: brightness(1); }
+            50%      { filter: brightness(1.35); }
+          }
+          .hero-cta-pulse {
+            position: relative;
+            overflow: hidden;
+          }
+          .hero-cta-pulse::after {
+            content: "";
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 40%;
+            left: -40%;
+            background: linear-gradient(90deg, transparent, rgba(214, 168, 116, 0.45), transparent);
+            animation: heroCtaSweep 3.4s ease-in-out 1.2s infinite;
+            pointer-events: none;
+          }
+          @keyframes heroCtaSweep {
+            0%   { left: -40%; }
+            55%  { left: 110%; }
+            100% { left: 110%; }
+          }
+          .hero-cta-pulse:hover::after { animation-play-state: paused; }
+        `}</style>
+
+        <p className="mt-7 text-lg text-hero-mute leading-relaxed max-w-xl mx-auto text-pretty">
+          Controladoria que pega o desvio enquanto dá pra corrigir — não no balanço do ano seguinte.
+        </p>
+
+        <div className="mt-10 flex flex-wrap gap-3 items-center justify-center">
+          <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+             className="inline-flex items-center gap-2 bg-hero-fg text-hero-bg hover:bg-white transition px-7 h-12 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+            Agendar Diagnóstico
+            <IconArrowRight className="h-4 w-4"/>
+          </a>
+          <a href="diagnostico.html"
+             className="hero-cta-pulse inline-flex items-center gap-2 border border-accent/45 text-hero-fg hover:bg-accent/10 transition px-7 h-12 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+            Auto-diagnóstico · 5 min
+          </a>
+        </div>
+
+        <div className="mt-12 font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute-2">
+          ↓ passe o mouse · revele o dashboard
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ----------------------------- DASHBOARD DEMO ----------------------------- */
+const KPICard = ({ label, value, hint, status }) => {
+  const color = status === "bad" ? "text-crit-dark" : status === "warn" ? "text-warn-dark" : "text-ok-dark";
+  // Long currency strings need smaller type to avoid overflow in 4-col grid
+  const isLong = String(value).length > 6;
+  const sizeCls = isLong ? "text-lg md:text-2xl" : "text-2xl md:text-3xl";
+  return (
+    <div className="border border-hero-hair bg-hero-glass p-5 min-w-0">
+      <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-hero-mute">{label}</div>
+      <div className={`mt-3 ${sizeCls} font-bold tabular-nums ${color} truncate`}>{value}</div>
+      <div className="mt-1 text-xs text-hero-mute leading-snug">{hint}</div>
+    </div>
+  );
+};
+
+const Tab = ({ active, onClick, children }) => (
+  <button onClick={onClick}
+    className={`whitespace-nowrap border-b-2 px-3 pb-3 pt-1 text-sm transition ${
+      active ? "border-white text-white" : "border-transparent text-hero-mute hover:text-hero-fg"
+    }`}>
+    {children}
+  </button>
+);
+
+const Badge = ({ tone = "amber", children }) => {
+  const tones = {
+    amber: "bg-amber-500/15 text-warn-dark border-amber-500/30",
+    red: "bg-red-500/15 text-crit-dark border-red-500/30",
+  };
+  return (
+    <span className={`inline-flex items-center px-2.5 py-1 text-[10px] font-mono tracking-[0.18em] uppercase border ${tones[tone]}`}>
+      {children}
+    </span>
+  );
+};
+
+const DashboardDemo = () => {
+  const [tab, setTab] = useState("resumo");
+  return (
+    <div className="bg-hero-bg-2 text-hero-fg border border-black/10 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.45)] overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-5 border-b border-hero-hair flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">
+            GESTÃO L4 · Dossiê de Controladoria
+          </div>
+          <div className="mt-1.5 text-base font-semibold">{demoData.obra}</div>
+          <div className="text-xs text-hero-mute font-mono">Data-base: {demoData.dataBase}</div>
+        </div>
+        <Badge>DEMO · Dados de exemplo</Badge>
+      </div>
+
+      {/* Tabs */}
+      <div className="px-3 md:px-6 pt-4">
+        <div className="tabs-list border-b border-hero-hair flex gap-2 overflow-x-auto" style={{scrollbarWidth:"none"}}>
+          {[
+            { v: "resumo", l: "Resumo Executivo" },
+            { v: "financeiro", l: "Financeiro" },
+            { v: "cronograma", l: "Cronograma" },
+            { v: "suprimentos", l: "Suprimentos" }
+          ].map(t => (
+            <Tab key={t.v} active={tab === t.v} onClick={() => setTab(t.v)}>{t.l}</Tab>
+          ))}
+        </div>
+      </div>
+
+      {/* RESUMO */}
+      {tab === "resumo" && (
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KPICard label="CPI" value={cpi.toFixed(2)}
+              hint={cpi < 0.9 ? "Atenção · custo > planejado" : "No alvo"}
+              status={cpi < 0.85 ? "bad" : cpi < 0.95 ? "warn" : "ok"} />
+            <KPICard label="SPI" value={spi.toFixed(2)}
+              hint={`${demoData.diasDesvio} dias vs baseline`}
+              status={spi < 0.9 ? "bad" : spi < 1 ? "warn" : "ok"} />
+            <KPICard label="EAC" value={fmtBRL(eac)} hint="Custo final projetado" status="warn" />
+            <KPICard label="VAC" value={fmtBRL(vac)}
+              hint={vac < 0 ? "Estouro previsto" : "Folga prevista"}
+              status={vac < 0 ? "bad" : "ok"} />
+          </div>
+          <div>
+            <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-hero-mute mb-3">
+              Plano de ação
+            </div>
+            <div className="space-y-2">
+              {demoData.acoes.map((a, i) => (
+                <div key={i} className="border border-hero-hair p-4 flex items-start gap-4 bg-hero-glass">
+                  <div className="font-mono text-xs text-hero-mute mt-0.5">{String(i + 1).padStart(2, "0")}</div>
+                  <IconTarget className="h-4 w-4 mt-0.5 text-ok-dark flex-shrink-0" strokeWidth={2}/>
+                  <div className="flex-1">
+                    <div className="text-sm">
+                      <span className="font-bold uppercase tracking-wide">{a.verbo}</span>{" "}
+                      <span className="text-hero-fg">{a.alvo}</span>
+                    </div>
+                    <div className="text-xs text-hero-mute mt-1">{a.impacto}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FINANCEIRO */}
+      {tab === "financeiro" && (
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KPICard label="BAC" value={fmtBRL(demoData.bac)} hint="Orçamento contratado" status="ok" />
+            <KPICard label="AC" value={fmtBRL(demoData.ac)} hint="Custo realizado" status="warn" />
+            <KPICard label="EV" value={fmtBRL(demoData.ev)} hint="Valor agregado" status="warn" />
+            <KPICard label="PV" value={fmtBRL(demoData.pv)} hint="Valor planejado" status="ok" />
+          </div>
+          <div>
+            <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-hero-mute mb-3">
+              Estouros por centro de custo
+            </div>
+            <div className="border border-hero-hair">
+              <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-hero-hair font-mono text-[10px] tracking-wider uppercase text-hero-mute">
+                <div className="col-span-5">Centro de custo</div>
+                <div className="col-span-3 text-right">Orçado</div>
+                <div className="col-span-3 text-right">Realizado</div>
+                <div className="col-span-1 text-right">Δ</div>
+              </div>
+              {demoData.estouros.map((e, i) => {
+                const delta = ((e.realizado - e.orcado) / e.orcado) * 100;
+                return (
+                  <div key={i} className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-hero-hair text-sm last:border-b-0">
+                    <div className="col-span-5">{e.centro}</div>
+                    <div className="col-span-3 text-right tabular-nums text-hero-mute">{fmtBRL(e.orcado)}</div>
+                    <div className="col-span-3 text-right tabular-nums">{fmtBRL(e.realizado)}</div>
+                    <div className={`col-span-1 text-right tabular-nums font-mono ${delta > 20 ? "text-crit-dark" : "text-warn-dark"}`}>
+                      +{delta.toFixed(0)}%
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CRONOGRAMA */}
+      {tab === "cronograma" && (
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <KPICard label="SPI Global" value={spi.toFixed(2)} hint="< 1.0 = atrasado" status={spi < 0.9 ? "bad" : "warn"} />
+            <KPICard label="Dias de desvio" value={`${demoData.diasDesvio}`} hint="vs baseline original" status="bad" />
+            <KPICard label="Etapas críticas" value="2" hint="No caminho crítico" status="warn" />
+          </div>
+          <div>
+            <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-hero-mute mb-3">
+              Etapas em monitoramento
+            </div>
+            <div className="space-y-2">
+              {demoData.cronograma.map((c, i) => (
+                <div key={i} className="border border-hero-hair p-4 bg-hero-glass">
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <div className="text-sm font-medium flex items-center gap-2">
+                      {c.critico && <IconAlert className="h-3.5 w-3.5 text-crit-dark" strokeWidth={2}/>}
+                      {c.etapa}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs font-mono">
+                      <span className={c.spi < 0.9 ? "text-crit-dark" : c.spi < 1 ? "text-warn-dark" : "text-ok-dark"}>
+                        SPI {c.spi.toFixed(2)}
+                      </span>
+                      <span className={c.dias < 0 ? "text-crit-dark" : "text-ok-dark"}>
+                        {c.dias > 0 ? "+" : ""}{c.dias} dias
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-1 bg-hero-glass overflow-hidden">
+                    <div className="h-full bg-white" style={{width: `${Math.min(c.spi * 100, 100)}%`}} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUPRIMENTOS */}
+      {tab === "suprimentos" && (
+        <div className="p-6 space-y-6">
+          <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-hero-mute">
+            Antecipação de ruptura · próximos 14 dias
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {demoData.rupturas.map((r, i) => (
+              <div key={i} className="border border-hero-hair p-5 bg-hero-glass">
+                <div className="flex items-center justify-between mb-3">
+                  <Badge tone={r.severidade === "alta" ? "red" : "amber"}>
+                    {r.severidade === "alta" ? "Alta" : "Média"}
+                  </Badge>
+                  <span className="font-mono text-xs text-hero-mute">{r.dias}d crítico</span>
+                </div>
+                <div className="font-semibold">{r.material}</div>
+                <div className="text-xs text-hero-mute mt-1 font-mono">Gap: {r.gap}</div>
+              </div>
+            ))}
+          </div>
+          <div className="border border-hero-hair p-4 bg-hero-glass flex items-start gap-3">
+            <IconTrendDown className="h-4 w-4 text-warn-dark mt-0.5 flex-shrink-0" strokeWidth={2}/>
+            <div className="text-sm text-hero-fg">
+              Recomendação: <span className="text-white">antecipar pedido de aço CA-50 em 5 dias</span>{" "}
+              para evitar parada da frente Torre 3 (impacto estimado R$ 95k).
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const DashboardSection = () => (
+  <section id="dashboard" className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg relative grain-bg">
+    <div className="flex items-end justify-between flex-wrap gap-4">
+      <div>
+        <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">01 — A entrega</p>
+        <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
+          É isso que chega na sua mesa.
+        </h2>
+      </div>
+      <p className="max-w-md text-hero-mute text-pretty">
+        Dashboard navegável com KPIs EVM, estouros por centro de custo, etapas críticas do cronograma
+        e antecipação de ruptura de suprimentos. Clique nas abas — dados de exemplo.
+      </p>
+    </div>
+    <div className="mt-12">
+      <DashboardDemo />
+    </div>
+    <p className="mt-6 text-xs text-hero-mute font-mono">
+      Demo com dados sintéticos. Sua versão chega populada com a obra real após o diagnóstico.
+    </p>
+  </section>
+);
+
+/* ----------------------------- HOW IT WORKS ----------------------------- */
+const HowItWorksSection = () => {
+  const steps = [
+    { Icon: IconUpload, n: "01", title: "Você sobe os arquivos",
+      desc: "Orçamento (.xlsx), cronograma (.mpp), boletins de medição, notas fiscais (PDF). Como já estão hoje — sem padronizar nada." },
+    { Icon: IconCpu, n: "02", title: "A L4 audita com IA",
+      desc: "Higienização dos dados, cruzamento orçado vs realizado, projeção de EAC, análise de cronograma e mapa de suprimentos. Sem alucinação — dado ausente vira alerta, nunca chute." },
+    { Icon: IconBars, n: "03", title: "Você recebe o dossiê executivo",
+      desc: "Dashboard navegável + relatório Markdown + apresentação Canva pronta para diretoria. Plano de ação com 3 movimentos cirúrgicos priorizados." },
+  ];
+  return (
+    <section id="processo" className="px-6 md:px-16 py-24 bg-hero-bg text-hero-fg relative grain-bg">
+      <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">02 — Como funciona</p>
+      <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
+        Três passos. Zero ERP novo.
+      </h2>
+      <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-10">
+        {steps.map((s, i) => (
+          <div key={i} className="border-t border-hero-hair pt-6">
+            <div className="flex items-center justify-between">
+              <s.Icon className="h-6 w-6" strokeWidth={1.6}/>
+              <span className="font-mono text-xs text-hero-mute">{s.n}</span>
+            </div>
+            <h3 className="mt-6 font-serif text-xl md:text-2xl font-medium tracking-tight">{s.title}</h3>
+            <p className="mt-3 text-hero-mute text-sm md:text-base leading-relaxed text-pretty">{s.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/* ----------------------------- BEFORE / AFTER ----------------------------- */
+const BeforeAfterSection = () => {
+  const rows = [
+    { task: "Consolidar dados de 5+ planilhas", before: "1 a 3 dias / engenheiro", after: "Automático" },
+    { task: "Cruzar boletim de medição × NF", before: "Manual, propenso a erro", after: "Auditado, com flags" },
+    { task: "Projetar custo final (EAC)", before: "Estimativa intuitiva", after: "Fórmula EVM rastreável" },
+    { task: "Mapear ruptura de suprimentos", before: "Descoberta no canteiro", after: "Antecipada em 14 dias" },
+    { task: "Apresentação para diretoria", before: "Coordenador para no operacional", after: "Pronta em Canva" }
+  ];
+  return (
+    <section className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg">
+      <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">03 — Antes / Depois</p>
+      <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
+        Sua coordenação volta a coordenar.
+      </h2>
+      <div className="mt-12 border border-hero-hair">
+        <div className="grid grid-cols-12 gap-2 px-4 md:px-6 py-3 border-b border-hero-hair font-mono text-[10px] tracking-wider uppercase text-hero-mute">
+          <div className="col-span-5 md:col-span-4">Tarefa</div>
+          <div className="col-span-4 md:col-span-4">Hoje (sem L4)</div>
+          <div className="col-span-3 md:col-span-4">Com a L4</div>
+        </div>
+        {rows.map((r, i) => (
+          <div key={i} className="grid grid-cols-12 gap-2 px-4 md:px-6 py-4 border-b border-hero-hair text-sm last:border-b-0 items-center">
+            <div className="col-span-5 md:col-span-4 font-medium">{r.task}</div>
+            <div className="col-span-4 md:col-span-4 text-hero-mute">{r.before}</div>
+            <div className="col-span-3 md:col-span-4 text-ok-dark flex items-center gap-2">
+              <IconCheck className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={2.5}/>
+              <span>{r.after}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/* ----------------------------- ABOUT ----------------------------- */
+const AboutSection = () => (
+  <section id="sobre" className="px-6 md:px-16 py-24 bg-hero-bg text-hero-fg relative grain-bg">
+    <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">04 — Quem opera</p>
+    <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
+      Engenharia operando os agentes — não SaaS de prateleira.
+    </h2>
+    <p className="mt-6 max-w-3xl text-lg text-hero-mute text-pretty leading-relaxed">
+      A Gestão L4 não é um app que você baixa. É uma operação de controladoria de obra com engenheiros
+      auditando cada dossiê antes de entregar. A IA roda no nosso lado, com PVO bloqueante e validação
+      humana final. Você recebe a saída — não as suposições.
+    </p>
+    <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+      {[
+        { k: "Operação", v: "Auditoria executada pela equipe técnica da L4. Cada dossiê passa por engenheiro civil antes da entrega. Sem auto-serviço, sem dashboard que ninguém olha." },
+        { k: "Stack", v: "Pipeline EVM completo com fórmulas rastreáveis: CPI, SPI, EAC, VAC, ruptura de suprimentos. Cruzamento Sienge × físico × cronograma. Tudo auditável linha a linha." },
+        { k: "Compromisso", v: "Base contratual sempre — nunca medimos contra baseline replanejado para esconder atraso. PVO 27/27 bloqueia entrega que não convergir. Sem palpite, sem alucinação." },
+      ].map((c, i) => (
+        <div key={i} className="border-t border-hero-hair pt-5">
+          <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-hero-mute">{c.k}</div>
+          <p className="mt-3 text-hero-fg text-sm md:text-[15px] leading-relaxed text-pretty">{c.v}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+);
+
+/* ----------------------------- FAQ ----------------------------- */
+const AccordionItem = ({ q, a, open, onClick }) => (
+  <div className="border-b border-hero-hair">
+    <button onClick={onClick} className="w-full flex items-center justify-between gap-6 py-5 text-left">
+      <span className="font-serif text-base md:text-lg font-medium tracking-tight pr-4">{q}</span>
+      <IconChevron className={`h-4 w-4 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} strokeWidth={2}/>
+    </button>
+    <div className={`grid transition-all duration-300 ${open ? "grid-rows-[1fr] opacity-100 pb-5" : "grid-rows-[0fr] opacity-0"}`}>
+      <div className="overflow-hidden">
+        <p className="text-hero-mute text-[15px] leading-relaxed max-w-2xl text-pretty">{a}</p>
+      </div>
+    </div>
+  </div>
+);
+
+const FAQSection = () => {
+  const items = [
+    { q: "Quais formatos de arquivo a L4 aceita?",
+      a: "Excel (orçamento, curva ABC, boletins de medição), MS Project (.mpp), PDF (NFs, contratos), exportações de ERP (Sienge, AltoQi). Se vier no formato em que sua equipe trabalha hoje, entra no pipeline." },
+    { q: "Funciona com Sienge ou outro ERP que já usamos?",
+      a: "Sim. O pipeline lê exportações de Sienge e similares. A L4 não substitui seu ERP — opera em cima dele e devolve o dossiê executivo que o ERP não entrega." },
+    { q: "Onde ficam os dados da obra?",
+      a: "Em ambiente dedicado da L4 ou na sua infraestrutura, conforme contrato. Sem upload para SaaS de terceiros, sem treinamento de modelo público com seus dados. NDA assinado antes do diagnóstico." },
+    { q: "Quanto tempo até o primeiro dossiê?",
+      a: "Após o diagnóstico (call de 30min), o primeiro dossiê executivo sai em até 7 dias com seus dados reais. Implantação completa de rotina mensal em 30 dias." },
+    { q: "E se a IA errar um número crítico?",
+      a: "Política zero-alucinação. Dado ausente vira alerta explícito, nunca palpite. Toda métrica EVM (CPI, SPI, EAC, VAC) tem fórmula rastreável e auditável. Validação humana final pela L4 antes da entrega." },
+    { q: "Que porte de obra faz sentido para a L4?",
+      a: "Obras com BIM 5D ou estruturas matriciais com múltiplos centros de custo, múltiplas frentes, contrato acima de R$ 8M. Para obras menores ou times sem BIM, o caminho é uma sessão de diagnóstico pontual." },
+  ];
+  const [open, setOpen] = useState(0);
+  return (
+    <section id="faq" className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg relative grain-bg">
+      <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">05 — Perguntas frequentes</p>
+      <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
+        Antes de agendar.
+      </h2>
+      <div className="mt-12 max-w-3xl">
+        {items.map((it, i) => (
+          <AccordionItem key={i} q={it.q} a={it.a} open={open === i} onClick={() => setOpen(open === i ? -1 : i)} />
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/* ----------------------------- CTA ----------------------------- */
+const CTASection = () => {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const handleWaitlist = (e) => {
+    e.preventDefault();
+    console.log("[L4 waitlist]", { email, destination: WAITLIST_EMAIL });
+    setSubmitted(true);
+  };
+  return (
+    <section className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg">
+      <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">06 — Próximo passo</p>
+      <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
+        30 minutos. Sem custo. Saímos com mapa de oportunidades.
+      </h2>
+
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Calendly */}
+        <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+           className="group border border-hero-hair p-8 hover:border-hero-fg hover:bg-hero-glass transition flex flex-col">
+          <div className="flex items-center justify-between">
+            <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-ok-dark">Recomendado</div>
+            <div className="h-1.5 w-1.5 bg-emerald-400 rounded-full" />
+          </div>
+          <div className="mt-4 font-serif text-2xl font-medium tracking-tight">Agendar Diagnóstico</div>
+          <div className="mt-2 text-sm text-hero-mute leading-relaxed">
+            Call de 30min. Saímos com mapa de oportunidades específico da sua obra.
+          </div>
+          <div className="mt-6 inline-flex items-center gap-2 text-sm font-mono group-hover:translate-x-1 transition">
+            Calendly <IconArrowRight className="h-3.5 w-3.5"/>
+          </div>
+        </a>
+
+        {/* WhatsApp */}
+        <a href={`https://wa.me/${WHATSAPP_NUMBER.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Olá Romell, vim da página Gestão L4. Quero entender como auditar minha obra.")}`}
+           target="_blank" rel="noopener noreferrer"
+           className="group border border-hero-hair p-8 hover:border-hero-fg hover:bg-hero-glass transition flex flex-col">
+          <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-hero-mute">Pergunta rápida</div>
+          <div className="mt-4 font-serif text-2xl font-medium tracking-tight">WhatsApp</div>
+          <div className="mt-2 text-sm text-hero-mute leading-relaxed font-mono">{WHATSAPP_DISPLAY}</div>
+          <div className="text-xs text-hero-mute mt-1">Resposta em horário comercial.</div>
+          <div className="mt-auto pt-6 inline-flex items-center gap-2 text-sm font-mono group-hover:translate-x-1 transition">
+            Abrir conversa <IconArrowRight className="h-3.5 w-3.5"/>
+          </div>
+        </a>
+
+        {/* Waitlist */}
+        <form onSubmit={handleWaitlist} className="border border-hero-hair p-8 flex flex-col">
+          <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-hero-mute">Sem urgência</div>
+          <div className="mt-4 font-serif text-2xl font-medium tracking-tight">Lista de espera</div>
+          <div className="mt-2 text-sm text-hero-mute leading-relaxed">
+            Receba a abertura de novas vagas de implantação.
+          </div>
+          {submitted ? (
+            <div className="mt-6 text-sm font-mono text-ok-dark inline-flex items-center gap-2">
+              <IconCheck className="h-4 w-4" strokeWidth={2.5}/> Recebido. Em breve entramos em contato.
+            </div>
+          ) : (
+            <div className="mt-6 flex gap-2">
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                className="flex-1 bg-transparent border border-hero-hair focus:border-white outline-none text-white placeholder:text-hero-mute px-3 h-10 text-sm font-mono" />
+              <button type="submit" className="bg-hero-fg text-hero-bg hover:bg-white transition px-4 h-10 text-[10px] tracking-[0.24em] uppercase font-semibold font-mono rounded-full">
+                OK
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+
+      {/* Trust line */}
+      <div className="mt-16 pt-8 border-t border-hero-hair flex items-center gap-4 text-xs font-mono text-hero-mute flex-wrap">
+        <IconShield className="h-4 w-4" strokeWidth={1.6}/>
+        <span>NDA assinado antes do diagnóstico · dados em ambiente dedicado · sem treinamento de modelo público</span>
+      </div>
+
+      <div className="mt-16 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <Wordmark dark />
+        <div className="font-mono text-[11px] tracking-[0.18em] text-hero-mute">© Gestão L4 · Ilhéus · Bahia · Brasil</div>
+      </div>
+    </section>
+  );
+};
+
+/* ----------------------------- WHATSAPP FAB ----------------------------- */
+const WhatsAppFloating = () => (
+  <a href={`https://wa.me/${WHATSAPP_NUMBER.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Olá Romell, vim da página Gestão L4. Quero entender como auditar minha obra.")}`}
+     target="_blank" rel="noopener noreferrer"
+     className="fixed bottom-6 right-6 z-50 inline-flex items-center justify-center h-14 w-14 rounded-full bg-ok-dark text-hero-bg shadow-[0_10px_30px_-5px_rgba(109,203,142,0.5)] hover:bg-emerald-400 transition"
+     aria-label="Falar no WhatsApp">
+    <IconChat className="h-6 w-6" strokeWidth={2}/>
+  </a>
+);
+
+/* ----------------------------- APP ----------------------------- */
+const App = () => (
+  <main className="font-sans">
+    <Nav />
+    <HeroSection />
+    <DashboardSection />
+    <HowItWorksSection />
+    <BeforeAfterSection />
+    <AboutSection />
+    <FAQSection />
+    <CTASection />
+    <WhatsAppFloating />
+  </main>
+);
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+
+</body></html>

@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>John — Automação Revit · L4 Engenharia</title>
+<script>
+  (function(){
+    var ua = navigator.userAgent || '';
+    var isMobile = /iPhone|iPad|iPod|Android|Mobile|webOS|BlackBerry|Opera Mini|IEMobile/i.test(ua);
+    var forced = location.search.indexOf('desktop=1') !== -1;
+    if (isMobile && !forced) {
+      location.replace('/landing-mobile' + location.search + location.hash);
+    }
+  })();
+</script>
+<script>
+  // Configure Tailwind BEFORE the runtime loads
+  window.tailwind = window.tailwind || {};
+  window.tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          serif: ['Source Serif 4', 'Source Serif Pro', 'Georgia', 'serif'],
+        },
+        colors: {
+          'hero-bg': '#0B1220',
+          'hero-bg-2': '#131D33',
+          'hero-fg': '#E8EFF7',
+          'hero-mute': 'rgba(232, 239, 247, 0.62)',
+          'hero-mute-2': 'rgba(232, 239, 247, 0.38)',
+          'hero-hair': 'rgba(232, 239, 247, 0.14)',
+          'hero-glass': 'rgba(232, 239, 247, 0.08)',
+          'crit-dark': '#ED7878',
+          'warn-dark': '#E8B354',
+          'ok-dark':   '#6DCB8E',
+          'accent':    '#00E5FF',
+        }
+      }
+    }
+  }
+</script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+  .tabs-list::-webkit-scrollbar { display: none; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+<style>
+  body, html { background: #0B1220; color: #E8EFF7; }
+  body { font-family: 'Inter', system-ui, sans-serif; }
+  .grain-bg::after {
+    content: ""; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                      radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 3px 3px, 5px 5px;
+    mix-blend-mode: overlay; opacity: 0.4; pointer-events: none;
+  }
+  .accent-italic { font-style: italic; color: #00E5FF; }
+</style>
+</head>
+<body class="bg-hero-bg text-hero-fg">
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <defs>
+    <symbol id="L4-solid" viewBox="0 0 124 88">
+      <g fill="currentColor" fill-rule="evenodd">
+        <rect x="8" y="8" width="15" height="59"/>
+        <rect x="24" y="68" width="64" height="12"/>
+        <path d="M 74 8 L 28 52 L 28 62 L 73 62 L 73 8 Z M 70 14 L 34 50 L 70 50 Z"/>
+        <rect x="74" y="8" width="14" height="59"/>
+        <rect x="96" y="68" width="12" height="12"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef } = React;
+
+const CALENDLY_URL = "https://calendar.app.google/MEkG8tsWszd2sXtn9";
+const WHATSAPP_NUMBER = "+5573998174140";
+const WHATSAPP_DISPLAY = "+55 73 99817-4140";
+const WAITLIST_EMAIL = "romell@bravaconstrutora.com";
+
+/* ----------------------------- ICONS (inline SVG) ----------------------------- */
+const Icon = ({ d, className = "h-5 w-5", strokeWidth = 1.75, children }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {children || <path d={d} />}
+  </svg>
+);
+const IconArrowRight = (p) => <Icon {...p}><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></Icon>;
+const IconPlug = (p) => <Icon {...p}><path d="M9 2v6"/><path d="M15 2v6"/><path d="M7 8h10v4a5 5 0 0 1-10 0V8z"/><path d="M12 17v5"/></Icon>;
+const IconWand = (p) => <Icon {...p}><path d="m15 4 6 6"/><path d="M3 21l9-9"/><path d="M14 4l1.5 1.5"/><path d="M19 9l1.5 1.5"/><path d="M9 1l1 2"/><path d="M3 5l2 1"/><path d="M3 11l2-1"/></Icon>;
+const IconCheck = (p) => <Icon {...p}><polyline points="20 6 9 17 4 12"/></Icon>;
+const IconAlert = (p) => <Icon {...p}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></Icon>;
+const IconCube = (p) => <Icon {...p}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></Icon>;
+const IconLayers = (p) => <Icon {...p}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></Icon>;
+const IconRuler = (p) => <Icon {...p}><path d="M21.3 8.7 8.7 21.3a2.41 2.41 0 0 1-3.4 0L2.7 18.7a2.41 2.41 0 0 1 0-3.4L15.3 2.7a2.41 2.41 0 0 1 3.4 0l2.6 2.6a2.41 2.41 0 0 1 0 3.4Z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/><path d="m4.5 13.5 2 2"/></Icon>;
+const IconChat = (p) => <Icon {...p}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
+const IconChevron = (p) => <Icon {...p}><polyline points="6 9 12 15 18 9"/></Icon>;
+const IconShield = (p) => <Icon {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></Icon>;
+const IconTerminal = (p) => <Icon {...p}><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></Icon>;
+
+/* ----------------------------- DEMO DATA ----------------------------- */
+const demoData = {
+  projeto: "Residencial Demo · 12 pavimentos · 3 torres",
+  arquivo: "BR_RESIDENCIAL_DEMO.RVT · v2024",
+  paredes: 482,
+  parts: 4338,
+  paramsEap: 4338,
+  cotas: 312,
+  m2Pintura: 18420,
+  m2Reboco: 19880,
+  m2Chapisco: 19880,
+  m3Bloco: 2745,
+  quantitativo: [
+    { material: "Pintura PVA Látex", un: "m²", qtd: 18420, custo: 22.5, total: 414450 },
+    { material: "Reboco massa única", un: "m²", qtd: 19880, custo: 38.0, total: 755440 },
+    { material: "Chapisco cimento+areia", un: "m²", qtd: 19880, custo: 12.0, total: 238560 },
+    { material: "Bloco cerâmico 14×19×29", un: "m³", qtd: 2745, custo: 480.0, total: 1317600 }
+  ],
+  eap: [
+    { codigo: "03.01.001", n1: "Estrutura", n2: "Alvenaria", n3: "Bloco cerâmico", parts: 482 },
+    { codigo: "04.02.005", n1: "Revestimento", n2: "Argamassa", n3: "Chapisco", parts: 964 },
+    { codigo: "04.02.012", n1: "Revestimento", n2: "Argamassa", n3: "Reboco", parts: 964 },
+    { codigo: "04.03.018", n1: "Revestimento", n2: "Pintura", n3: "PVA Látex", parts: 928 }
+  ],
+  log: [
+    { skill: "analisar o modelo", dur: "12s", status: "ok", out: "482 paredes · 12 pavimentos detectados" },
+    { skill: "padronizar estrutura das paredes", dur: "1m 42s", status: "ok", out: "Estrutura aplicada em 482 paredes" },
+    { skill: "preparar camadas pra quantitativo", dur: "3m 18s", status: "ok", out: "4.338 elementos gerados · 9 camadas/parede" },
+    { skill: "classificar revestimentos", dur: "54s", status: "ok", out: "Pintura 928 · Reboco 964 · Chapisco 964 · Bloco 1.482" },
+    { skill: "configurar códigos de orçamento", dur: "8s", status: "ok", out: "Parâmetros vinculados ao modelo" },
+    { skill: "preencher códigos nos elementos", dur: "2m 06s", status: "ok", out: "Códigos preenchidos em 4.338 elementos" },
+    { skill: "gerar tabelas de quantitativo", dur: "22s", status: "ok", out: "3 tabelas criadas: Pintura · Reboco · Chapisco" },
+    { skill: "cotar paredes em planta", dur: "1m 31s", status: "warn", out: "312 cotas · 4 paredes precisam revisão manual" }
+  ],
+  avisos: [
+    { titulo: "Paredes fora do padrão de nomenclatura", desc: "12 paredes sem prefixo correto · renomeação pronta", flag: "atenção" },
+    { titulo: "Paredes que não permitiram cotagem", desc: "4 paredes com geometria irregular · revisão manual", flag: "atenção" },
+    { titulo: "Tipos de parede duplicados", desc: "2 tipos apontam pra mesma estrutura · consolidar", flag: "consolidar" },
+    { titulo: "Elementos sem código de orçamento", desc: "8 elementos pendentes de configuração", flag: "ação" }
+  ],
+  proximas: [
+    { verbo: "executar", alvo: "cotar paredes nas torres B e C", impacto: "+ 540 cotas · cobertura 100% planta" },
+    { verbo: "regenerar", alvo: "tabelas de quantitativo após nova torre", impacto: "quantitativo atualizado · pronto pro orçamento" },
+    { verbo: "validar", alvo: "renomeação de 12 paredes fora do padrão", impacto: "cobertura 100% · todos elementos processados" }
+  ]
+};
+
+const fmtBRL = (n) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+const fmtNum = (n) => n.toLocaleString("pt-BR");
+
+/* ----------------------------- WORDMARK ----------------------------- */
+const Wordmark = ({ dark = false }) => (
+  <div className="flex items-center gap-3">
+    <svg viewBox="0 0 124 88" className="h-7" aria-hidden="true" style={{color: '#E8EFF7'}}>
+      <use href="#L4-solid"/>
+    </svg>
+  </div>
+);
+
+/* ----------------------------- NAV ----------------------------- */
+const Nav = () => (
+  <nav className="px-6 md:px-16 py-5 flex items-center justify-between bg-hero-bg/85 text-hero-fg sticky top-0 z-40 border-b border-hero-hair backdrop-blur supports-[backdrop-filter]:bg-hero-bg/70">
+    <Wordmark />
+    <div className="hidden md:flex items-center gap-8 font-mono text-[11px] tracking-[0.2em] uppercase text-hero-mute">
+      <a href="#saida" className="hover:text-hero-fg transition">A saída</a>
+      <a href="#processo" className="hover:text-hero-fg transition">Processo</a>
+      <a href="#skills" className="hover:text-hero-fg transition">Skills</a>
+      <a href="#sobre" className="hover:text-hero-fg transition">Quem opera</a>
+      <a href="#faq" className="hover:text-hero-fg transition">FAQ</a>
+    </div>
+    <div className="flex items-center gap-3">
+      <a href="/john/app/" className="hidden md:inline-flex items-center gap-2 border border-hero-hair text-hero-fg hover:bg-hero-glass hover:border-accent transition px-4 py-2.5 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+        Plataforma
+      </a>
+      <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+         className="inline-flex items-center gap-2 bg-hero-fg text-hero-bg hover:bg-white transition px-5 py-2.5 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+        Agendar Demo
+        <IconArrowRight className="h-3.5 w-3.5"/>
+      </a>
+    </div>
+  </nav>
+);
+
+/* ----------------------------- HERO ----------------------------- */
+const HeroSection = () => {
+  const dashRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const root = dashRef.current;
+    if (!root) return;
+
+    const elements = root.querySelectorAll('[data-reveal]');
+
+    const onMove = (e) => {
+      const radius = Math.min(window.innerWidth, window.innerHeight) / 2.8;
+      elements.forEach((el) => {
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        const intensity = Math.max(0, 1 - d / radius);
+        el.style.setProperty('--intensity', intensity.toFixed(3));
+      });
+    };
+
+    const onLeave = () => {
+      elements.forEach((el) => el.style.setProperty('--intensity', '0'));
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseleave', onLeave);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseleave', onLeave);
+    };
+  }, []);
+
+  return (
+    <section className="relative min-h-screen w-full bg-hero-bg text-hero-fg overflow-hidden flex items-center justify-center px-6 md:px-16 py-24">
+
+      {/* Phantom Revit interface — full-bleed background, dimmed at rest, reveals on hover */}
+      <div ref={dashRef} className="phantom-dash" aria-hidden="true">
+        <style>{`
+          .phantom-dash {
+            position: absolute; inset: 0;
+            display: grid;
+            grid-template-columns: 200px 1fr 220px;
+            grid-template-rows: 44px 1fr 26px;
+            grid-template-areas:
+              "ribbon ribbon ribbon"
+              "browser canvas props"
+              "status status status";
+            pointer-events: none;
+            z-index: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #E8EFF7;
+          }
+          .phantom-dash [data-reveal] {
+            --intensity: 0;
+            opacity: calc(0.10 + var(--intensity) * 0.78);
+            filter: blur(calc((1 - var(--intensity)) * 1.5px));
+            transition: opacity 240ms ease, filter 240ms ease;
+          }
+          /* Ribbon */
+          .pd-ribbon {
+            grid-area: ribbon;
+            border-bottom: 1px solid rgba(232,239,247,0.14);
+            display: flex; align-items: center;
+            padding: 0 18px;
+            gap: 22px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+            color: rgba(232,239,247,0.5);
+          }
+          .pd-ribbon .tab.active { color: #00E5FF; }
+          .pd-ribbon .filename {
+            margin-left: auto;
+            color: rgba(232,239,247,0.62);
+            letter-spacing: 0.12em;
+            text-transform: none;
+            font-size: 10px;
+          }
+          /* Browser */
+          .pd-browser {
+            grid-area: browser;
+            border-right: 1px solid rgba(232,239,247,0.14);
+            padding: 18px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            color: rgba(232,239,247,0.6);
+            overflow: hidden;
+          }
+          .pd-browser .tree-h {
+            color: #E8EFF7;
+            font-size: 9px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            margin: 14px 0 6px;
+          }
+          .pd-browser .tree-h:first-child { margin-top: 0; }
+          .pd-browser .item {
+            padding: 3px 0 3px 12px;
+            font-size: 11px;
+            letter-spacing: 0.02em;
+          }
+          .pd-browser .item.active {
+            color: #00E5FF;
+            background: rgba(0,229,255,0.08);
+            border-left: 2px solid #00E5FF;
+            padding-left: 10px;
+          }
+          /* Canvas */
+          .pd-canvas {
+            grid-area: canvas;
+            position: relative;
+            overflow: hidden;
+            background:
+              radial-gradient(ellipse at center, rgba(0,229,255,0.04), transparent 60%),
+              repeating-linear-gradient(0deg, transparent 0 39px, rgba(0,229,255,0.04) 39px 40px),
+              repeating-linear-gradient(90deg, transparent 0 39px, rgba(0,229,255,0.04) 39px 40px);
+          }
+          .pd-canvas svg { width: 100%; height: 100%; display: block; }
+          .pd-canvas .label-room {
+            font-family: 'Source Serif 4', Georgia, serif;
+            font-size: 13px;
+            font-style: italic;
+            fill: #E8EFF7;
+          }
+          .pd-canvas .label-area {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            fill: rgba(232,239,247,0.55);
+            letter-spacing: 0.05em;
+          }
+          .pd-canvas .grid-line { stroke: rgba(0,229,255,0.28); stroke-width: 0.5; stroke-dasharray: 3 3; }
+          .pd-canvas .grid-circle { fill: #0B1220; stroke: #00E5FF; stroke-width: 0.6; }
+          .pd-canvas .grid-text { fill: #00E5FF; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-anchor: middle; dominant-baseline: central; }
+          .pd-canvas .wall-ext { stroke: #E8EFF7; stroke-width: 4; fill: none; }
+          .pd-canvas .wall-int { stroke: #E8EFF7; stroke-width: 2; fill: none; }
+          .pd-canvas .door { stroke: rgba(232,239,247,0.55); stroke-width: 0.8; fill: none; }
+          .pd-canvas .dim-line { stroke: #00E5FF; stroke-width: 0.4; }
+          .pd-canvas .dim-text { fill: #00E5FF; font-family: 'JetBrains Mono', monospace; font-size: 9px; text-anchor: middle; }
+          /* Properties */
+          .pd-props {
+            grid-area: props;
+            border-left: 1px solid rgba(232,239,247,0.14);
+            padding: 18px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: rgba(232,239,247,0.62);
+            overflow: hidden;
+          }
+          .pd-props .ph {
+            color: #E8EFF7;
+            font-size: 9px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(232,239,247,0.14);
+          }
+          .pd-props .sel {
+            font-size: 11px;
+            color: #E8EFF7;
+            margin-bottom: 6px;
+            letter-spacing: 0.04em;
+          }
+          .pd-props .group-h {
+            color: rgba(232,239,247,0.45);
+            font-size: 8px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            margin: 12px 0 4px;
+            padding-bottom: 2px;
+            border-bottom: 1px dashed rgba(232,239,247,0.1);
+          }
+          .pd-props .row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 6px;
+            padding: 2px 0;
+            font-size: 10px;
+          }
+          .pd-props .row .k { color: rgba(232,239,247,0.48); }
+          .pd-props .row .v { color: #E8EFF7; }
+          .pd-props .row.accent .v { color: #00E5FF; }
+          /* Status */
+          .pd-status {
+            grid-area: status;
+            border-top: 1px solid rgba(232,239,247,0.14);
+            display: flex; align-items: center;
+            padding: 0 18px;
+            gap: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(232,239,247,0.48);
+          }
+          .pd-vignette {
+            position: absolute; inset: 0;
+            background: radial-gradient(60% 50% at 50% 50%, rgba(11,18,32,0.85) 0%, rgba(11,18,32,0.45) 60%, transparent 100%);
+            pointer-events: none;
+            z-index: 5;
+          }
+          @media (max-width: 900px) {
+            .phantom-dash {
+              grid-template-columns: 1fr;
+              grid-template-rows: 1fr;
+              grid-template-areas: "canvas";
+            }
+            .pd-ribbon, .pd-browser, .pd-props, .pd-status { display: none; }
+          }
+        `}</style>
+
+        {/* Ribbon */}
+        <div className="pd-ribbon" data-reveal>
+          <span className="tab">File</span>
+          <span className="tab active">Architecture</span>
+          <span className="tab">Structure</span>
+          <span className="tab">Annotate</span>
+          <span className="tab">View</span>
+          <span className="filename">[Residencial Demo.rvt] — Floor Plan: 04 Pav Tipo</span>
+        </div>
+
+        {/* Project Browser */}
+        <div className="pd-browser" data-reveal>
+          <div className="tree-h">▾ Views (all)</div>
+          <div className="tree-h" style={{marginTop:'6px'}}>▾ Floor Plans</div>
+          <div className="item">01 Térreo</div>
+          <div className="item">02 Mezanino</div>
+          <div className="item">03 Pav Tipo</div>
+          <div className="item active">04 Pav Tipo</div>
+          <div className="item">05 Pav Tipo</div>
+          <div className="tree-h">▾ Elevations</div>
+          <div className="item">Norte</div>
+          <div className="item">Sul</div>
+          <div className="item">Leste</div>
+          <div className="tree-h">▾ 3D Views</div>
+          <div className="item">3D Modelo</div>
+          <div className="tree-h">▾ Schedules</div>
+          <div className="item">Pintura</div>
+          <div className="item">Reboco</div>
+          <div className="item">Chapisco</div>
+        </div>
+
+        {/* Canvas — floor plan SVG */}
+        <div className="pd-canvas">
+          <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+            {/* Grid axes horizontais */}
+            <g data-reveal>
+              <line x1="60" y1="80" x2="740" y2="80" className="grid-line"/>
+              <circle cx="50" cy="80" r="12" className="grid-circle"/><text x="50" y="80" className="grid-text">1</text>
+            </g>
+            <g data-reveal>
+              <line x1="60" y1="200" x2="740" y2="200" className="grid-line"/>
+              <circle cx="50" cy="200" r="12" className="grid-circle"/><text x="50" y="200" className="grid-text">2</text>
+            </g>
+            <g data-reveal>
+              <line x1="60" y1="320" x2="740" y2="320" className="grid-line"/>
+              <circle cx="50" cy="320" r="12" className="grid-circle"/><text x="50" y="320" className="grid-text">3</text>
+            </g>
+            <g data-reveal>
+              <line x1="60" y1="440" x2="740" y2="440" className="grid-line"/>
+              <circle cx="50" cy="440" r="12" className="grid-circle"/><text x="50" y="440" className="grid-text">4</text>
+            </g>
+            {/* Grid axes verticais */}
+            <g data-reveal>
+              <line x1="120" y1="40" x2="120" y2="460" className="grid-line"/>
+              <circle cx="120" cy="30" r="12" className="grid-circle"/><text x="120" y="30" className="grid-text">A</text>
+            </g>
+            <g data-reveal>
+              <line x1="300" y1="40" x2="300" y2="460" className="grid-line"/>
+              <circle cx="300" cy="30" r="12" className="grid-circle"/><text x="300" y="30" className="grid-text">B</text>
+            </g>
+            <g data-reveal>
+              <line x1="500" y1="40" x2="500" y2="460" className="grid-line"/>
+              <circle cx="500" cy="30" r="12" className="grid-circle"/><text x="500" y="30" className="grid-text">C</text>
+            </g>
+            <g data-reveal>
+              <line x1="680" y1="40" x2="680" y2="460" className="grid-line"/>
+              <circle cx="680" cy="30" r="12" className="grid-circle"/><text x="680" y="30" className="grid-text">D</text>
+            </g>
+
+            {/* Paredes externas */}
+            <g data-reveal>
+              <rect x="120" y="80" width="560" height="360" className="wall-ext"/>
+            </g>
+            {/* Paredes internas */}
+            <g data-reveal>
+              <line x1="300" y1="80" x2="300" y2="260" className="wall-int"/>
+              <line x1="300" y1="200" x2="500" y2="200" className="wall-int"/>
+              <line x1="500" y1="80" x2="500" y2="320" className="wall-int"/>
+              <line x1="300" y1="320" x2="680" y2="320" className="wall-int"/>
+            </g>
+
+            {/* Portas (arcs) */}
+            <g data-reveal>
+              <path d="M 240 200 A 24 24 0 0 0 264 224" className="door"/>
+              <line x1="240" y1="200" x2="240" y2="224" className="door"/>
+            </g>
+            <g data-reveal>
+              <path d="M 380 200 A 24 24 0 0 0 404 224" className="door"/>
+              <line x1="380" y1="200" x2="380" y2="224" className="door"/>
+            </g>
+            <g data-reveal>
+              <path d="M 540 320 A 28 28 0 0 0 568 348" className="door"/>
+              <line x1="540" y1="320" x2="540" y2="348" className="door"/>
+            </g>
+
+            {/* Ambientes */}
+            <g data-reveal>
+              <text x="210" y="135" className="label-room">DORM 01</text>
+              <text x="210" y="152" className="label-area">12.4 m²</text>
+            </g>
+            <g data-reveal>
+              <text x="400" y="135" className="label-room">SUÍTE</text>
+              <text x="400" y="152" className="label-area">18.6 m²</text>
+            </g>
+            <g data-reveal>
+              <text x="590" y="195" className="label-room">LIVING / JANTAR</text>
+              <text x="590" y="212" className="label-area">28.2 m²</text>
+            </g>
+            <g data-reveal>
+              <text x="210" y="380" className="label-room">COZINHA</text>
+              <text x="210" y="397" className="label-area">9.8 m²</text>
+            </g>
+            <g data-reveal>
+              <text x="400" y="265" className="label-room">BWC</text>
+              <text x="400" y="282" className="label-area">4.2 m²</text>
+            </g>
+            <g data-reveal>
+              <text x="590" y="385" className="label-room">ÁREA SERVIÇO</text>
+              <text x="590" y="402" className="label-area">5.6 m²</text>
+            </g>
+
+            {/* Cotas externas top */}
+            <g data-reveal>
+              <line x1="120" y1="56" x2="300" y2="56" className="dim-line"/>
+              <line x1="120" y1="52" x2="120" y2="60" className="dim-line"/>
+              <line x1="300" y1="52" x2="300" y2="60" className="dim-line"/>
+              <text x="210" y="50" className="dim-text">3.55</text>
+            </g>
+            <g data-reveal>
+              <line x1="300" y1="56" x2="500" y2="56" className="dim-line"/>
+              <line x1="500" y1="52" x2="500" y2="60" className="dim-line"/>
+              <text x="400" y="50" className="dim-text">3.90</text>
+            </g>
+            <g data-reveal>
+              <line x1="500" y1="56" x2="680" y2="56" className="dim-line"/>
+              <line x1="680" y1="52" x2="680" y2="60" className="dim-line"/>
+              <text x="590" y="50" className="dim-text">3.55</text>
+            </g>
+            {/* Cotas left */}
+            <g data-reveal>
+              <line x1="96" y1="80" x2="96" y2="200" className="dim-line"/>
+              <line x1="92" y1="80" x2="100" y2="80" className="dim-line"/>
+              <line x1="92" y1="200" x2="100" y2="200" className="dim-line"/>
+              <text x="86" y="140" className="dim-text" transform="rotate(-90 86 140)">2.40</text>
+            </g>
+            <g data-reveal>
+              <line x1="96" y1="200" x2="96" y2="320" className="dim-line"/>
+              <line x1="92" y1="320" x2="100" y2="320" className="dim-line"/>
+              <text x="86" y="260" className="dim-text" transform="rotate(-90 86 260)">2.40</text>
+            </g>
+            <g data-reveal>
+              <line x1="96" y1="320" x2="96" y2="440" className="dim-line"/>
+              <line x1="92" y1="440" x2="100" y2="440" className="dim-line"/>
+              <text x="86" y="380" className="dim-text" transform="rotate(-90 86 380)">2.40</text>
+            </g>
+
+            {/* Selected wall highlight (cyan) */}
+            <g data-reveal>
+              <line x1="120" y1="200" x2="300" y2="200" stroke="#00E5FF" strokeWidth="5" opacity="0.7"/>
+            </g>
+          </svg>
+        </div>
+
+        {/* Properties panel */}
+        <div className="pd-props" data-reveal>
+          <div className="ph">Properties</div>
+          <div className="sel">Wall · Eixo 2 (A-B)</div>
+          <div className="group-h">Identity</div>
+          <div className="row"><span className="k">Family</span><span className="v">Basic Wall</span></div>
+          <div className="row"><span className="k">Type</span><span className="v">15cm Bloco</span></div>
+          <div className="row"><span className="k">Level</span><span className="v">04 Pav Tipo</span></div>
+          <div className="group-h">Dimensions</div>
+          <div className="row"><span className="k">Length</span><span className="v">3.55 m</span></div>
+          <div className="row"><span className="k">Height</span><span className="v">2.80 m</span></div>
+          <div className="row"><span className="k">Area</span><span className="v">9.94 m²</span></div>
+          <div className="group-h">Orçamento</div>
+          <div className="row accent"><span className="k">Código</span><span className="v">03.01.001</span></div>
+          <div className="row accent"><span className="k">Categoria</span><span className="v">Alvenaria</span></div>
+          <div className="row accent"><span className="k">Sub-cat</span><span className="v">Bloco</span></div>
+          <div className="row accent"><span className="k">Pavimento</span><span className="v">04</span></div>
+        </div>
+
+        {/* Status bar */}
+        <div className="pd-status" data-reveal>
+          <span>1 : 50</span>
+          <span>Metros</span>
+          <span>Level: 04 Pav Tipo</span>
+          <span style={{marginLeft:'auto', color:'#00E5FF', letterSpacing:'0.24em'}}>● John conectado</span>
+        </div>
+
+        <div className="pd-vignette"></div>
+      </div>
+
+      {/* Center overlay */}
+      <div className="relative z-10 max-w-3xl mx-auto text-center">
+        <p className="font-mono text-[10px] tracking-[0.4em] uppercase text-hero-mute mb-8 inline-flex items-center gap-3">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,229,255,0.7)]"></span>
+          IA dentro do Revit · L4
+        </p>
+
+        <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl font-medium tracking-[-0.025em] leading-[0.95] text-balance">
+          Diga o que quer.<br/><em className="hero-mark text-accent" style={{fontStyle:'italic'}}>O Revit faz</em>.
+        </h1>
+        <style>{`
+          .hero-mark {
+            position: relative;
+            display: inline-block;
+            white-space: nowrap;
+          }
+          .hero-mark::before {
+            content: "";
+            position: absolute;
+            left: -3%;
+            right: -3%;
+            bottom: 0.06em;
+            height: 0.42em;
+            background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.28) 8%, rgba(0, 229, 255, 0.40) 50%, rgba(0, 229, 255, 0.28) 92%, transparent 100%);
+            border-radius: 2px;
+            z-index: -1;
+            transform-origin: left center;
+            animation: heroMarkDraw 1100ms cubic-bezier(0.22, 1, 0.36, 1) 380ms both,
+                       heroMarkPulse 3.6s ease-in-out 1700ms infinite;
+          }
+          @keyframes heroMarkDraw {
+            0%   { transform: scaleX(0); opacity: 0; }
+            40%  { opacity: 1; }
+            100% { transform: scaleX(1); opacity: 1; }
+          }
+          @keyframes heroMarkPulse {
+            0%, 100% { filter: brightness(1); }
+            50%      { filter: brightness(1.45); }
+          }
+          .hero-cta-pulse {
+            position: relative;
+            overflow: hidden;
+          }
+          .hero-cta-pulse::after {
+            content: "";
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 40%;
+            left: -40%;
+            background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.45), transparent);
+            animation: heroCtaSweep 3.4s ease-in-out 1.2s infinite;
+            pointer-events: none;
+          }
+          @keyframes heroCtaSweep {
+            0%   { left: -40%; }
+            55%  { left: 110%; }
+            100% { left: 110%; }
+          }
+          .hero-cta-pulse:hover::after { animation-play-state: paused; }
+        `}</style>
+
+        <p className="mt-7 text-lg text-hero-mute leading-relaxed max-w-xl mx-auto text-pretty">
+          John é o assistente IA que mora dentro do Revit. Fala em português, modela, extrai quantitativo, cota planta — sem você abrir Dynamo, sem aprender script, sem clicar mil vezes.
+        </p>
+
+        <div className="mt-10 flex flex-wrap gap-3 items-center justify-center">
+          <a href="/john/autodiagnostico"
+             className="hero-cta-pulse inline-flex items-center gap-2 bg-accent text-hero-bg hover:bg-cyan-300 transition px-7 h-12 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+            Autodiagnóstico grátis
+            <IconArrowRight className="h-4 w-4"/>
+          </a>
+          <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+             className="inline-flex items-center gap-2 border border-hero-hair text-hero-fg hover:bg-hero-glass hover:border-accent transition px-7 h-12 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+            Agendar Demo
+          </a>
+        </div>
+
+        <div className="mt-12 font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute-2">
+          ↓ passe o mouse · revele o dashboard
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ----------------------------- DASHBOARD DEMO ----------------------------- */
+const KPICard = ({ label, value, hint, status }) => {
+  const color = status === "bad" ? "text-crit-dark" : status === "warn" ? "text-warn-dark" : status === "accent" ? "text-accent" : "text-ok-dark";
+  const isLong = String(value).length > 6;
+  const sizeCls = isLong ? "text-lg md:text-2xl" : "text-2xl md:text-3xl";
+  return (
+    <div className="border border-hero-hair bg-hero-glass p-5 min-w-0">
+      <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-hero-mute">{label}</div>
+      <div className={`mt-3 ${sizeCls} font-bold tabular-nums ${color} truncate`}>{value}</div>
+      <div className="mt-1 text-xs text-hero-mute leading-snug">{hint}</div>
+    </div>
+  );
+};
+
+const Tab = ({ active, onClick, children }) => (
+  <button onClick={onClick}
+    className={`whitespace-nowrap border-b-2 px-3 pb-3 pt-1 text-sm transition ${
+      active ? "border-accent text-white" : "border-transparent text-hero-mute hover:text-hero-fg"
+    }`}>
+    {children}
+  </button>
+);
+
+const Badge = ({ tone = "amber", children }) => {
+  const tones = {
+    amber: "bg-amber-500/15 text-warn-dark border-amber-500/30",
+    red: "bg-red-500/15 text-crit-dark border-red-500/30",
+    accent: "bg-cyan-400/15 text-accent border-cyan-400/30",
+  };
+  return (
+    <span className={`inline-flex items-center px-2.5 py-1 text-[10px] font-mono tracking-[0.18em] uppercase border ${tones[tone]}`}>
+      {children}
+    </span>
+  );
+};
+
+/* ----- ANIMATION HOOKS ----- */
+const useDashView = (threshold = 0.15) => {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    if (!ref.current || inView) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setInView(true); obs.disconnect(); }
+    }, { threshold });
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [inView, threshold]);
+  return [ref, inView];
+};
+
+const useCountTo = (target, active, duration = 1800) => {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!active) { setVal(0); return; }
+    let raf, t0;
+    const tick = (t) => {
+      if (!t0) t0 = t;
+      const k = Math.min(1, (t - t0) / duration);
+      const eased = 1 - Math.pow(1 - k, 4);
+      setVal(Math.round(target * eased));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, active, duration]);
+  return val;
+};
+
+const MiniSpark = ({ values, active, color = "#00E5FF" }) => {
+  const max = Math.max(...values), min = Math.min(...values);
+  const range = max - min || 1;
+  const w = 120, h = 30;
+  const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - ((v - min) / range) * (h - 2) - 1}`).join(" ");
+  return (
+    <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="mt-3"
+      style={{ opacity: active ? 1 : 0, transition: "opacity 800ms 1400ms ease-out" }}>
+      <polyline fill="none" stroke={color} strokeWidth="1.5" points={pts} strokeLinecap="round" strokeLinejoin="round"
+        style={{ filter: `drop-shadow(0 0 4px ${color})` }}/>
+    </svg>
+  );
+};
+
+const DashboardDemo = () => {
+  const [tab, setTab] = useState("resumo");
+  const totalQuant = demoData.quantitativo.reduce((s, q) => s + q.total, 0);
+  const [containerRef, inView] = useDashView(0.1);
+  const paredesCount = useCountTo(demoData.paredes, inView);
+  const partsCount = useCountTo(demoData.parts, inView, 2200);
+  const cotasCount = useCountTo(demoData.cotas, inView, 1600);
+  const eapCount = useCountTo(demoData.paramsEap, inView, 2200);
+  const pintura = useCountTo(demoData.m2Pintura, inView, 1800);
+  const reboco = useCountTo(demoData.m2Reboco, inView, 1800);
+  const chapisco = useCountTo(demoData.m2Chapisco, inView, 1800);
+  const bloco = useCountTo(demoData.m3Bloco, inView, 1800);
+
+  return (
+    <div ref={containerRef} className="relative bg-hero-bg-2 text-hero-fg border border-accent/30 shadow-[0_30px_120px_-30px_rgba(0,229,255,0.4)] overflow-hidden">
+      {/* AMBIENT GLOW */}
+      <div className="pointer-events-none absolute inset-0 opacity-50">
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-accent/10 blur-3xl"/>
+        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-500/15 blur-3xl"/>
+      </div>
+
+      {/* LIVE STATUS BAR */}
+      <div className="relative px-6 py-4 border-b border-hero-hair flex items-center justify-between flex-wrap gap-3 bg-hero-bg/40 backdrop-blur">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"/>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent shadow-[0_0_10px_rgba(0,229,255,0.9)]"/>
+            </span>
+            <span className="font-mono text-[10px] tracking-[0.32em] uppercase text-accent">Sessão ao vivo</span>
+          </div>
+          <span className="hidden sm:inline h-3 w-px bg-hero-hair"/>
+          <span className="hidden sm:inline font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute tabular-nums">
+            8m · 12s
+          </span>
+        </div>
+        <Badge tone="accent">DEMO</Badge>
+      </div>
+
+      {/* HERO STATS */}
+      <div className="relative px-6 py-10 border-b border-hero-hair">
+        <div className="grid grid-cols-3 gap-6 md:gap-12">
+          <div>
+            <div className="font-mono text-[10px] tracking-[0.32em] uppercase text-hero-mute">paredes</div>
+            <div className="mt-3 font-serif text-5xl md:text-7xl font-medium tabular-nums tracking-tight leading-none">
+              {fmtNum(paredesCount)}
+            </div>
+            <div className="mt-3 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute">paredes do modelo</div>
+            <MiniSpark values={[40, 120, 240, 320, 400, 460, 482]} active={inView}/>
+          </div>
+          <div className="border-l border-accent/30 pl-6 md:pl-12">
+            <div className="font-mono text-[10px] tracking-[0.32em] uppercase text-accent">parts</div>
+            <div className="mt-3 font-serif text-5xl md:text-7xl font-medium tabular-nums tracking-tight leading-none text-accent" style={{textShadow: "0 0 30px rgba(0,229,255,0.5)"}}>
+              {fmtNum(partsCount)}
+            </div>
+            <div className="mt-3 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute">9 camadas/parede</div>
+            <MiniSpark values={[120, 480, 1240, 2180, 3120, 3920, 4338]} active={inView}/>
+          </div>
+          <div className="border-l border-hero-hair pl-6 md:pl-12">
+            <div className="font-mono text-[10px] tracking-[0.32em] uppercase text-hero-mute">cotas</div>
+            <div className="mt-3 font-serif text-5xl md:text-7xl font-medium tabular-nums tracking-tight leading-none">
+              {fmtNum(cotasCount)}
+            </div>
+            <div className="mt-3 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute">cota corrida 4 lados</div>
+            <MiniSpark values={[12, 48, 110, 180, 240, 290, 312]} active={inView} color="#E8B354"/>
+          </div>
+        </div>
+        <div className="mt-8 flex items-center justify-between flex-wrap gap-2 font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute">
+          <div className="flex items-center gap-3">
+            <span>· Residencial Demo · 12 pav · 3 torres</span>
+          </div>
+          <div className="text-accent">{demoData.arquivo}</div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="px-3 md:px-6 pt-4">
+        <div className="tabs-list border-b border-hero-hair flex gap-2 overflow-x-auto" style={{scrollbarWidth:"none"}}>
+          {[
+            { v: "resumo", l: "Resumo do Modelo" },
+            { v: "quantitativo", l: "Quantitativo" },
+            { v: "eap", l: "Códigos de orçamento" },
+            { v: "log", l: "Log de Operações" }
+          ].map(t => (
+            <Tab key={t.v} active={tab === t.v} onClick={() => setTab(t.v)}>{t.l}</Tab>
+          ))}
+        </div>
+      </div>
+
+      {/* RESUMO */}
+      {tab === "resumo" && (
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KPICard label="Paredes processadas" value={fmtNum(demoData.paredes)} hint="482 do projeto inteiro" status="ok" />
+            <KPICard label="Elementos preparados" value={fmtNum(demoData.parts)} hint="cada parede em 9 camadas" status="accent" />
+            <KPICard label="Códigos atribuídos" value={fmtNum(demoData.paramsEap)} hint="pronto pro orçamento" status="accent" />
+            <KPICard label="Cotas em planta" value={fmtNum(demoData.cotas)} hint="Cota corrida · 4 lados" status="warn" />
+          </div>
+          <div>
+            <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-hero-mute mb-3">
+              Saída final
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {[
+                { titulo: "Modelo Revit enriquecido", desc: "Elementos + códigos de orçamento + estrutura padrão" },
+                { titulo: "Tabelas de quantitativo", desc: "Por revestimento (pintura, reboco, chapisco, bloco) e pavimento" },
+                { titulo: "312 cotas em planta", desc: "Cota corrida ext+int gerada por pavimento" }
+              ].map((s, i) => (
+                <div key={i} className="border border-hero-hair p-4 flex items-start gap-3 bg-hero-glass">
+                  <IconCheck className="h-4 w-4 mt-0.5 text-accent flex-shrink-0" strokeWidth={2}/>
+                  <div>
+                    <div className="text-sm font-semibold">{s.titulo}</div>
+                    <div className="text-xs text-hero-mute mt-1">{s.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QUANTITATIVO */}
+      {tab === "quantitativo" && (
+        <div className="p-6 space-y-6 relative">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KPICard label="Pintura" value={fmtNum(pintura)} hint="m² · PVA Látex" status="ok" />
+            <KPICard label="Reboco" value={fmtNum(reboco)} hint="m² · Massa única" status="ok" />
+            <KPICard label="Chapisco" value={fmtNum(chapisco)} hint="m² · Cimento+areia" status="ok" />
+            <KPICard label="Bloco cerâmico" value={fmtNum(bloco)} hint="m³ · 14×19×29" status="ok" />
+          </div>
+          <div>
+            <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-hero-mute mb-3">
+              Tabela extraída do modelo
+            </div>
+            <div className="border border-hero-hair">
+              <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-hero-hair font-mono text-[10px] tracking-wider uppercase text-hero-mute">
+                <div className="col-span-4">Material</div>
+                <div className="col-span-2 text-right">Unid.</div>
+                <div className="col-span-2 text-right">Qtd</div>
+                <div className="col-span-2 text-right">Custo unit.</div>
+                <div className="col-span-2 text-right">Total</div>
+              </div>
+              {demoData.quantitativo.map((q, i) => (
+                <div key={i} className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-hero-hair text-sm last:border-b-0">
+                  <div className="col-span-4">{q.material}</div>
+                  <div className="col-span-2 text-right tabular-nums text-hero-mute">{q.un}</div>
+                  <div className="col-span-2 text-right tabular-nums">{fmtNum(q.qtd)}</div>
+                  <div className="col-span-2 text-right tabular-nums text-hero-mute">{fmtBRL(q.custo)}</div>
+                  <div className="col-span-2 text-right tabular-nums font-mono text-accent">{fmtBRL(q.total)}</div>
+                </div>
+              ))}
+              <div className="grid grid-cols-12 gap-2 px-4 py-3 text-sm bg-hero-glass font-semibold">
+                <div className="col-span-10 text-right">Total</div>
+                <div className="col-span-2 text-right tabular-nums font-mono text-accent">{fmtBRL(totalQuant)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CÓDIGOS DE ORÇAMENTO */}
+      {tab === "eap" && (
+        <div className="p-6 space-y-6">
+          <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-hero-mute">
+            Códigos de orçamento atribuídos a cada elemento
+          </div>
+          <div className="border border-hero-hair">
+            <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-hero-hair font-mono text-[10px] tracking-wider uppercase text-hero-mute">
+              <div className="col-span-2">Código</div>
+              <div className="col-span-3">Categoria</div>
+              <div className="col-span-3">Nível 2</div>
+              <div className="col-span-2">Nível 3</div>
+              <div className="col-span-2 text-right">Elementos</div>
+            </div>
+            {demoData.eap.map((e, i) => (
+              <div key={i} className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-hero-hair text-sm last:border-b-0">
+                <div className="col-span-2 font-mono text-accent">{e.codigo}</div>
+                <div className="col-span-3">{e.n1}</div>
+                <div className="col-span-3 text-hero-mute">{e.n2}</div>
+                <div className="col-span-2 text-hero-mute">{e.n3}</div>
+                <div className="col-span-2 text-right tabular-nums">{fmtNum(e.parts)}</div>
+              </div>
+            ))}
+          </div>
+          <div className="border border-hero-hair p-4 bg-hero-glass flex items-start gap-3">
+            <IconCheck className="h-4 w-4 text-accent mt-0.5 flex-shrink-0" strokeWidth={2}/>
+            <div className="text-sm text-hero-fg">
+              Todos os 4.338 elementos têm código de orçamento, categoria e pavimento atribuídos — prontos pra cruzar com qualquer sistema (Sienge, AltoQi, planilha).
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LOG */}
+      {tab === "log" && (
+        <div className="p-6 space-y-4 relative">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-hero-mute flex items-center gap-2">
+              <span className="text-accent">$</span> tail -f john-session.log
+            </div>
+            <div className="font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute-2">8 skills · 0 erros</div>
+          </div>
+          <div className="space-y-2 font-mono text-xs bg-hero-bg/60 border border-hero-hair p-4 max-h-[500px] overflow-y-auto">
+            {demoData.log.map((l, i) => {
+              const isWarn = l.status === "warn";
+              return (
+                <div key={i} className="flex items-start gap-3 group hover:bg-hero-glass transition rounded px-2 py-1.5"
+                  style={{
+                    opacity: inView ? 1 : 0,
+                    transform: inView ? "translateX(0)" : "translateX(-12px)",
+                    transition: `opacity 500ms ${i * 180}ms ease-out, transform 500ms ${i * 180}ms cubic-bezier(0.22, 1, 0.36, 1)`
+                  }}>
+                  <span className="text-hero-mute-2 tabular-nums w-8 flex-shrink-0">{String(i+1).padStart(2,"0")}</span>
+                  <span className={`flex-shrink-0 ${isWarn ? "text-warn-dark" : "text-ok-dark"}`}>{isWarn ? "▲" : "✓"}</span>
+                  <span className={`flex-shrink-0 w-44 truncate ${isWarn ? "text-warn-dark" : "text-accent"}`}>{l.skill}</span>
+                  <span className="flex-shrink-0 text-hero-mute-2 w-16 tabular-nums">{l.dur}</span>
+                  <span className="flex-1 text-hero-mute break-words">{l.out}</span>
+                </div>
+              );
+            })}
+            <div className="flex items-center gap-2 pt-2 border-t border-hero-hair text-accent"
+              style={{
+                opacity: inView ? 1 : 0,
+                transition: `opacity 600ms ${demoData.log.length * 180 + 200}ms ease-out`
+              }}>
+              <span className="animate-pulse">▊</span>
+              <span className="text-hero-mute">aguardando próximo comando...</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const DashboardSection = () => (
+  <section id="saida" className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg relative grain-bg overflow-hidden">
+    <div className="pointer-events-none absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-accent/[0.06] blur-3xl"/>
+
+    <div className="relative">
+      <div className="flex items-center gap-3 mb-3">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"/>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-accent shadow-[0_0_10px_rgba(0,229,255,0.9)]"/>
+        </span>
+        <p className="font-mono text-[11px] tracking-[0.32em] uppercase text-accent">01 — Sessão ao vivo</p>
+      </div>
+      <h2 className="font-serif text-4xl md:text-6xl lg:text-7xl font-medium tracking-[-0.02em] leading-[0.95] max-w-4xl">
+        Veja o John operando<br/><span className="italic text-accent">em tempo real</span>.
+      </h2>
+      <p className="mt-6 max-w-xl text-hero-mute text-lg leading-relaxed">
+        Centenas de elementos processados em minutos. Tudo o que você precisaria fazer manualmente, rolando.
+      </p>
+    </div>
+
+    <div className="relative mt-16">
+      <DashboardDemo />
+    </div>
+    <p className="mt-6 text-xs text-hero-mute font-mono text-center">
+      Demo com modelo sintético · sua versão chega com seu .rvt real após o setup
+    </p>
+  </section>
+);
+
+/* ----------------------------- ARCHITECTURE ----------------------------- */
+const HowItWorksSection = () => (
+  <section id="processo" className="px-6 md:px-16 py-24 bg-hero-bg text-hero-fg relative grain-bg overflow-hidden">
+    <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-accent">02 — Como funciona</p>
+    <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-2xl">
+      Conversa. Pronto.
+    </h2>
+    <p className="mt-4 max-w-2xl text-hero-mute text-lg leading-relaxed">
+      Sem aprender programação, sem abrir Dynamo, sem treinar a equipe num plugin novo.
+    </p>
+
+    <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-2 items-stretch relative">
+      <div className="border border-hero-hair p-6 bg-hero-glass/40">
+        <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">01</div>
+        <div className="mt-3 font-serif text-2xl">Você fala</div>
+        <div className="mt-4 text-sm text-hero-mute leading-snug">
+          Em português, no chat. "Cota essas paredes" ou "lista pilares acima de 3m".
+        </div>
+        <div className="mt-6 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute-2">linguagem natural</div>
+      </div>
+
+      <div className="relative border border-accent/40 p-6 bg-accent/[0.05] shadow-[0_0_60px_-20px_rgba(0,229,255,0.4)]">
+        <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-accent">02</div>
+        <div className="mt-3 font-serif text-2xl text-accent">John entende</div>
+        <div className="mt-4 text-sm text-hero-fg leading-snug">
+          Traduz pra ação no Revit. Mostra o que vai fazer antes de tocar no modelo.
+        </div>
+        <div className="mt-6 font-mono text-[10px] tracking-[0.22em] uppercase text-accent">IA + sua API Revit</div>
+        <div className="hidden md:flex absolute -left-1 top-1/2 -translate-y-1/2 -translate-x-full pr-2 text-accent font-mono text-xs">⟵</div>
+        <div className="hidden md:flex absolute -right-1 top-1/2 -translate-y-1/2 translate-x-full pl-2 text-accent font-mono text-xs">⟶</div>
+      </div>
+
+      <div className="border border-hero-hair p-6 bg-hero-glass/40">
+        <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">03</div>
+        <div className="mt-3 font-serif text-2xl">Você revisa</div>
+        <div className="mt-4 text-sm text-hero-mute leading-snug">
+          Aprova ou pede ajuste. Se errou, desfaz. Tudo auditável.
+        </div>
+        <div className="mt-6 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute-2">você no controle</div>
+      </div>
+    </div>
+
+    <div className="mt-8 flex items-center justify-center gap-2 font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute-2 text-center">
+      <span className="h-px w-12 bg-hero-hair"/>
+      tudo roda no seu PC · modelo nunca sai do .rvt
+      <span className="h-px w-12 bg-hero-hair"/>
+    </div>
+  </section>
+);
+
+/* ----------------------------- SKILLS GRID ----------------------------- */
+const SkillsSection = () => {
+  const capabilities = [
+    {
+      cat: "Modelagem",
+      ex: "\"Cria 12 paredes de 4m no eixo A entre níveis 1 e 2\"",
+      tags: ["paredes", "pisos", "esquadrias", "MEP", "famílias"]
+    },
+    {
+      cat: "Extração",
+      ex: "\"Lista todos pilares com altura > 3m em CSV\"",
+      tags: ["quantitativo", "schedules", "params", "geometria"]
+    },
+    {
+      cat: "Validação",
+      ex: "\"Acha paredes sem material atribuído no pavimento 5\"",
+      tags: ["coerência", "padrões", "clash", "warnings"]
+    },
+    {
+      cat: "Documentação",
+      ex: "\"Cota todas paredes externas ext+int por pavimento\"",
+      tags: ["cotas", "tags", "legendas", "view filters"]
+    },
+    {
+      cat: "Orçamento",
+      ex: "\"Liga cada elemento ao código do meu orçamento\"",
+      tags: ["códigos", "tabelas", "quantitativo", "custo"]
+    },
+    {
+      cat: "Avançado",
+      ex: "\"Roda esse script C# pra renomear paredes por padrão\"",
+      tags: ["scripts", "automação em lote", "API completa"]
+    }
+  ];
+  const skills = [
+    "diagnose", "compound-structure", "create-parts", "revestimento-tag",
+    "bind-eap-inst", "populate-eap", "create-schedule", "cota-corrida"
+  ];
+  return (
+    <section id="skills" className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg relative grain-bg overflow-hidden">
+      <div className="pointer-events-none absolute -top-32 -left-32 w-[400px] h-[400px] rounded-full bg-accent/[0.06] blur-3xl"/>
+
+      <div className="relative">
+        <p className="font-mono text-[11px] tracking-[0.32em] uppercase text-accent">03 — Capacidades</p>
+        <h2 className="mt-4 font-serif text-4xl md:text-6xl font-medium tracking-[-0.02em] leading-[0.95] max-w-4xl">
+          Tudo que a API do Revit faz,<br/><span className="italic text-accent">John faz</span>.
+        </h2>
+        <p className="mt-6 max-w-2xl text-hero-mute text-lg leading-relaxed">
+          Conversa em português. John traduz pro Revit, mostra o que vai fazer e espera você aprovar. Tudo que a sua equipe faz na mão hoje — só que em minutos.
+        </p>
+      </div>
+
+      <div className="relative mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+        {capabilities.map((c, i) => (
+          <div key={i} className="group relative border border-hero-hair p-6 bg-hero-glass/30 hover:border-accent hover:bg-accent/[0.04] transition-all duration-300 flex flex-col">
+            <div className="flex items-baseline justify-between">
+              <div className="font-serif text-2xl font-medium tracking-tight">{c.cat}</div>
+              <div className="font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute-2 tabular-nums">{String(i+1).padStart(2,"0")}</div>
+            </div>
+            <div className="mt-4 font-mono text-xs text-hero-mute leading-relaxed italic flex-1 min-h-[44px]">
+              {c.ex}
+            </div>
+            <div className="mt-4 pt-4 border-t border-hero-hair flex flex-wrap gap-1.5">
+              {c.tags.map((t, j) => (
+                <span key={j} className="font-mono text-[9px] tracking-[0.18em] uppercase text-hero-mute-2 px-1.5 py-0.5 border border-hero-hair group-hover:border-accent/40 group-hover:text-accent transition">{t}</span>
+              ))}
+            </div>
+            <div className="absolute bottom-0 left-0 h-px w-0 bg-accent group-hover:w-full transition-all duration-500"/>
+          </div>
+        ))}
+      </div>
+
+      <div className="relative mt-16 border-t border-hero-hair pt-12">
+        <div className="flex items-end justify-between flex-wrap gap-4">
+          <div>
+            <p className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">+ workflows prontos</p>
+            <h3 className="mt-3 font-serif text-2xl md:text-3xl font-medium tracking-tight max-w-2xl">
+              Tarefas comuns viram <span className="italic text-accent">um clique</span>
+            </h3>
+          </div>
+          <div className="font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute-2 max-w-xs text-right">
+            sequências já testadas em obra<br/>chamadas por nome curto
+          </div>
+        </div>
+        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[
+            "analisar modelo",
+            "padronizar paredes",
+            "preparar quantitativo",
+            "classificar revestimento",
+            "configurar códigos",
+            "preencher orçamento",
+            "gerar tabelas",
+            "cotar em planta"
+          ].map((s, i) => (
+            <div key={i} className="group border border-hero-hair p-3 bg-hero-glass/20 hover:border-accent/50 transition-all">
+              <div className="font-mono text-[10px] text-hero-mute-2 tabular-nums">{String(i+1).padStart(2,"0")}</div>
+              <div className="mt-1 text-xs text-hero-fg leading-tight">{s}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-6 text-xs text-hero-mute">
+          Novos workflows são adicionados conforme equipe pede.
+        </p>
+      </div>
+    </section>
+  );
+};
+
+/* ----------------------------- IMPACT METRICS ----------------------------- */
+const BeforeAfterSection = () => {
+  const metrics = [
+    { v: "2sem", arrow: "→", v2: "40min", l: "tarefa repetitiva no Revit" },
+    { v: "0", l: "plugin novo pra instalar", sub: "roda no Claude Desktop" },
+    { v: "PT-BR", l: "você fala português", sub: "John traduz pra ação" },
+    { v: "100%", l: "auditável e reversível", sub: "você aprova antes" }
+  ];
+  return (
+    <section className="px-6 md:px-16 py-24 bg-hero-bg text-hero-fg">
+      <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">04 — O que muda</p>
+      <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
+        Menos clique, mais projeto.
+      </h2>
+      <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-2">
+        {metrics.map((m, i) => (
+          <div key={i} className="border-t-2 border-accent pt-5 pr-4">
+            <div className="font-serif text-3xl md:text-5xl font-medium tabular-nums tracking-tight leading-none">
+              {m.v}
+              {m.arrow && <span className="text-accent mx-1 md:mx-2">{m.arrow}</span>}
+              {m.v2 && <span>{m.v2}</span>}
+            </div>
+            <div className="mt-4 text-sm text-hero-fg">{m.l}</div>
+            {m.sub && <div className="mt-1 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute">{m.sub}</div>}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/* ----------------------------- STACK ----------------------------- */
+const AboutSection = () => (
+  <section id="sobre" className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg relative grain-bg">
+    <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">05 — Sem pegadinha</p>
+    <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
+      IA séria, não brinquedo.
+    </h2>
+    <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-2">
+      {[
+        { k: "Seu PC, seu modelo", v: "Tudo roda local. O Revit não envia projeto pra nuvem. Sem upload, sem vazamento." },
+        { k: "Você aprova", v: "John mostra exatamente o que vai fazer antes de mexer. Recusa, ajusta, refaz. Você no comando." },
+        { k: "Testado em obra", v: "Validado em projetos reais de construtora. Bug encontrado vira correção pra todo mundo." }
+      ].map((c, i) => (
+        <div key={i} className="border border-hero-hair p-6 bg-hero-glass/30">
+          <div className="font-mono text-[10px] tracking-[0.24em] uppercase text-accent">{c.k}</div>
+          <p className="mt-4 text-sm md:text-base text-hero-fg leading-snug">{c.v}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+);
+
+/* ----------------------------- FAQ ----------------------------- */
+const FAQSection = () => {
+  const items = [
+    { q: "Preciso saber programar?", a: "Não. Conversa em português normal — John traduz." },
+    { q: "Funciona em qualquer projeto?", a: "Residencial, comercial, industrial, infra. Qualquer modelo Revit." },
+    { q: "Versão do Revit?", a: "2023, 2024, 2025 ou 2026. Cada uma tem build próprio." },
+    { q: "John modifica meu modelo sem avisar?", a: "Não. Mostra o que vai fazer e espera aprovação. Você sempre decide." },
+    { q: "Meus dados ficam protegidos?", a: "Sim. Tudo roda no seu PC. Modelo nunca sai do .rvt." },
+    { q: "Substitui meu orçamentista / coordenador?", a: "Não. Tira o tempo deles em tarefa repetitiva pra focar em decisão." }
+  ];
+  const [open, setOpen] = useState(-1);
+  return (
+    <section id="faq" className="px-6 md:px-16 py-24 bg-hero-bg text-hero-fg relative grain-bg">
+      <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">06 — FAQ</p>
+      <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-2xl">
+        Antes de agendar.
+      </h2>
+      <div className="mt-12 max-w-4xl">
+        {items.map((it, i) => (
+          <button key={i} onClick={() => setOpen(open === i ? -1 : i)}
+            className="w-full text-left py-5 px-2 grid grid-cols-12 gap-4 items-baseline border-b border-hero-hair hover:bg-hero-glass/40 transition group">
+            <div className="col-span-12 md:col-span-5 font-serif text-base md:text-lg font-medium flex items-center gap-2">
+              <span className="font-mono text-[10px] text-accent tabular-nums">{String(i+1).padStart(2,"0")}</span>
+              {it.q}
+            </div>
+            <div className={`col-span-12 md:col-span-7 text-sm text-hero-mute transition-all ${open === i ? "opacity-100" : "opacity-70"}`}>
+              {it.a}
+            </div>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/* ----------------------------- CTA ----------------------------- */
+const CTASection = () => {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const handleWaitlist = (e) => {
+    e.preventDefault();
+    console.log("[John waitlist]", { email, destination: WAITLIST_EMAIL });
+    setSubmitted(true);
+  };
+  return (
+    <section className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg">
+      <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">07 — Próximo passo</p>
+      <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
+        30 minutos. Demo ao vivo no seu modelo .rvt.
+      </h2>
+
+      <a href="/john/app/" className="mt-8 inline-flex items-center justify-between gap-6 border border-accent/40 bg-accent/[0.05] hover:bg-accent/[0.10] hover:border-accent transition px-5 py-3 w-full md:w-auto group">
+        <div className="flex items-center gap-3">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(0,229,255,0.7)]"/>
+          <span className="font-mono text-[10px] tracking-[0.24em] uppercase text-accent">Já é cliente?</span>
+          <span className="text-sm text-hero-fg">Acesse a plataforma — instalação, skills, suporte.</span>
+        </div>
+        <IconArrowRight className="h-4 w-4 text-accent group-hover:translate-x-1 transition"/>
+      </a>
+
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+           className="group border border-hero-hair p-8 hover:border-accent hover:bg-hero-glass transition flex flex-col">
+          <div className="flex items-center justify-between">
+            <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent">Recomendado</div>
+            <div className="h-1.5 w-1.5 bg-accent rounded-full shadow-[0_0_10px_rgba(0,229,255,0.7)]" />
+          </div>
+          <div className="mt-4 font-serif text-2xl font-medium tracking-tight">Agendar Demo</div>
+          <div className="mt-2 text-sm text-hero-mute leading-relaxed">
+            Call de 30min. John analisa o seu modelo Revit ao vivo.
+          </div>
+          <div className="mt-6 inline-flex items-center gap-2 text-sm font-mono group-hover:translate-x-1 transition">
+            Calendly <IconArrowRight className="h-3.5 w-3.5"/>
+          </div>
+        </a>
+
+        <a href={`https://wa.me/${WHATSAPP_NUMBER.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Olá Romell, vim da página do John. Quero entender automação Revit.")}`}
+           target="_blank" rel="noopener noreferrer"
+           className="group border border-hero-hair p-8 hover:border-accent hover:bg-hero-glass transition flex flex-col">
+          <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-hero-mute">Pergunta rápida</div>
+          <div className="mt-4 font-serif text-2xl font-medium tracking-tight">WhatsApp</div>
+          <div className="mt-2 text-sm text-hero-mute leading-relaxed font-mono">{WHATSAPP_DISPLAY}</div>
+          <div className="text-xs text-hero-mute mt-1">Resposta em horário comercial.</div>
+          <div className="mt-auto pt-6 inline-flex items-center gap-2 text-sm font-mono group-hover:translate-x-1 transition">
+            Abrir conversa <IconArrowRight className="h-3.5 w-3.5"/>
+          </div>
+        </a>
+
+        <form onSubmit={handleWaitlist} className="border border-hero-hair p-8 flex flex-col">
+          <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-hero-mute">Sem urgência</div>
+          <div className="mt-4 font-serif text-2xl font-medium tracking-tight">Lista de espera</div>
+          <div className="mt-2 text-sm text-hero-mute leading-relaxed">
+            Receba avisos de novas skills do John e abertura de slots.
+          </div>
+          {submitted ? (
+            <div className="mt-6 text-sm font-mono text-accent inline-flex items-center gap-2">
+              <IconCheck className="h-4 w-4" strokeWidth={2.5}/> Recebido. Em breve entramos em contato.
+            </div>
+          ) : (
+            <div className="mt-6 flex gap-2">
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                className="flex-1 bg-transparent border border-hero-hair focus:border-accent outline-none text-white placeholder:text-hero-mute px-3 h-10 text-sm font-mono" />
+              <button type="submit" className="bg-hero-fg text-hero-bg hover:bg-white transition px-4 h-10 text-[10px] tracking-[0.24em] uppercase font-semibold font-mono rounded-full">
+                OK
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+
+      <div className="mt-16 pt-8 border-t border-hero-hair flex items-center gap-4 text-xs font-mono text-hero-mute flex-wrap">
+        <IconShield className="h-4 w-4" strokeWidth={1.6}/>
+        <span>Modelo nunca sai do seu PC · roda 100% local · suporte humano em cada sessão</span>
+      </div>
+
+      <div className="mt-16 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <Wordmark dark />
+        <div className="font-mono text-[11px] tracking-[0.18em] text-hero-mute">© John · L4 Engenharia · Ilhéus · Bahia · Brasil</div>
+      </div>
+    </section>
+  );
+};
+
+/* ----------------------------- WHATSAPP FAB ----------------------------- */
+const WhatsAppFloating = () => (
+  <a href={`https://wa.me/${WHATSAPP_NUMBER.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Olá Romell, vim da página do John. Quero entender automação Revit.")}`}
+     target="_blank" rel="noopener noreferrer"
+     className="fixed bottom-6 right-6 z-50 inline-flex items-center justify-center h-14 w-14 rounded-full bg-accent text-hero-bg shadow-[0_10px_30px_-5px_rgba(0,229,255,0.55)] hover:bg-cyan-300 transition"
+     aria-label="Falar no WhatsApp">
+    <IconChat className="h-6 w-6" strokeWidth={2}/>
+  </a>
+);
+
+/* ----------------------------- APP ----------------------------- */
+const App = () => (
+  <main className="font-sans">
+    <Nav />
+    <HeroSection />
+    <DashboardSection />
+    <HowItWorksSection />
+    <SkillsSection />
+    <BeforeAfterSection />
+    <AboutSection />
+    <FAQSection />
+    <CTASection />
+    <WhatsAppFloating />
+  </main>
+);
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+
+</body></html>

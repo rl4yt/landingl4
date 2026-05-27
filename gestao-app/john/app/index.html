@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>John — Plataforma · Acesso</title>
+<script>
+  window.tailwind = window.tailwind || {};
+  window.tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          serif: ['Source Serif 4', 'Source Serif Pro', 'Georgia', 'serif'],
+        },
+        colors: {
+          'hero-bg': '#0B1220',
+          'hero-bg-2': '#131D33',
+          'hero-fg': '#E8EFF7',
+          'hero-mute': 'rgba(232, 239, 247, 0.62)',
+          'hero-mute-2': 'rgba(232, 239, 247, 0.38)',
+          'hero-hair': 'rgba(232, 239, 247, 0.14)',
+          'hero-glass': 'rgba(232, 239, 247, 0.06)',
+          'crit-dark': '#ED7878',
+          'warn-dark': '#E8B354',
+          'ok-dark':   '#6DCB8E',
+          'accent':    '#00E5FF',
+        }
+      }
+    }
+  }
+</script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; background: #0B1220; color: #E8EFF7; }
+
+  /* Blueprint background: grid + radial gradients + bg image fallback */
+  .bg-blueprint {
+    position: relative;
+    background-color: #0B1220;
+    background-image:
+      linear-gradient(rgba(11,18,32,0.82), rgba(11,18,32,0.95)),
+      url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=2400&q=70');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+  .bg-grid::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 39px, rgba(0,229,255,0.05) 39px 40px),
+      repeating-linear-gradient(90deg, transparent 0 39px, rgba(0,229,255,0.05) 39px 40px);
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+  .bg-glow::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(800px 600px at 25% 30%, rgba(0,229,255,0.12), transparent 65%),
+      radial-gradient(900px 700px at 75% 70%, rgba(64,90,180,0.18), transparent 65%);
+    pointer-events: none;
+  }
+  .grain::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                      radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 3px 3px, 5px 5px;
+    mix-blend-mode: overlay; opacity: 0.45; pointer-events: none;
+  }
+  code, pre { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+  .pulse-dot {
+    animation: pulse-soft 2.4s ease-in-out infinite;
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.7);
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.4); }
+  }
+  .code-input {
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(232,239,247,0.25);
+    outline: none;
+    color: #E8EFF7;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.25rem;
+    letter-spacing: 0.18em;
+    text-align: center;
+    text-transform: uppercase;
+    padding: 0.75rem 0;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+  .code-input:focus { border-bottom-color: #00E5FF; box-shadow: 0 1px 0 0 #00E5FF; }
+  .code-input::placeholder { color: rgba(232,239,247,0.25); letter-spacing: 0.18em; }
+  .fade-in { animation: fadein 700ms cubic-bezier(0.22,1,0.36,1) both; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+</head>
+<body>
+
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <defs>
+    <symbol id="L4-solid" viewBox="0 0 124 88">
+      <g fill="currentColor" fill-rule="evenodd">
+        <rect x="8" y="8" width="15" height="59"/>
+        <rect x="24" y="68" width="64" height="12"/>
+        <path d="M 74 8 L 28 52 L 28 62 L 73 62 L 73 8 Z M 70 14 L 34 50 L 70 50 Z"/>
+        <rect x="74" y="8" width="14" height="59"/>
+        <rect x="96" y="68" width="12" height="12"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect } = React;
+
+const CALENDLY_URL = "https://calendar.app.google/MEkG8tsWszd2sXtn9";
+const WHATSAPP_NUMBER = "+5573998174140";
+const WHATSAPP_DISPLAY = "+55 73 99817-4140";
+const WHATSAPP_REQUEST = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g,"")}?text=${encodeURIComponent("Oi Romell, preciso do código de acesso da plataforma do John.")}`;
+const WHATSAPP_SUPPORT = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g,"")}?text=${encodeURIComponent("Oi Romell, preciso de suporte na plataforma do John.")}`;
+
+// Auth real via Vercel Function /api/john-auth.
+// Códigos válidos ficam em env var JOHN_CODES no Vercel.
+// Cookie httpOnly john_session (24h) gerenciado server-side.
+
+const AUTH_ENDPOINT = "/api/john-auth";
+const LOGOUT_ENDPOINT = "/api/john-logout";
+const SESSION_FLAG_KEY = "john-platform-session-flag";
+const SESSION_CODE_KEY = "john-platform-code";
+
+const Icon = ({ className = "h-5 w-5", strokeWidth = 1.75, children }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {children}
+  </svg>
+);
+const IconArrowRight = (p) => <Icon {...p}><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></Icon>;
+const IconBack = (p) => <Icon {...p}><polyline points="15 18 9 12 15 6"/></Icon>;
+const IconLock = (p) => <Icon {...p}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></Icon>;
+const IconCheck = (p) => <Icon {...p}><polyline points="20 6 9 17 4 12"/></Icon>;
+const IconLogout = (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></Icon>;
+const IconChat = (p) => <Icon {...p}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
+
+/* ----------------------------- APP ----------------------------- */
+const App = () => {
+  const [auth, setAuth] = useState(false);
+  const [code, setCode] = useState("");
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [activeCode, setActiveCode] = useState("");
+
+  useEffect(() => {
+    try {
+      const flag = localStorage.getItem(SESSION_FLAG_KEY);
+      const storedCode = localStorage.getItem(SESSION_CODE_KEY);
+      if (flag === "1" && storedCode) {
+        setAuth(true);
+        setActiveCode(storedCode);
+      }
+    } catch {}
+  }, []);
+
+  const tryAuth = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErr("");
+    try {
+      const resp = await fetch(AUTH_ENDPOINT, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ code: code.trim() })
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && data.ok) {
+        const granted = (data.code || code.trim()).toUpperCase();
+        try {
+          localStorage.setItem(SESSION_FLAG_KEY, "1");
+          localStorage.setItem(SESSION_CODE_KEY, granted);
+        } catch {}
+        setActiveCode(granted);
+        setAuth(true);
+
+        // Redireciona se veio do middleware com ?redirect=
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get("redirect");
+        if (redirect && redirect.startsWith("/")) {
+          window.location.replace(redirect);
+          return;
+        }
+      } else {
+        setErr(data.error || "Código inválido. Confirme com o Romell.");
+      }
+    } catch (e) {
+      setErr("Erro de conexão. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await fetch(LOGOUT_ENDPOINT, { method: "POST", credentials: "same-origin" });
+    } catch {}
+    try {
+      localStorage.removeItem(SESSION_FLAG_KEY);
+      localStorage.removeItem(SESSION_CODE_KEY);
+    } catch {}
+    setAuth(false);
+    setCode("");
+    setActiveCode("");
+  };
+
+  return (
+    <main className="min-h-screen relative bg-blueprint bg-grid bg-glow grain overflow-hidden">
+
+      {/* TOP BAR */}
+      <header className="relative z-30 px-6 md:px-10 py-5 flex items-center justify-between">
+        <a href="/john/" className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute hover:text-hero-fg transition">
+          <IconBack className="h-3 w-3" strokeWidth={2.5}/> Landing
+        </a>
+        <div className="flex items-center gap-3">
+          <svg viewBox="0 0 124 88" className="h-6 text-hero-fg" aria-hidden="true">
+            <use href="#L4-solid"/>
+          </svg>
+          <span className="hidden sm:inline-block h-3 w-px bg-hero-hair"/>
+          <span className="hidden sm:inline font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">Plataforma · John</span>
+        </div>
+        {auth ? (
+          <button onClick={logout} className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute-2 hover:text-accent transition">
+            <IconLogout className="h-3 w-3" strokeWidth={2}/> sair
+          </button>
+        ) : (
+          <a href={WHATSAPP_SUPPORT} target="_blank" rel="noopener noreferrer"
+             className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute hover:text-accent transition">
+            <IconChat className="h-3 w-3" strokeWidth={2}/> ajuda
+          </a>
+        )}
+      </header>
+
+      {/* HERO */}
+      <section className="relative z-10 min-h-[calc(100vh-80px)] flex items-center justify-center px-6 md:px-10 py-10">
+        <div className="w-full max-w-2xl text-center">
+
+          {!auth ? (
+            <div className="fade-in">
+              <div className="font-mono text-[10px] tracking-[0.4em] uppercase text-accent mb-6 inline-flex items-center gap-3">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent pulse-dot"/>
+                Plataforma · acesso restrito
+              </div>
+
+              <h1 className="font-serif text-4xl md:text-6xl font-medium tracking-[-0.02em] leading-[1.05] text-balance">
+                Acesso ao instalador<br/>do <span className="italic text-accent">John</span>.
+              </h1>
+
+              <p className="mt-6 text-base md:text-lg text-hero-mute leading-relaxed max-w-xl mx-auto text-pretty">
+                Agente Revit automatizado, distribuído pela L4 Engenharia. Wizard guiado de instalação,
+                referência de skills e suporte direto. Use o código entregue na contratação.
+              </p>
+
+              {/* LOGIN FORM */}
+              <form onSubmit={tryAuth} className="mt-12 max-w-md mx-auto">
+                <label className="block">
+                  <span className="font-mono text-[10px] tracking-[0.32em] uppercase text-hero-mute">Código de ativação</span>
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => { setCode(e.target.value); setErr(""); }}
+                    placeholder="JOHN-XXXX-XXXX"
+                    autoFocus
+                    autoComplete="off"
+                    className="code-input mt-4"
+                  />
+                </label>
+                {err && (
+                  <div className="mt-3 font-mono text-[11px] text-crit-dark fade-in">{err}</div>
+                )}
+                <button type="submit" disabled={loading || !code.trim()}
+                  className={`mt-8 inline-flex items-center gap-3 px-7 h-12 text-[11px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono transition ${
+                    loading || !code.trim()
+                      ? "bg-hero-glass text-hero-mute-2 cursor-not-allowed"
+                      : "bg-accent text-hero-bg hover:bg-cyan-300"
+                  }`}>
+                  <IconLock className="h-3.5 w-3.5" strokeWidth={2.5}/>
+                  {loading ? "Validando..." : "Entrar"}
+                  {!loading && <IconArrowRight className="h-3.5 w-3.5"/>}
+                </button>
+              </form>
+
+              <div className="mt-10 pt-10 border-t border-hero-hair max-w-md mx-auto">
+                <div className="font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute mb-3">Não tem código?</div>
+                <a href={WHATSAPP_REQUEST} target="_blank" rel="noopener noreferrer"
+                   className="inline-flex items-center gap-2 text-sm text-hero-fg hover:text-accent transition font-mono">
+                  <IconChat className="h-4 w-4" strokeWidth={2}/>
+                  Solicitar acesso · {WHATSAPP_DISPLAY}
+                </a>
+                <div className="mt-2 text-xs text-hero-mute-2">
+                  Código é entregue no fechamento do contrato de implantação.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="fade-in">
+              <div className="font-mono text-[10px] tracking-[0.4em] uppercase text-ok-dark mb-6 inline-flex items-center gap-3">
+                <IconCheck className="h-3 w-3" strokeWidth={3}/>
+                Acesso liberado · {activeCode}
+              </div>
+
+              <h1 className="font-serif text-4xl md:text-6xl font-medium tracking-[-0.02em] leading-[1.05] text-balance">
+                Qual versão do<br/><span className="italic text-accent">Revit</span> você usa?
+              </h1>
+
+              <p className="mt-6 text-base md:text-lg text-hero-mute leading-relaxed max-w-xl mx-auto text-pretty">
+                Cada versão do Revit precisa de um build específico do plugin John. Selecione abaixo pra continuar pro instalador.
+              </p>
+
+              <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
+                {[
+                  { v: "2023", available: true },
+                  { v: "2024", available: true },
+                  { v: "2025", available: true },
+                  { v: "2026", available: true }
+                ].map((r) => (
+                  r.available ? (
+                    <a key={r.v} href={`/john/app/install?version=${r.v}`}
+                       className="group border border-accent bg-accent/[0.05] hover:bg-accent/[0.15] transition p-6 flex flex-col items-center justify-center min-h-[140px] shadow-[0_0_30px_-12px_rgba(0,229,255,0.5)]">
+                      <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-accent mb-2">Disponível</div>
+                      <div className="font-serif text-4xl md:text-5xl font-medium text-accent">{r.v}</div>
+                      <div className="mt-3 inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-fg group-hover:text-accent transition">
+                        Instalar <IconArrowRight className="h-3 w-3" strokeWidth={2.5}/>
+                      </div>
+                    </a>
+                  ) : (
+                    <a key={r.v} href={`https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g,"")}?text=${encodeURIComponent("Oi Romell, preciso do build do John pra Revit " + r.v + ". Quando fica pronto?")}`}
+                       target="_blank" rel="noopener noreferrer"
+                       className="group border border-hero-hair bg-hero-glass/30 hover:border-warn-dark/60 transition p-6 flex flex-col items-center justify-center min-h-[140px]">
+                      <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-warn-dark mb-2">Em construção</div>
+                      <div className="font-serif text-4xl md:text-5xl font-medium text-hero-mute">{r.v}</div>
+                      <div className="mt-3 inline-flex items-center gap-1 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute group-hover:text-warn-dark transition">
+                        Solicitar <IconChat className="h-3 w-3" strokeWidth={2}/>
+                      </div>
+                    </a>
+                  )
+                ))}
+              </div>
+
+              <div className="mt-10 pt-8 border-t border-hero-hair max-w-md mx-auto">
+                <div className="font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute mb-2">Suporte</div>
+                <a href={WHATSAPP_SUPPORT} target="_blank" rel="noopener noreferrer"
+                   className="inline-flex items-center gap-2 text-sm text-hero-fg hover:text-accent transition font-mono">
+                  <IconChat className="h-4 w-4" strokeWidth={2}/>
+                  {WHATSAPP_DISPLAY}
+                </a>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="relative z-10 px-6 md:px-10 py-6 border-t border-hero-hair flex items-center justify-between flex-wrap gap-3 font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute">
+        <span>© L4 Engenharia · John v1 · Plataforma</span>
+        <span className="text-hero-mute-2">Auth local · sem servidor</span>
+      </footer>
+    </main>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+</body></html>

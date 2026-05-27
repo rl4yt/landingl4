@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>John — Plataforma · Instalação</title>
+<script>
+  window.tailwind = window.tailwind || {};
+  window.tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          serif: ['Source Serif 4', 'Source Serif Pro', 'Georgia', 'serif'],
+        },
+        colors: {
+          'hero-bg': '#0B1220',
+          'hero-bg-2': '#131D33',
+          'hero-bg-3': '#0F1729',
+          'hero-fg': '#E8EFF7',
+          'hero-mute': 'rgba(232, 239, 247, 0.62)',
+          'hero-mute-2': 'rgba(232, 239, 247, 0.38)',
+          'hero-hair': 'rgba(232, 239, 247, 0.14)',
+          'hero-glass': 'rgba(232, 239, 247, 0.06)',
+          'crit-dark': '#ED7878',
+          'warn-dark': '#E8B354',
+          'ok-dark':   '#6DCB8E',
+          'accent':    '#00E5FF',
+        }
+      }
+    }
+  }
+</script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; background: #0B1220; color: #E8EFF7; }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+  .grain-bg::after {
+    content: ""; position: absolute; inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                      radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 3px 3px, 5px 5px;
+    mix-blend-mode: overlay; opacity: 0.4; pointer-events: none;
+  }
+  code, pre { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  pre { tab-size: 2; }
+  .step-done .step-num { background: #00E5FF !important; color: #0B1220 !important; border-color: #00E5FF !important; }
+  .step-active .step-num { border-color: #00E5FF !important; color: #00E5FF !important; box-shadow: 0 0 0 4px rgba(0,229,255,0.15); }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(232,239,247,0.14); border-radius: 3px; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin></script>
+</head>
+<body>
+
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <defs>
+    <symbol id="L4-solid" viewBox="0 0 124 88">
+      <g fill="currentColor" fill-rule="evenodd">
+        <rect x="8" y="8" width="15" height="59"/>
+        <rect x="24" y="68" width="64" height="12"/>
+        <path d="M 74 8 L 28 52 L 28 62 L 73 62 L 73 8 Z M 70 14 L 34 50 L 70 50 Z"/>
+        <rect x="74" y="8" width="14" height="59"/>
+        <rect x="96" y="68" width="12" height="12"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+
+const CALENDLY_URL = "https://calendar.app.google/MEkG8tsWszd2sXtn9";
+const WHATSAPP_NUMBER = "+5573998174140";
+const WHATSAPP_DISPLAY = "+55 73 99817-4140";
+const VALID_REVIT_VERSIONS = ["2023", "2024", "2025", "2026"];
+const DEFAULT_REVIT_VERSION = "2026";
+const NODEJS_DOWNLOAD = "https://nodejs.org/dist/latest-v20.x/node-v20.20.2-x64.msi"; // direct .msi v20 LTS x64
+const NODEJS_FALLBACK = "https://nodejs.org/dist/latest-v20.x/"; // listagem latest v20.x — usar caso URL direto saia do ar
+const CLAUDE_DESKTOP_URL = "https://claude.ai/download";
+const GIT_DOWNLOAD = "https://git-scm.com/download/win";
+
+/* ----------------------------- ICONS ----------------------------- */
+const Icon = ({ className = "h-5 w-5", strokeWidth = 1.75, children }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {children}
+  </svg>
+);
+const IconArrowRight = (p) => <Icon {...p}><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></Icon>;
+const IconCheck = (p) => <Icon {...p}><polyline points="20 6 9 17 4 12"/></Icon>;
+const IconCopy = (p) => <Icon {...p}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></Icon>;
+const IconDownload = (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>;
+const IconExternal = (p) => <Icon {...p}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></Icon>;
+const IconAlert = (p) => <Icon {...p}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></Icon>;
+const IconTerminal = (p) => <Icon {...p}><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></Icon>;
+const IconChat = (p) => <Icon {...p}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></Icon>;
+const IconBack = (p) => <Icon {...p}><polyline points="15 18 9 12 15 6"/></Icon>;
+const IconRefresh = (p) => <Icon {...p}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></Icon>;
+
+/* ----------------------------- COPY BUTTON ----------------------------- */
+const CopyCode = ({ code, label = "Comando" }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+  return (
+    <div className="border border-hero-hair bg-hero-bg-3 overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-hero-hair bg-hero-glass">
+        <div className="flex items-center gap-2 text-[10px] tracking-[0.24em] uppercase font-mono text-hero-mute">
+          <IconTerminal className="h-3 w-3" strokeWidth={2}/>
+          {label}
+        </div>
+        <button onClick={copy}
+          className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase font-mono text-hero-mute hover:text-accent transition px-2 py-0.5">
+          {copied ? <><IconCheck className="h-3 w-3" strokeWidth={2.5}/> copiado</> : <><IconCopy className="h-3 w-3" strokeWidth={2}/> copiar</>}
+        </button>
+      </div>
+      <pre className="px-4 py-3 text-sm text-hero-fg overflow-x-auto whitespace-pre">{code}</pre>
+    </div>
+  );
+};
+
+/* ----------------------------- DOWNLOAD BUTTON ----------------------------- */
+const DownloadBtn = ({ href, children, primary = false, external = true, disabled = false }) => {
+  const cls = primary
+    ? "bg-accent text-hero-bg hover:bg-cyan-300"
+    : "border border-hero-hair text-hero-fg hover:border-accent hover:bg-hero-glass";
+  if (disabled) {
+    return (
+      <span className="inline-flex items-center gap-2 px-5 h-11 text-[11px] tracking-[0.22em] uppercase font-semibold rounded-full font-mono border border-hero-hair text-hero-mute-2 cursor-not-allowed">
+        {children}
+      </span>
+    );
+  }
+  return (
+    <a href={href} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}
+       className={`inline-flex items-center gap-2 px-5 h-11 text-[11px] tracking-[0.22em] uppercase font-semibold rounded-full font-mono transition ${cls}`}>
+      {children}
+    </a>
+  );
+};
+
+/* ----------------------------- STEPS DATA ----------------------------- */
+const getSteps = (version) => {
+  const JOHN_PACK_URL = "/private/john-pack-" + version + ".zip"; // protegido por middleware (cookie john_session)
+  const revitPath = "C:\\Program Files\\Autodesk\\Revit " + version;
+  return [
+  {
+    id: 0, label: "Pré-requisitos", time: "5 min",
+    title: "Confirme que sua máquina está pronta",
+    intro: "Antes de instalar nada, valide os requisitos abaixo. Se algum falhar, resolva primeiro — instalação não passa daqui sem.",
+    blocks: [
+      { type: "checklist", title: "Checklist obrigatório", items: [
+        { k: "Windows 10 ou 11", v: "winver" },
+        { k: "Revit " + version + " instalado", v: revitPath },
+        { k: "Permissão de admin no Windows", v: "necessária pra copiar em C:\\ProgramData\\" },
+        { k: "~500 MB livres em disco", v: "" }
+      ]},
+      { type: "warn", text: "Este pacote contém o plugin compilado pra Revit " + version + ". Se você usa outra versão (2023/24/25/26), volte pra plataforma e escolha a build correspondente." }
+    ]
+  },
+  {
+    id: 1, label: "Node.js 20 LTS", time: "2 min",
+    title: "Instale Node.js versão 20 LTS",
+    intro: "Instalador Windows tradicional — baixa, executa, Next-Next-Next. Sem terminal. John usa Node por baixo dos panos pra rodar o servidor MCP.",
+    blocks: [
+      { type: "btns", items: [
+        { href: NODEJS_DOWNLOAD, label: "Baixar Node 20 LTS (.msi)", primary: true, icon: "download" }
+      ]},
+      { type: "warn", text: "O site oficial nodejs.org hoje oferece v22 / v24 por padrão (essas não funcionam). O botão acima vai DIRETO pro instalador v20.20.2 x64 — a versão exata que o john-pack precisa. Não use os botões da home do nodejs.org." },
+      { type: "ordered", items: [
+        "Clica no botão acima — começa o download de `node-v20.20.2-x64.msi` (~30 MB).",
+        "Dá duplo clique no arquivo baixado.",
+        "Clica Next em todas as telas (configurações padrão funcionam).",
+        "Aguarda a instalação terminar (~1 min).",
+        "Se o download falhar, usa o link de fallback abaixo e pega o arquivo `node-v20.20.2-x64.msi` da listagem."
+      ]},
+      { type: "btns", items: [
+        { href: NODEJS_FALLBACK, label: "Fallback: listagem v20.x", primary: false, icon: "external" }
+      ]}
+    ]
+  },
+  {
+    id: 2, label: "Conta Claude", time: "2 min",
+    title: "Crie sua conta Claude",
+    intro: "Crie conta na Anthropic — é a mesma usada pra entrar no Claude.ai. Você vai usar esse login no Claude Desktop do passo seguinte.",
+    blocks: [
+      { type: "btns", items: [
+        { href: "https://claude.ai/signup", label: "Criar conta Claude", primary: true, icon: "external" }
+      ]},
+      { type: "ordered", items: [
+        "Crie conta com email ou login Google.",
+        "Confirme o email recebido.",
+        "Pronto — guarde o login. Vai usar no passo seguinte."
+      ]}
+    ]
+  },
+  {
+    id: 3, label: "Claude Desktop + Git", time: "5 min",
+    title: "Instale Claude Desktop e Git",
+    intro: "Claude Desktop é o app de chat onde o John vai operar. A aba Code dele usa Git por baixo dos panos pra abrir pastas do PC — sem Git, ela não consegue selecionar workspace. Ambos são instaladores GUI Next-Next-Install, sem terminal.",
+    blocks: [
+      { type: "btns", items: [
+        { href: CLAUDE_DESKTOP_URL, label: "Baixar Claude Desktop", primary: true, icon: "download" }
+      ]},
+      { type: "ordered", title: "Claude Desktop", items: [
+        "Baixa o instalador (.exe pra Windows).",
+        "Executa e segue o assistente padrão (Next → Next → Install).",
+        "Abre o Claude Desktop e faz login com a conta criada no passo 2.",
+        "Confirma que o app abriu e está logado — você vê a tela de chat."
+      ]},
+      { type: "or", text: "agora o Git" },
+      { type: "btns", items: [
+        { href: GIT_DOWNLOAD, label: "Baixar Git for Windows", primary: true, icon: "download" }
+      ]},
+      { type: "ordered", title: "Git for Windows", items: [
+        "Baixa o instalador (.exe, ~70 MB).",
+        "Executa e clica Next em todas as telas — todas as configurações padrão funcionam.",
+        "Aguarda a instalação (~2 min).",
+        "Não precisa abrir nada depois. A aba Code do Claude Desktop detecta automaticamente."
+      ]},
+      { type: "warn", text: "Depois de instalar o Git, **reinicia o Claude Desktop completamente** (fecha incluindo system tray e abre de novo). A aba Code só detecta o Git em boot fresh — sem reiniciar, vai pedir pra baixar Git de novo no passo 5 e travar o setup." }
+    ]
+  },
+  {
+    id: 4, label: "Baixar john-pack", time: "2 min",
+    title: "Baixe o john-pack.zip",
+    intro: "Pacote com DLLs compiladas do plugin Revit, servidor MCP, skills do John e agent. Descompacte numa pasta de fácil acesso (ex: C:\\john-pack\\).",
+    blocks: [
+      { type: "btns", items: [
+        { href: JOHN_PACK_URL, label: "Baixar john-pack.zip", primary: true, icon: "download", disabled: JOHN_PACK_URL === "#" }
+      ]},
+      { type: "note", text: JOHN_PACK_URL === "#" ? "Download em preparação. Romell envia o link pelo WhatsApp após confirmação dos pré-requisitos." : "" },
+      { type: "tree", title: "Estrutura esperada após descompactar", lines: [
+        "john-pack/",
+        "├── 1-plugin-revit/      ← DLLs + .addin",
+        "├── 2-mcp-server/        ← instruções server Node",
+        "├── 3-claude-config/     ← agent John + config MCP",
+        "├── 4-shared-params/     ← template BIM5D",
+        "├── 5-verificacao/       ← health-check",
+        "├── INSTALACAO.md",
+        "├── PRE-REQUISITOS.md",
+        "└── README.md"
+      ]}
+    ]
+  },
+  {
+    id: 5, label: "Setup do plugin", time: "5 min",
+    title: "Envie a pasta + prompt pro Claude",
+    intro: "Você vai apontar o Claude pra pasta descompactada do john-pack e mandar ele executar o INSTALACAO.md. Claude copia o plugin no Revit, instala o servidor MCP e configura tudo. Acompanha pra aprovar quando ele pedir.",
+    blocks: [
+      { type: "warn", text: "Antes de começar: confirma que (1) o Git foi instalado no passo 3 e (2) o Claude Desktop foi REINICIADO depois (system tray também). Sem isso, ele vai travar ao tentar selecionar a pasta." },
+      { type: "ordered", title: "1. Prepara a pasta", items: [
+        "Vai na pasta onde você descompactou o `john-pack.zip` (recomendado: `C:\\john-pack`).",
+        "Confirma que dentro tem `INSTALACAO.md`, `README.md` e as pastas `1-plugin-revit`, `2-mcp-server` etc.",
+        "Se ainda não descompactou: botão direito no `.zip` → \"Extrair tudo\"."
+      ]},
+      { type: "ordered", title: "2. Abre o Claude Desktop como admin", items: [
+        "Fecha o Claude Desktop completamente (clica no ícone do system tray também).",
+        "Botão direito no atalho do Claude Desktop → **\"Executar como administrador\"**.",
+        "Necessário pra Claude conseguir copiar em `C:\\ProgramData\\` no setup."
+      ]},
+      { type: "ordered", title: "3. Aponta a pasta do john-pack", items: [
+        "Na barra lateral esquerda do Claude Desktop, clica no ícone **Code** (`</>`).",
+        "Clica em **\"Open folder\"** (ou \"Open project\" / \"Add workspace\").",
+        "No diálogo, navega até a pasta `C:\\john-pack` (ou onde descompactou) e confirma.",
+        "Claude carrega a pasta — você vê a lista de arquivos do lado."
+      ]},
+      { type: "ordered", title: "4. Cola e envia o prompt", items: [
+        "Copia o prompt abaixo (botão copiar →).",
+        "Cola no chat do Claude (campo no rodapé).",
+        "Aperta Enter ou clica no botão de enviar. Claude começa a executar."
+      ]},
+      { type: "code", label: "Prompt pro Claude (cola e envia)", code: "Leia INSTALACAO.md e execute cada passo na ordem.\nAntes de qualquer operação destrutiva (apagar/sobrescrever), peça minha confirmação.\nReporte resultado de cada etapa no formato:\n  [PASSO X] OK\n  [PASSO X] ERRO: <descrição>\nAo final, rode 5-verificacao/health-check.md." },
+      { type: "verify", title: "O que esperar", expect: "Claude vai pedir aprovação em cada passo destrutivo (ex: \"Posso copiar X em ProgramData?\"). Aprove e siga. No final, reporta [PASSO 1] OK ... [PASSO 6] OK. Se algum reportar ERRO, pare e chame o Romell." },
+      { type: "warn", text: "Se você esqueceu de abrir como administrador, o copy de plugin falha. Fecha o Claude Desktop, abre como admin de novo e reenvia o prompt." }
+    ]
+  },
+  {
+    id: 6, label: "Reiniciar Revit", time: "2 min",
+    title: "Restart Revit + ativar Switch",
+    intro: "O plugin foi instalado no Revit, mas só carrega na próxima abertura. Reinicia o Revit " + version + " e clica no botão que apareceu na Ribbon.",
+    blocks: [
+      { type: "ordered", items: [
+        "FECHE completamente o Revit " + version + " (se estiver aberto).",
+        "ABRA o Revit " + version + " de novo.",
+        "Na Ribbon (barra superior), procure a aba \"Revit MCP Plugin\".",
+        "Clique no botão \"Revit MCP Switch\" — o servidor liga."
+      ]},
+      { type: "warn", text: "Você precisa clicar no Switch TODA VEZ que abrir o Revit. O servidor não inicia automático. Se esquecer, o John não conecta." }
+    ]
+  },
+  {
+    id: 7, label: "Primeiro teste", time: "1 min",
+    title: "Rode /john-diagnose na aba Code",
+    intro: "Tudo conectado. Hora de validar. Abre um projeto Revit, vai na aba Code do Claude Desktop (com o Switch ligado no Revit) e digita o comando abaixo. John lê a vista ativa e reporta o que enxergou.",
+    blocks: [
+      { type: "ordered", items: [
+        "Com o Revit aberto + Switch ligado na Ribbon, vá na aba Code do Claude Desktop.",
+        "Abra um projeto .rvt qualquer (ou modelo de teste) no Revit.",
+        "Na aba Code, digite o comando abaixo e aperte Enter:"
+      ]},
+      { type: "code", label: "Claude (aba Code)", code: "/john-diagnose" },
+      { type: "verify", title: "Resultado esperado", expect: "John reporta: vista ativa, número de paredes PAR_, níveis detectados, elementos selecionados. Se reportar erro de conexão MCP, voltar ao passo 6 (Switch) — ou conferir se o Claude Desktop foi reiniciado depois do PASSO 3 do INSTALACAO." }
+    ]
+  },
+  {
+    id: 8, label: "Pronto", time: "—",
+    title: "Instalação completa",
+    intro: "John está operacional na aba Code do Claude Desktop. Qualquer skill /john-* funciona com o Switch ligado no Revit.",
+    blocks: [
+      { type: "skills", items: [
+        { cmd: "/john-diagnose", desc: "Lê o modelo, sem modificar" },
+        { cmd: "/john-compound-structure", desc: "Estrutura composta 150mm nos WallTypes PAR_" },
+        { cmd: "/john-create-parts", desc: "Separa paredes em Parts (9 camadas)" },
+        { cmd: "/john-revestimento-tag", desc: "Classifica Parts: Pintura/Reboco/Chapisco/Bloco" },
+        { cmd: "/john-bind-eap-inst", desc: "Cria parâmetros EAP_ como InstanceBinding" },
+        { cmd: "/john-populate-eap", desc: "Popula EAP_Codigo/Nivel1/2/3 nos Parts" },
+        { cmd: "/john-create-schedule", desc: "Gera tabelas CAD_PINTURA, CAD_REBOCO etc" },
+        { cmd: "/john-cota-corrida", desc: "Cota corrida 4 lados ext+int em planta" }
+      ]},
+      { type: "support" }
+    ]
+  }
+  ];
+};
+
+/* ----------------------------- BLOCK RENDERER ----------------------------- */
+const Block = ({ b }) => {
+  if (b.type === "checklist") return (
+    <div>
+      <div className="font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute mb-3">{b.title}</div>
+      <ul className="border border-hero-hair divide-y divide-hero-hair">
+        {b.items.map((it, i) => (
+          <li key={i} className="flex items-start gap-3 px-4 py-3 text-sm">
+            <div className="h-4 w-4 mt-0.5 border border-hero-hair rounded-sm flex-shrink-0" />
+            <div className="flex-1">
+              <div className="font-medium">{it.k}</div>
+              {it.v && <div className="text-xs text-hero-mute font-mono mt-0.5">{it.v}</div>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+  if (b.type === "btns") return (
+    <div className="flex flex-wrap gap-3">
+      {b.items.map((bt, i) => (
+        <DownloadBtn key={i} href={bt.href} primary={bt.primary} disabled={bt.disabled}>
+          {bt.icon === "download" && <IconDownload className="h-4 w-4" strokeWidth={2}/>}
+          {bt.icon === "external" && <IconExternal className="h-4 w-4" strokeWidth={2}/>}
+          {bt.label}
+        </DownloadBtn>
+      ))}
+    </div>
+  );
+  if (b.type === "or") return (
+    <div className="flex items-center gap-3 text-[10px] tracking-[0.24em] uppercase font-mono text-hero-mute-2">
+      <div className="h-px flex-1 bg-hero-hair"/>
+      <span>{b.text}</span>
+      <div className="h-px flex-1 bg-hero-hair"/>
+    </div>
+  );
+  if (b.type === "code") return <CopyCode code={b.code} label={b.label}/>;
+  if (b.type === "verify") return (
+    <div className="border border-accent/30 bg-accent/[0.04] p-4">
+      <div className="font-mono text-[10px] tracking-[0.24em] uppercase text-accent mb-2 flex items-center gap-2">
+        <IconCheck className="h-3 w-3" strokeWidth={2.5}/> {b.title || "Verificação"}
+      </div>
+      {b.code && <CopyCode code={b.code} label="Verificar"/>}
+      {b.expect && <div className="mt-2 text-sm text-hero-fg">{b.expect}</div>}
+    </div>
+  );
+  if (b.type === "ordered") return (
+    <div>
+      {b.title && <div className="font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute mb-3">{b.title}</div>}
+      <ol className="space-y-2.5">
+        {b.items.map((it, i) => (
+          <li key={i} className="flex items-start gap-3 text-sm">
+            <span className="font-mono text-[11px] text-accent tabular-nums mt-0.5 flex-shrink-0 w-5">{i + 1}.</span>
+            <span dangerouslySetInnerHTML={{__html: it.replace(/`([^`]+)`/g, '<code class="bg-hero-bg-3 text-accent px-1.5 py-0.5 text-[12px] border border-hero-hair">$1</code>')}}/>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+  if (b.type === "warn") return (
+    <div className="border border-warn-dark/40 bg-warn-dark/[0.06] p-4 flex items-start gap-3">
+      <IconAlert className="h-4 w-4 text-warn-dark mt-0.5 flex-shrink-0" strokeWidth={2}/>
+      <div className="text-sm text-hero-fg">{b.text}</div>
+    </div>
+  );
+  if (b.type === "note") return b.text ? (
+    <div className="text-xs text-hero-mute font-mono italic">{b.text}</div>
+  ) : null;
+  if (b.type === "tree") return (
+    <div>
+      <div className="font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute mb-3">{b.title}</div>
+      <pre className="border border-hero-hair bg-hero-bg-3 p-4 text-xs text-hero-fg overflow-x-auto whitespace-pre">{b.lines.join("\n")}</pre>
+    </div>
+  );
+  if (b.type === "skills") return (
+    <div>
+      <div className="font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute mb-3">Skills disponíveis</div>
+      <div className="border border-hero-hair divide-y divide-hero-hair">
+        {b.items.map((s, i) => (
+          <div key={i} className="grid grid-cols-12 gap-3 px-4 py-3 text-sm items-center">
+            <div className="col-span-12 md:col-span-5 font-mono text-accent text-xs md:text-sm flex items-center gap-2">
+              <IconTerminal className="h-3 w-3" strokeWidth={2}/>{s.cmd}
+            </div>
+            <div className="col-span-12 md:col-span-7 text-hero-mute text-xs md:text-sm">{s.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  if (b.type === "support") return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <a href={`https://wa.me/${WHATSAPP_NUMBER.replace(/[^0-9]/g, "")}?text=${encodeURIComponent("Olá Romell, instalei o John mas preciso de ajuda em algum passo.")}`}
+         target="_blank" rel="noopener noreferrer"
+         className="border border-hero-hair p-5 hover:border-accent hover:bg-hero-glass transition flex items-start gap-3">
+        <IconChat className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" strokeWidth={2}/>
+        <div>
+          <div className="font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute">Suporte</div>
+          <div className="mt-1 font-semibold">WhatsApp Romell</div>
+          <div className="text-xs text-hero-mute font-mono mt-0.5">{WHATSAPP_DISPLAY}</div>
+        </div>
+      </a>
+      <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+         className="border border-hero-hair p-5 hover:border-accent hover:bg-hero-glass transition flex items-start gap-3">
+        <IconExternal className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" strokeWidth={2}/>
+        <div>
+          <div className="font-mono text-[10px] tracking-[0.22em] uppercase text-hero-mute">Sessão 1:1</div>
+          <div className="mt-1 font-semibold">Onboarding ao vivo</div>
+          <div className="text-xs text-hero-mute mt-0.5">30 min · agenda no Calendar</div>
+        </div>
+      </a>
+    </div>
+  );
+  return null;
+};
+
+/* ----------------------------- APP ----------------------------- */
+const App = () => {
+  // Detecta versão Revit do query string ?version=YYYY
+  const version = useMemo(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const v = params.get("version");
+      if (v && VALID_REVIT_VERSIONS.includes(v)) return v;
+    } catch {}
+    return DEFAULT_REVIT_VERSION;
+  }, []);
+
+  const steps = useMemo(() => getSteps(version), [version]);
+
+  const [done, setDone] = useState(() => {
+    try {
+      const raw = localStorage.getItem("john-install-done-" + version);
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    try { localStorage.setItem("john-install-done-" + version, JSON.stringify(done)); } catch {}
+  }, [done, version]);
+
+  const toggle = (id) => setDone(d => d.includes(id) ? d.filter(x => x !== id) : [...d, id]);
+  const reset = () => {
+    if (confirm("Resetar progresso da instalação?")) {
+      setDone([]);
+      setActive(0);
+    }
+  };
+
+  const pct = Math.round((done.length / steps.length) * 100);
+  const current = steps[active];
+  const isDone = done.includes(current.id);
+
+  return (
+    <main className="min-h-screen relative">
+      {/* TOP BAR */}
+      <header className="sticky top-0 z-40 bg-hero-bg/85 backdrop-blur border-b border-hero-hair">
+        <div className="px-6 md:px-10 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <a href="/john/app/" className="inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute hover:text-hero-fg transition">
+              <IconBack className="h-3 w-3" strokeWidth={2.5}/> Plataforma
+            </a>
+            <div className="flex items-center gap-3">
+              <svg viewBox="0 0 124 88" className="h-7 text-hero-fg" aria-hidden="true">
+                <use href="#L4-solid"/>
+              </svg>
+              <span className="hidden sm:inline-block h-4 w-px bg-hero-hair"/>
+              <span className="hidden sm:inline font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">Plataforma · Instalação</span>
+              <span className="hidden md:inline-flex items-center gap-1.5 px-2 py-1 border border-accent/40 bg-accent/[0.06] font-mono text-[10px] tracking-[0.22em] uppercase text-accent">
+                Revit {version}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-3">
+              <span className="font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute tabular-nums">{done.length} / {steps.length} · {pct}%</span>
+              <div className="w-40 h-1 bg-hero-hair overflow-hidden rounded-full">
+                <div className="h-full bg-accent transition-all duration-500" style={{width: `${pct}%`}}/>
+              </div>
+            </div>
+            <button onClick={reset} className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.18em] uppercase font-mono text-hero-mute-2 hover:text-hero-mute transition px-2 py-1"
+              title="Resetar progresso">
+              <IconRefresh className="h-3 w-3" strokeWidth={2}/> reset
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-12 gap-0">
+        {/* SIDEBAR */}
+        <aside className="col-span-12 md:col-span-3 lg:col-span-3 border-r border-hero-hair md:min-h-[calc(100vh-4rem)] md:sticky md:top-16 md:self-start md:max-h-[calc(100vh-4rem)] md:overflow-y-auto scrollbar-thin">
+          <div className="p-6">
+            <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute mb-4">Passos</div>
+            <nav className="space-y-1">
+              {steps.map((s, i) => {
+                const isCurrent = active === i;
+                const isDoneS = done.includes(s.id);
+                return (
+                  <button key={s.id} onClick={() => setActive(i)}
+                    className={`w-full text-left px-3 py-3 border-l-2 transition group ${
+                      isCurrent ? "border-accent bg-hero-glass step-active" : "border-transparent hover:border-hero-hair hover:bg-hero-glass/50"
+                    } ${isDoneS ? "step-done" : ""}`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`step-num flex-shrink-0 h-6 w-6 rounded-full border border-hero-hair flex items-center justify-center font-mono text-[11px] tabular-nums ${
+                        isDoneS ? "" : isCurrent ? "" : "text-hero-mute"
+                      }`}>
+                        {isDoneS ? <IconCheck className="h-3 w-3" strokeWidth={3}/> : s.id}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-medium ${isCurrent ? "text-hero-fg" : isDoneS ? "text-hero-mute line-through" : "text-hero-fg"}`}>
+                          {s.label}
+                        </div>
+                        <div className="text-[10px] font-mono text-hero-mute-2 mt-0.5 tracking-wider uppercase">{s.time}</div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        </aside>
+
+        {/* MAIN */}
+        <section className="col-span-12 md:col-span-9 lg:col-span-9 px-6 md:px-12 py-10 md:py-14 relative grain-bg">
+          <div className="max-w-3xl">
+            <div className="font-mono text-[10px] tracking-[0.32em] uppercase text-accent mb-4">
+              Passo {String(current.id).padStart(2, "0")} de {String(steps.length - 1).padStart(2, "0")} · {current.time}
+            </div>
+            <h1 className="font-serif text-3xl md:text-5xl font-medium tracking-[-0.02em] leading-[1.1]">
+              {current.title}
+            </h1>
+            <p className="mt-6 text-base md:text-lg text-hero-mute leading-relaxed text-pretty">
+              {current.intro}
+            </p>
+
+            <div className="mt-10 space-y-6">
+              {current.blocks.map((b, i) => <Block key={i} b={b}/>)}
+            </div>
+
+            {/* PASSO NAV */}
+            <div className="mt-14 pt-8 border-t border-hero-hair flex items-center justify-between gap-4 flex-wrap">
+              <button
+                onClick={() => active > 0 && setActive(active - 1)}
+                disabled={active === 0}
+                className={`inline-flex items-center gap-2 px-4 h-10 text-[10px] tracking-[0.22em] uppercase font-mono border border-hero-hair transition ${
+                  active === 0 ? "text-hero-mute-2 cursor-not-allowed" : "text-hero-fg hover:border-accent hover:text-accent"
+                }`}>
+                <IconBack className="h-3 w-3" strokeWidth={2.5}/> Anterior
+              </button>
+
+              <button
+                onClick={() => toggle(current.id)}
+                className={`inline-flex items-center gap-2 px-5 h-10 text-[10px] tracking-[0.22em] uppercase font-semibold font-mono rounded-full transition ${
+                  isDone ? "bg-ok-dark/20 text-ok-dark border border-ok-dark/40" : "bg-accent text-hero-bg hover:bg-cyan-300"
+                }`}>
+                {isDone ? <><IconCheck className="h-3.5 w-3.5" strokeWidth={3}/> Concluído</> : <><IconCheck className="h-3.5 w-3.5" strokeWidth={2.5}/> Marcar concluído</>}
+              </button>
+
+              <button
+                onClick={() => active < steps.length - 1 && setActive(active + 1)}
+                disabled={active === steps.length - 1}
+                className={`inline-flex items-center gap-2 px-4 h-10 text-[10px] tracking-[0.22em] uppercase font-mono border transition ${
+                  active === steps.length - 1
+                    ? "border-hero-hair text-hero-mute-2 cursor-not-allowed"
+                    : "border-accent text-accent hover:bg-accent hover:text-hero-bg"
+                }`}>
+                Próximo <IconArrowRight className="h-3 w-3" strokeWidth={2.5}/>
+              </button>
+            </div>
+
+            <div className="mt-16 text-xs font-mono text-hero-mute-2 text-center">
+              Progresso salvo localmente neste navegador.
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+</body></html>
