@@ -4513,6 +4513,14 @@ table.t .end { text-align: right; }
         <div class="upload-grid" id="upload-grid"></div>
       </section>
 
+      <!-- Histórico de documentos por categoria -->
+      <section style="margin-top: 40px;" id="docs-history-section" hidden>
+        <div class="docs-section-head" style="margin-bottom: 16px;">
+          <h2>Histórico de documentos</h2>
+        </div>
+        <div id="docs-history"></div>
+      </section>
+
     </div>
   </div>
 </div>
@@ -6460,6 +6468,64 @@ async function renderDocumentos(obraId) {
   const totalDocs = DOC_TYPES.length;
   const prog = document.getElementById('docs-progress');
   if (prog) prog.textContent = `${docCount} / ${totalDocs} enviados`;
+
+  // Histórico de documentos agrupado por categoria
+  const histSection = document.getElementById('docs-history-section');
+  const histContainer = document.getElementById('docs-history');
+  if (histSection && histContainer) {
+    const rdbt = st.real_docs_by_tipo || {};
+    const HIST_GROUPS = [
+      { label: 'Orçamento',    tipos: ['orcamento'] },
+      { label: 'Planejamento', tipos: ['cronograma', 'boletim_medicao'] },
+      { label: 'Suprimentos',  tipos: ['nota_fiscal'] },
+    ];
+    const coveredTipos = HIST_GROUPS.flatMap(g => g.tipos);
+    const extraTipos = Object.keys(rdbt).filter(t => !coveredTipos.includes(t));
+    if (extraTipos.length) HIST_GROUPS.push({ label: 'Adicionais', tipos: extraTipos });
+
+    const STATUS_CFG = {
+      processando:        { color: '#E8B354', label: 'PROCESSANDO' },
+      aguardando_preview: { color: '#D6A874', label: 'AGUARDANDO OK' },
+      processado:         { color: '#6DCB8E', label: 'PROCESSADO' },
+      erro:               { color: '#F87171', label: 'ERRO' },
+      rejeitado_preview:  { color: '#F87171', label: 'REJEITADO' },
+    };
+    const fmtD = ts => ts ? new Date(ts).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—';
+
+    const groupsHtml = HIST_GROUPS.map(g => {
+      const docs = g.tipos.flatMap(t => rdbt[t] || []);
+      if (!docs.length) return '';
+      docs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      const rows = docs.map(d => {
+        const sc = STATUS_CFG[d.status] || { color: 'rgba(244,239,231,0.4)', label: (d.status || '').toUpperCase() };
+        const fname = (d.nome_arquivo_original || '—');
+        const fnameS = fname.length > 48 ? fname.slice(0, 48) + '…' : fname;
+        const action = d.status === 'aguardando_preview'
+          ? `<button onclick="event.stopPropagation();showPreviewModal('${d.id}','${d.tipo}','${obraId}')" style="background:transparent;border:none;color:#D6A874;font-family:monospace;font-size:10px;letter-spacing:0.12em;cursor:pointer;padding:0;white-space:nowrap;">VER DADOS →</button>`
+          : '';
+        return `<div style="display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid rgba(244,239,231,0.06);font-family:monospace;font-size:11px;">
+          <span style="color:rgba(244,239,231,0.35);min-width:28px;">v${d.versao}</span>
+          <span style="flex:1;color:rgba(244,239,231,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${fname}">${fnameS}</span>
+          <span style="color:${sc.color};letter-spacing:0.1em;font-size:9px;white-space:nowrap;">${sc.label}</span>
+          <span style="min-width:72px;text-align:right;">${action}</span>
+          <span style="color:rgba(244,239,231,0.25);font-size:10px;white-space:nowrap;">${fmtD(d.created_at)}</span>
+        </div>`;
+      }).join('');
+
+      return `<div style="margin-bottom:12px;border:1px solid rgba(244,239,231,0.1);border-radius:10px;overflow:hidden;background:rgba(244,239,231,0.02);">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(244,239,231,0.04);border-bottom:1px solid rgba(244,239,231,0.08);">
+          <span style="font-family:monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(244,239,231,0.7);">${g.label}</span>
+          <span style="font-family:monospace;font-size:10px;color:rgba(244,239,231,0.35);">${docs.length} versão${docs.length > 1 ? 'ões' : ''}</span>
+        </div>
+        <div style="max-height:240px;overflow-y:auto;">${rows}</div>
+      </div>`;
+    }).join('');
+
+    const hasAny = HIST_GROUPS.some(g => g.tipos.some(t => rdbt[t]?.length));
+    histSection.hidden = !hasAny;
+    histContainer.innerHTML = groupsHtml;
+  }
 
   // Auto-polling: atualiza sem F5 enquanto houver docs processando ou aguardando preview
   const allRealDocs = Object.values(st.real_docs_by_tipo || {}).flat();
