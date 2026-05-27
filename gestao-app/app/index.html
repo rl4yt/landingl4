@@ -6015,6 +6015,19 @@ function canSeeDelivery() {
   return DEV_MODE || STATE.obraIsDemo || isAdminMode() || STATE.audStatus === 'pronto';
 }
 
+let _docsPollTimer = null;
+function _startDocsPoll(obraId) {
+  _stopDocsPoll();
+  _docsPollTimer = setInterval(async () => {
+    if (!location.hash.startsWith('#documentos/' + obraId)) { _stopDocsPoll(); return; }
+    delete STATE.obras_state[obraId];
+    await renderDocumentos(obraId);
+  }, 5000);
+}
+function _stopDocsPoll() {
+  if (_docsPollTimer) { clearInterval(_docsPollTimer); _docsPollTimer = null; }
+}
+
 // ─── DOC TYPES MAPPING ──────────────────────────────────
 // UI shows 3 categories. Backend has 6 types. Adicionais covers extras.
 // Cada categoria UI tem subtipos (label → tipo backend). Subtipos podem mapear pro mesmo tipo backend.
@@ -6436,6 +6449,12 @@ async function renderDocumentos(obraId) {
   const totalDocs = DOC_TYPES.length;
   const prog = document.getElementById('docs-progress');
   if (prog) prog.textContent = `${docCount} / ${totalDocs} enviados`;
+
+  // Auto-polling: atualiza sem F5 enquanto houver docs processando ou aguardando preview
+  const allRealDocs = Object.values(st.real_docs_by_tipo || {}).flat();
+  const hasActive = allRealDocs.some(d => d.status === 'processando' || d.status === 'aguardando_preview');
+  if (hasActive && !STATE.obraIsDemo) _startDocsPoll(obraId);
+  else _stopDocsPoll();
 }
 
 function renderDocsStatus(obraId) {
