@@ -6383,11 +6383,33 @@ async function renderDocumentos(obraId) {
   const grid = document.getElementById('upload-grid');
   if (grid) {
     const docCards = DOC_TYPES.map(d => {
+      // Latest real doc across all subtipos of this category
+      const allCatDocs = d.subtipos.flatMap(s => ((st.real_docs_by_tipo || {})[s.tipo] || []));
+      allCatDocs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const latestDoc = allCatDocs[0];
+      const latestStatus = latestDoc?.status;
+
       const docState = (st.docs || {})[d.id];
-      const cls = docState === 'uploaded' ? 'uploaded' : (docState === 'processing' ? 'processing' : '');
-      const statusLabel = docState === 'uploaded' ? '✓ Recebido' : (docState === 'processing' ? 'Processando' : 'Aguardando envio');
-      const footLabel = docState === 'uploaded' ? 'Última atualização · ' + new Date().toLocaleDateString('pt-BR') : 'Clique para enviar arquivo';
-      return `<div class="upload-zone ${cls}" data-doc="${d.id}" onclick="handleUploadClick('${obraId}','${d.id}')">
+      let cls, statusLabel, footLabel, clickHandler;
+
+      if (latestStatus === 'aguardando_preview') {
+        cls = 'processing';
+        statusLabel = '⚡ Aguardando OK';
+        footLabel = 'Ver dados e confirmar →';
+        clickHandler = `showPreviewModal('${latestDoc.id}','${latestDoc.tipo}','${obraId}')`;
+      } else if (latestStatus === 'processando') {
+        cls = 'processing';
+        statusLabel = 'Processando…';
+        footLabel = 'aguarde o processamento…';
+        clickHandler = `handleUploadClick('${obraId}','${d.id}')`;
+      } else {
+        cls = docState === 'uploaded' ? 'uploaded' : (docState === 'processing' ? 'processing' : '');
+        statusLabel = docState === 'uploaded' ? '✓ Recebido' : (docState === 'processing' ? 'Processando' : 'Aguardando envio');
+        footLabel = docState === 'uploaded' ? 'Última atualização · ' + new Date().toLocaleDateString('pt-BR') : 'Clique para enviar arquivo';
+        clickHandler = `handleUploadClick('${obraId}','${d.id}')`;
+      }
+
+      return `<div class="upload-zone ${cls}" data-doc="${d.id}" onclick="${clickHandler}">
         <div class="upload-zone-head">
           <span class="upload-zone-ico">${d.ico}</span>
           <span class="upload-zone-status">${statusLabel}</span>
@@ -6654,6 +6676,79 @@ async function publicarDossie() {
     if (statusEl) statusEl.textContent = 'publicado ✓';
     renderDocumentos(STATE.obraAtiva);
   } catch (e) { if (statusEl) statusEl.textContent = 'erro: ' + e.message; }
+}
+
+// ─── HANDLER: Preview modal (aguardando_preview) ───────
+function showPreviewModal(docId, tipo, obraId) {
+  const old = document.getElementById('l4-preview-modal'); if (old) old.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'l4-preview-modal';
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;';
+  document.body.appendChild(wrap);
+
+  supaGet('l4_documentos_obra', `?id=eq.${docId}&select=ia_output,nome_arquivo_original`)
+    .then(rows => {
+      const doc = rows[0];
+      if (!doc || !doc.ia_output) { wrap.remove(); alert('Dados não disponíveis.'); return; }
+      const out = doc.ia_output;
+      let tableHtml = '';
+
+      if (tipo === 'cronograma' && Array.isArray(out.tarefas)) {
+        tableHtml = `<p style="margin:0 0 8px;opacity:0.55;font-size:12px;">${out.tarefas.length} tarefas · data ref: ${out.data_referencia || '—'}</p>
+        <div style="overflow:auto;max-height:340px;">
+        <table style="width:100%;font-size:11px;border-collapse:collapse;font-family:monospace;">
+          <thead><tr style="background:#111;">${['WBS','Etapa','Início','Fim','%'].map(h=>`<th style="padding:6px 8px;text-align:left;white-space:nowrap;">${h}</th>`).join('')}</tr></thead>
+          <tbody>${out.tarefas.slice(0,50).map((t,i)=>`<tr style="background:${i%2?'rgba(255,255,255,0.03)':''}">
+            <td style="padding:4px 8px;">${t.wbs_id||''}</td>
+            <td style="padding:4px 8px;">${(t.nome_etapa||'').slice(0,55)}</td>
+            <td style="padding:4px 8px;">${t.inicio_planejado||'—'}</td>
+            <td style="padding:4px 8px;">${t.fim_planejado||'—'}</td>
+            <td style="padding:4px 8px;">${t.percentual_concluido??'—'}%</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`;
+      } else if (tipo === 'orcamento' && Array.isArray(out.itens)) {
+        tableHtml = `<p style="margin:0 0 8px;opacity:0.55;font-size:12px;">${out.itens.length} itens · total: ${out.total_geral||'—'}</p>
+        <div style="overflow:auto;max-height:340px;">
+        <table style="width:100%;font-size:11px;border-collapse:collapse;font-family:monospace;">
+          <thead><tr style="background:#111;">${['Código','Descrição','Qtd','Un','Total'].map(h=>`<th style="padding:6px 8px;text-align:left;">${h}</th>`).join('')}</tr></thead>
+          <tbody>${out.itens.slice(0,50).map((t,i)=>`<tr style="background:${i%2?'rgba(255,255,255,0.03)':''}">
+            <td style="padding:4px 8px;">${t.codigo||''}</td>
+            <td style="padding:4px 8px;">${(t.descricao||'').slice(0,55)}</td>
+            <td style="padding:4px 8px;">${t.quantidade||''}</td>
+            <td style="padding:4px 8px;">${t.unidade||''}</td>
+            <td style="padding:4px 8px;">${t.valor_total||''}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`;
+      } else {
+        tableHtml = `<pre style="font-size:11px;overflow:auto;max-height:340px;white-space:pre-wrap;">${JSON.stringify(out,null,2).slice(0,3000)}</pre>`;
+      }
+
+      wrap.innerHTML = `<div style="background:#0A0A0A;color:#F4EFE7;border:1px solid rgba(255,255,255,0.12);max-width:780px;width:100%;padding:28px;max-height:88vh;overflow-y:auto;font-family:sans-serif;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+          <div>
+            <div style="font-family:monospace;font-size:10px;letter-spacing:0.2em;opacity:0.5;margin-bottom:4px;">DADOS EXTRAÍDOS · AGUARDANDO CONFIRMAÇÃO</div>
+            <div style="font-size:14px;">${doc.nome_arquivo_original||''}</div>
+          </div>
+          <button onclick="document.getElementById('l4-preview-modal').remove()" style="background:transparent;border:none;color:#F4EFE7;cursor:pointer;font-size:20px;padding:0 0 0 16px;">✕</button>
+        </div>
+        ${tableHtml}
+        <div style="display:flex;gap:12px;margin-top:20px;">
+          <button onclick="confirmDocPreview('${docId}','${obraId}')" style="flex:1;padding:12px;background:#1a5c1a;color:#F4EFE7;border:none;cursor:pointer;font-family:monospace;font-size:11px;letter-spacing:0.15em;">CONFIRMAR E LIBERAR PARA PIPELINE</button>
+          <button onclick="document.getElementById('l4-preview-modal').remove()" style="padding:12px 20px;background:transparent;color:rgba(244,239,231,0.55);border:1px solid rgba(244,239,231,0.18);cursor:pointer;font-family:monospace;font-size:11px;">CANCELAR</button>
+        </div>
+      </div>`;
+      wrap.onclick = e => { if (e.target === wrap) wrap.remove(); };
+    })
+    .catch(e => { wrap.remove(); alert('Erro ao carregar dados: ' + e.message); });
+}
+
+async function confirmDocPreview(docId, obraId) {
+  try {
+    await supaPatch('l4_documentos_obra', `?id=eq.${docId}`, { status: 'processado' });
+    document.getElementById('l4-preview-modal')?.remove();
+    delete STATE.obras_state[obraId]; // força re-fetch no próximo render
+    renderDocumentos(obraId);
+  } catch (e) { alert('Erro ao confirmar: ' + e.message); }
 }
 
 // ─── HANDLER: Export JSON pra rodar no Claude Code ─────
