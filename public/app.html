@@ -2271,7 +2271,85 @@ table.t .end { text-align: right; }
   .kpi-grid, .meta-grid { grid-template-columns: repeat(2, 1fr); }
   .pipe-row { grid-template-columns: 36px 1fr 90px 28px; }
   .pipe-row .time { display: none; }
+  .doc-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ─── Docs Overview (dark) ─── */
+.docs-sect {
+  background: #1c1c1c;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 20px;
+}
+.docs-sect-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #282828;
+  padding-bottom: 16px;
+}
+.docs-sect-title { color: #ffffff; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+.docs-sent-count { font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em; color: #555555; text-transform: uppercase; }
+.doc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.doc-card {
+  background: #252525;
+  border: 1px solid #333333;
+  border-radius: 10px;
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.doc-card:hover { border-color: #555555; background: #2a2a2a; }
+.doc-card.d-ok  { border-color: rgba(45,90,61,0.35); }
+.doc-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.doc-badge {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #3a3a3a;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 10px; font-weight: 600; color: #888888;
+  flex-shrink: 0;
+}
+.doc-badge.b-ok   { background: #2d5a3d; color: #ffffff; }
+.doc-badge.b-proc { background: #2d2200; color: #d4a800; }
+.doc-badge.b-wait { background: #2d2200; color: #d48000; }
+.doc-badge.b-err  { background: #2d0000; color: #f87171; }
+.doc-stat { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #555555; }
+.doc-stat.s-ok   { color: #5a9a6a; }
+.doc-stat.s-proc { color: #d4a800; }
+.doc-stat.s-wait { color: #d48000; }
+.doc-stat.s-err  { color: #f87171; }
+.doc-name  { color: #ffffff; font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.doc-desc  { color: #555555; font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; margin-bottom: 14px; line-height: 1.5; }
+.doc-cta   { color: #444444; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
+.doc-cta.has { color: #888888; }
+
+/* ─── Docs History Table (dark) ─── */
+.hist-sect { background: #1c1c1c; border: 1px solid #2a2a2a; border-radius: 12px; padding: 24px 32px; }
+.hist-head { font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; color: #555555; text-transform: uppercase; margin-bottom: 20px; }
+.hist-table { width: 100%; border-collapse: collapse; }
+.hist-table th {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #444444;
+  padding: 8px 12px; text-align: left;
+  border-bottom: 1px solid #2a2a2a; white-space: nowrap;
+}
+.hist-table td { padding: 10px 12px; font-size: 12px; border-bottom: 1px solid #1e1e1e; color: #aaaaaa; vertical-align: middle; }
+.hist-table tr:last-child td { border-bottom: none; }
+.hist-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tipo-chip {
+  display: inline-block; padding: 2px 8px; border-radius: 3px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+  background: #2a2a2a; color: #888888; border: 1px solid #333333;
+}
+.hbadge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; border: 1px solid transparent; }
+.hbadge.processando        { background: rgba(212,168,0,.1);   color: #d4a800; border-color: rgba(212,168,0,.2); }
+.hbadge.aguardando_preview { background: rgba(212,128,0,.1);   color: #e09040; border-color: rgba(212,128,0,.2); }
+.hbadge.processado         { background: rgba(90,154,106,.1);  color: #5a9a6a; border-color: rgba(90,154,106,.2); }
+.hbadge.erro               { background: rgba(248,113,113,.1); color: #f87171; border-color: rgba(248,113,113,.2); }
+.hbadge.rejeitado_preview  { background: rgba(180,80,80,.1);   color: #e07070; border-color: rgba(180,80,80,.2); }
+.hbadge.pendente           { background: rgba(100,100,100,.08); color: #666666; border-color: #333333; }
 </style>
 </head>
 <body>
@@ -4151,10 +4229,19 @@ const TAB_TIPO = {
   orcamento:  'orcamento',
   cronograma: 'cronograma',
   boletins:   'boletim_medicao',
-  'nf-rec':   'nota_fiscal',
-  'nf-lanc':  'nota_fiscal',
-  diario:     'nota_fiscal',
+  'nf-rec':   'nf_recebida',
+  'nf-lanc':  'nf_lancada',
+  diario:     'diario_obra',
 };
+
+const DOC_TYPES = [
+  { tab: 'orcamento',  label: 'Orçamento',      badge: 'O',  desc: 'Planilhas, composições e memoriais de orçamento.' },
+  { tab: 'cronograma', label: 'Cronograma',      badge: 'C',  desc: 'Cronograma, baseline e medições físicas.' },
+  { tab: 'boletins',   label: 'Boletins',        badge: 'B',  desc: 'Boletins de medição quinzenal.' },
+  { tab: 'nf-rec',     label: 'NFs Recebidas',   badge: 'NF', desc: 'NFs, contratos, pedidos e cotações SEFAZ.' },
+  { tab: 'nf-lanc',    label: 'NFs Lançadas',    badge: 'NL', desc: 'NFs lançadas no Sienge.' },
+  { tab: 'diario',     label: 'Diário de Obra',  badge: 'D',  desc: 'Registros diários de obra.' },
+];
 const TAB_ACCEPT = {
   orcamento:  '.xlsx,.xls,.csv,.pdf,.json',
   cronograma: '.xlsx,.xml,.json,.pdf',
@@ -4172,6 +4259,140 @@ function _startUploadPoll(obraId, tab) {
 }
 function _stopUploadPoll() {
   if (_uploadPollTimer) { clearInterval(_uploadPollTimer); _uploadPollTimer = null; }
+}
+function _startUploadPoll2(obraId) {
+  _stopUploadPoll();
+  _uploadPollTimer = setInterval(() => renderDocsPage(obraId), 5000);
+}
+
+function _cardUpload(tab) {
+  const obraId = STATE.obraAtiva;
+  if (!obraId) return;
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = TAB_ACCEPT[tab] || '*';
+  inp.onchange = () => { if (inp.files?.[0]) doUploadReal(obraId, tab, inp.files[0]); };
+  inp.click();
+}
+
+async function renderDocsPage(obraId) {
+  const c = document.getElementById('upload-content');
+  if (!c) return;
+  const isDemo = !obraId || ['residencial-demo','edificio-norte'].includes(obraId);
+
+  // skeleton
+  c.innerHTML = `
+    <div class="docs-sect">
+      <div class="docs-sect-head">
+        <span class="docs-sect-title">Documentos da obra</span>
+        <span class="docs-sent-count">carregando…</span>
+      </div>
+      <div class="doc-grid">${DOC_TYPES.map(() => '<div class="doc-card" style="opacity:.15;min-height:120px;pointer-events:none;"></div>').join('')}</div>
+    </div>
+    <div class="hist-sect" style="opacity:.15;min-height:60px;"></div>`;
+
+  let allDocs = [];
+  if (!isDemo) {
+    try {
+      allDocs = await supaGet('l4_documentos_obra',
+        `?project_id=eq.${obraId}&select=id,tipo,versao,nome_arquivo_original,status,ia_output,created_at,error_message&order=created_at.desc`);
+    } catch(e) { console.warn('Docs fetch:', e.message); }
+  }
+
+  const fmtDate = ts => {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
+  // latest doc per tab
+  const latestByTab = {};
+  for (const dt of DOC_TYPES) {
+    const tipo = TAB_TIPO[dt.tab];
+    const match = allDocs.find(d => d.tipo === tipo);
+    if (match) latestByTab[dt.tab] = match;
+  }
+
+  const receivedCount = DOC_TYPES.filter(dt => latestByTab[dt.tab]?.status === 'processado').length;
+  const hasActive = allDocs.some(d => d.status === 'processando' || d.status === 'aguardando_preview');
+  if (hasActive) _startUploadPoll2(obraId); else _stopUploadPoll();
+
+  const statInfo = (d) => {
+    if (!d) return { bc:'', sc:'', sl:'AGUARDANDO ENVIO',  ct:'CLIQUE PARA ENVIAR ARQUIVO', cc:'' };
+    return {
+      processando:        { bc:'b-proc', sc:'s-proc', sl:'PROCESSANDO…',        ct:'aguarde o processamento…',           cc:'has' },
+      aguardando_preview: { bc:'b-wait', sc:'s-wait', sl:'⚡ AGUARDANDO OK',     ct:'Ver dados e confirmar →',            cc:'has' },
+      processado:         { bc:'b-ok',   sc:'s-ok',   sl:'✓ RECEBIDO',          ct:`ÚLTIMA ATUALIZAÇÃO · ${fmtDate(d.created_at)}`, cc:'has' },
+      erro:               { bc:'b-err',  sc:'s-err',  sl:'✕ ERRO',              ct:'CLIQUE PARA TENTAR NOVAMENTE',       cc:'' },
+      rejeitado_preview:  { bc:'b-err',  sc:'s-err',  sl:'REJEITADO',           ct:'CLIQUE PARA NOVA VERSÃO',            cc:'' },
+    }[d.status] || { bc:'', sc:'', sl: d.status, ct:'clique para enviar', cc:'has' };
+  };
+
+  const cards = DOC_TYPES.map(dt => {
+    const latest  = latestByTab[dt.tab];
+    const si      = statInfo(latest);
+    const isPreview = latest?.status === 'aguardando_preview';
+    let click;
+    if (isDemo)       click = `alert('Selecione uma obra real para enviar documentos.')`;
+    else if (isPreview) click = `showPreviewModal('${latest.id}','${TAB_TIPO[dt.tab]}')`;
+    else               click = `_cardUpload('${dt.tab}')`;
+    return `
+      <div class="doc-card${latest?.status === 'processado' ? ' d-ok' : ''}" onclick="${click}">
+        <div class="doc-card-top">
+          <div class="doc-badge ${si.bc}">${dt.badge}</div>
+          <span class="doc-stat ${si.sc}">${si.sl}</span>
+        </div>
+        <div class="doc-name">${dt.label}</div>
+        <div class="doc-desc">${dt.desc}</div>
+        <div class="doc-cta ${si.cc}">${si.ct}</div>
+      </div>`;
+  }).join('');
+
+  const TIPO_CHIP = { orcamento:'orcamento', cronograma:'cronograma', boletim_medicao:'boletins',
+                      nf_recebida:'nf-rec', nf_lancada:'nf-lanc', diario_obra:'diário',
+                      nota_fiscal:'nota fiscal' };
+
+  const histRows = allDocs.length
+    ? allDocs.map(d => {
+        const chip   = TIPO_CHIP[d.tipo] || d.tipo;
+        const fname  = (d.nome_arquivo_original || '—');
+        const fnameS = fname.length > 42 ? fname.slice(0,42) + '…' : fname;
+        const hasPreview = d.status === 'aguardando_preview' && d.ia_output;
+        const hasErr     = (d.status === 'erro' || d.status === 'rejeitado_preview') && d.error_message;
+        const action = hasPreview
+          ? `<button class="btn-link" onclick="showPreviewModal('${d.id}','${d.tipo}')">Ver dados →</button>`
+          : hasErr
+            ? `<button class="btn-link" style="color:#f87171" onclick="alert(${JSON.stringify(String(d.error_message).slice(0,300))})">Ver erro</button>`
+            : '';
+        return `<tr>
+          <td><span class="tipo-chip">${chip}</span></td>
+          <td class="mono" style="color:#666;">v${d.versao}</td>
+          <td><span class="hbadge ${d.status}">${d.status.replace(/_/g,' ').toUpperCase()}</span></td>
+          <td class="mono" style="color:#777;font-size:11px;" title="${fname}">${fnameS}</td>
+          <td class="mono" style="color:#555;">${fmtDate(d.created_at)}</td>
+          <td style="text-align:right;">${action}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="6" style="text-align:center;padding:32px;opacity:.35;font-family:monospace;font-size:11px;letter-spacing:.1em;">NENHUM DOCUMENTO ENVIADO</td></tr>`;
+
+  c.innerHTML = `
+    <div class="docs-sect">
+      <div class="docs-sect-head">
+        <span class="docs-sect-title">Documentos da obra</span>
+        <span class="docs-sent-count">${receivedCount} / ${DOC_TYPES.length} ENVIADOS</span>
+      </div>
+      <div class="doc-grid">${cards}</div>
+    </div>
+    <div class="hist-sect">
+      <div class="hist-head">Histórico de documentos</div>
+      <table class="hist-table">
+        <thead><tr>
+          <th>Tipo</th><th>Versão</th><th>Status</th><th>Arquivo</th><th>Data</th>
+          <th style="text-align:right;">Ações</th>
+        </tr></thead>
+        <tbody>${histRows}</tbody>
+      </table>
+    </div>`;
 }
 
 // Carrega histórico real do Supabase e renderiza tabela
@@ -4326,8 +4547,8 @@ async function doUploadReal(obraId, tab, file) {
       canal_origem: 'site',
     });
 
-    renderUploadHistory(obraId, tab);
-    _startUploadPoll(obraId, tab);
+    renderDocsPage(obraId);
+    _startUploadPoll2(obraId);
   } catch (e) {
     alert('Erro no upload: ' + e.message);
   }
@@ -4335,62 +4556,11 @@ async function doUploadReal(obraId, tab, file) {
 
 function renderUpload(tab) {
   _stopUploadPoll();
-  document.querySelectorAll('#upload-tabs .tab').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
-  const c = document.getElementById('upload-content');
-  const obraId = STATE.obraAtiva;
-  const isDemo = !obraId || ['residencial-demo','edificio-norte'].includes(obraId);
-
-  c.innerHTML = `
-    <div class="drop" id="drop-zone">
-      <div class="label">${isDemo ? 'SELECIONE UMA OBRA REAL PARA ENVIAR ARQUIVOS' : 'ARRASTAR ARQUIVO OU CLICAR PARA SELECIONAR'}</div>
-      <div class="formats">FORMATOS · ${FORMATS[tab]}</div>
-    </div>
-    <h3 style="margin:40px 0 10px;font-size:16px;font-weight:600;">Versões anteriores</h3>
-    <table class="t">
-      <thead>
-        <tr>
-          <th style="width:70px;">Versão</th>
-          <th>Arquivo</th>
-          <th style="width:160px;">Status</th>
-          <th style="width:180px;">Enviado em</th>
-          <th class="end" style="width:160px;">Ações</th>
-        </tr>
-      </thead>
-      <tbody id="upload-tbody">
-        <tr><td colspan="5" style="opacity:0.5;text-align:center;padding:20px;">Carregando…</td></tr>
-      </tbody>
-    </table>
-  `;
-
-  const zone = document.getElementById('drop-zone');
-  if (!isDemo) {
-    zone.addEventListener('click', () => {
-      const inp = document.createElement('input');
-      inp.type = 'file';
-      inp.accept = TAB_ACCEPT[tab] || '*';
-      inp.onchange = () => { if (inp.files?.[0]) doUploadReal(obraId, tab, inp.files[0]); };
-      inp.click();
-    });
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('over'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('over'));
-    zone.addEventListener('drop', e => {
-      e.preventDefault(); zone.classList.remove('over');
-      const f = e.dataTransfer.files?.[0];
-      if (f) doUploadReal(obraId, tab, f);
-    });
-    zone.style.cursor = 'pointer';
-    renderUploadHistory(obraId, tab);
-  } else {
-    zone.style.cursor = 'not-allowed';
-    zone.style.opacity = '0.5';
-    document.getElementById('upload-tbody').innerHTML =
-      '<tr><td colspan="5" style="opacity:0.5;text-align:center;padding:20px;">Selecione uma obra real para ver o histórico.</td></tr>';
-  }
+  // hide legacy tabs bar
+  const tabsEl = document.getElementById('upload-tabs');
+  if (tabsEl) tabsEl.style.display = 'none';
+  renderDocsPage(STATE.obraAtiva);
 }
-
-document.addEventListener('click', e => {
-  if (e.target.matches('#upload-tabs .tab')) renderUpload(e.target.dataset.tab);
-});
 
 // ─── TELA 5: Pipeline
 function renderPipeline() {
