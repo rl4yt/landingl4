@@ -6322,7 +6322,7 @@ function renderObrasV2Grid(obras) {
     const st = STATE.obras_state[o.uuid] || { audit_state: 'inicial', docs: {} };
     const docCount = Object.values(st.docs || {}).filter(v => v === 'uploaded').length;
     const stateLabel = { 'inicial': 'Documentos · em envio', 'em_analise': 'Auditoria em análise', 'pronto': 'Dossiê pronto' }[st.audit_state] || 'Documentos · em envio';
-    const graphifyUrl = 'https://graphify-app.vercel.app/?project=' + o.uuid + '&name=' + encodeURIComponent(o.nome);
+    const gestaoUrl = 'https://landingl4.vercel.app/gestao/' + o.uuid;
     return `<div class="obra-card" onclick="location.hash='#documentos/${o.uuid}'">
       <div class="obra-card-head">
         <div>
@@ -6338,7 +6338,7 @@ function renderObrasV2Grid(obras) {
         <div><div class="lbl">Chave</div><div class="val">${o.gphy}</div></div>
       </div>
       <div class="obra-card-footer">
-        <a class="obra-card-dash-link" href="${graphifyUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Dashboard operacional →</a>
+        <a class="obra-card-dash-link" href="${gestaoUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Dashboard operacional →</a>
       </div>
     </div>`;
   }).join('');
@@ -7323,7 +7323,7 @@ document.addEventListener('click', e => {
   if (pill && !pill.classList.contains('locked')) {
     const t = pill.dataset.target;
     if (t === 'documentos') location.hash = '#documentos/' + STATE.obraAtiva;
-    else if (t === 'dashboard') location.hash = '#obra/' + STATE.obraAtiva;
+    else if (t === 'dashboard') window.open('https://landingl4.vercel.app/gestao/' + STATE.obraAtiva, '_blank');
     else if (t === 'pipeline')  location.hash = '#pipeline/run-' + STATE.obraAtiva;
     else if (t === 'dossie')    location.hash = '#relatorio/run-' + STATE.obraAtiva;
   }
