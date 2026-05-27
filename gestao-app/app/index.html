@@ -6634,14 +6634,8 @@ async function uploadDocReal(obraId, tipo, file) {
       uploaded_by: STATE.userId,
     });
 
-    // 4) Fallback: chama VPS direto caso trigger não esteja configurado
-    try {
-      await fetch(`${VPS}/process-documento`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'INSERT', table: 'l4_documentos_obra', schema: 'public', record: { project_id: obraId, tipo, storage_path: path }, old_record: null }),
-      });
-    } catch (e) { console.warn('VPS /process-documento fallback fail:', e.message); }
+    // Não chama VPS direto — depende do trigger Supabase (igual à Base de Dados)
+    // O trigger dispara o n8n automaticamente via webhook configurado no Supabase
 
     renderDocumentos(obraId);
     alert(`"${file.name}" enviado. Gemini processando.`);
