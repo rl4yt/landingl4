@@ -3845,6 +3845,7 @@ const STATE = {
   jwt: null,
   refreshToken: null,
   userId: null,
+  whatsappVerificado: false,
   obras: [],
   obraAtiva: 'residencial-demo',
   run: null,
@@ -3977,6 +3978,8 @@ function infoRenderCode(expired) {
 }
 
 function infoShowVerified() {
+  STATE.whatsappVerificado = true;
+  localStorage.setItem('l4_verified', '1');
   const card = document.getElementById('info-verify-card');
   const verifiedEl = document.getElementById('info-verified-state');
   if (card) card.hidden = true;
@@ -4037,6 +4040,12 @@ function infoCopy(type) {
 function router() {
   const hash = location.hash.slice(1) || 'login';
   const [route, arg] = hash.split('/');
+
+  const PROTECTED_ROUTES = ['obras', 'obra', 'upload', 'pipeline', 'relatorio', 'historico', 'agentes', 'config', 'nova-obra'];
+  if (PROTECTED_ROUTES.includes(route) && !DEV_MODE && STATE.userId && !STATE.whatsappVerificado) {
+    location.hash = '#info/' + STATE.userId;
+    return;
+  }
 
   // Hide all primary views + login
   ['view-login','view-obras','view-obra','view-upload','view-pipeline','view-relatorio','view-historico','view-agentes','view-config','view-nova-obra','view-info'].forEach(id => {
@@ -5086,10 +5095,33 @@ document.getElementById('login-form').addEventListener('submit', async e => {
     if (hdUser) hdUser.textContent = email.split('@')[0];
     setLoginStatus('Entrando...', 'ok');
     
+    let isVerified = true;
+    if (!DEV_MODE && STATE.userId) {
+      try {
+        const rows = await supaGet('l4_engenheiros', '?id=eq.' + STATE.userId + '&select=whatsapp_verificado_em&limit=1');
+        if (rows && rows[0] && rows[0].whatsapp_verificado_em) {
+          STATE.whatsappVerificado = true;
+          localStorage.setItem('l4_verified', '1');
+        } else {
+          isVerified = false;
+          STATE.whatsappVerificado = false;
+          localStorage.removeItem('l4_verified');
+        }
+      } catch (err) {
+        console.warn('Erro ao checar verificação:', err);
+        isVerified = true;
+      }
+    } else if (DEV_MODE) {
+      STATE.whatsappVerificado = true;
+      localStorage.setItem('l4_verified', '1');
+    }
+
     if (LOGIN_MODE_SIGNUP && STATE.userId) {
       location.hash = '#info/' + STATE.userId;
-    } else {
+    } else if (isVerified) {
       location.hash = '#obras';
+    } else {
+      location.hash = '#info/' + STATE.userId;
     }
   } catch (err) {
     setLoginStatus((LOGIN_MODE_SIGNUP ? 'Cadastro' : 'Login') + ' falhou: ' + err.message, 'err');
@@ -5104,10 +5136,12 @@ function doLogout() {
   localStorage.removeItem('l4_userId');
   localStorage.removeItem('l4_jwt_exp');
   localStorage.removeItem('l4_obra_ativa');
+  localStorage.removeItem('l4_verified');
   STATE.auth = null;
   STATE.jwt = null;
   STATE.refreshToken = null;
   STATE.userId = null;
+  STATE.whatsappVerificado = false;
   location.hash = '#login';
 }
 
@@ -5123,9 +5157,13 @@ if (btnLogout) {
 (function boot() {
   const saved = localStorage.getItem('l4_user');
   const jwt = localStorage.getItem('l4_jwt');
+  const userId = localStorage.getItem('l4_userId');
+  const verified = localStorage.getItem('l4_verified') === '1';
   if (saved) {
     STATE.auth = { email: saved };
     STATE.jwt = jwt;
+    STATE.userId = userId;
+    STATE.whatsappVerificado = verified;
     STATE.emailUser = saved;
     document.getElementById('hd-user').textContent = saved.split('@')[0];
   } else if (!location.hash) {
