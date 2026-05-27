@@ -2395,6 +2395,14 @@ table.t .end { text-align: right; }
     <div class="div"></div>
 
     <form id="login-form" class="login-form" autocomplete="off">
+      <div class="fld" id="fld-name" style="display: none;">
+        <label for="li-name">Nome completo</label>
+        <input id="li-name" type="text" placeholder="Seu nome" />
+      </div>
+      <div class="fld" id="fld-wpp" style="display: none;">
+        <label for="li-wpp">WhatsApp</label>
+        <input id="li-wpp" type="tel" placeholder="5573999999999 (DDD + número)" />
+      </div>
       <div class="fld">
         <label for="li-email">E-mail</label>
         <input id="li-email" type="email" required placeholder="seu.email@construtora.com.br" />
@@ -5045,6 +5053,10 @@ function setLoginMode(signup) {
   const acc = document.querySelector('#view-login .access');
   const sub = document.querySelector('#login-form button[type="submit"]');
   const foot = document.querySelector('#view-login .sub a');
+  const fldName = document.getElementById('fld-name');
+  const fldWpp = document.getElementById('fld-wpp');
+  const inpName = document.getElementById('li-name');
+  const inpWpp = document.getElementById('li-wpp');
   if (signup) {
     if (acc) acc.textContent = 'CRIAR NOVA CONTA';
     if (sub) sub.textContent = 'Cadastrar →';
@@ -5052,6 +5064,10 @@ function setLoginMode(signup) {
       foot.href = '#login';
       foot.textContent = 'Já tem conta? Fazer login';
     }
+    if (fldName) fldName.style.display = '';
+    if (fldWpp) fldWpp.style.display = '';
+    if (inpName) inpName.required = true;
+    if (inpWpp) inpWpp.required = true;
   } else {
     if (acc) acc.textContent = 'ACESSO RESTRITO';
     if (sub) sub.textContent = 'Entrar →';
@@ -5059,6 +5075,10 @@ function setLoginMode(signup) {
       foot.href = '#cadastro';
       foot.textContent = 'Cadastrar nova conta';
     }
+    if (fldName) fldName.style.display = 'none';
+    if (fldWpp) fldWpp.style.display = 'none';
+    if (inpName) { inpName.required = false; inpName.value = ''; }
+    if (inpWpp) { inpWpp.required = false; inpWpp.value = ''; }
   }
 }
 
@@ -5084,6 +5104,8 @@ function resetLoginForm() {
   const stEl = document.getElementById('login-status'); if (stEl) stEl.remove();
   const em = document.getElementById('li-email'); if (em && !STATE.jwt) em.value = '';
   const pw = document.getElementById('li-pass'); if (pw) pw.value = '';
+  const inpName = document.getElementById('li-name'); if (inpName) inpName.value = '';
+  const inpWpp = document.getElementById('li-wpp'); if (inpWpp) inpWpp.value = '';
 }
 
 document.getElementById('login-form').addEventListener('submit', async e => {
@@ -5091,6 +5113,14 @@ document.getElementById('login-form').addEventListener('submit', async e => {
   const email = document.getElementById('li-email').value.trim();
   const pass = document.getElementById('li-pass').value;
   if (!email || !pass) { setLoginStatus('Preencha e-mail e senha.', 'err'); return; }
+  
+  let name = '', wpp = '';
+  if (LOGIN_MODE_SIGNUP) {
+    name = document.getElementById('li-name').value.trim();
+    wpp = document.getElementById('li-wpp').value.trim();
+    if (!name || !wpp) { setLoginStatus('Preencha nome e WhatsApp.', 'err'); return; }
+  }
+
   const sub = e.target.querySelector('button[type="submit"]');
   const prev = sub.innerHTML;
   sub.disabled = true; sub.innerHTML = (LOGIN_MODE_SIGNUP ? 'Cadastrando...' : 'Entrando...');
@@ -5103,6 +5133,30 @@ document.getElementById('login-form').addEventListener('submit', async e => {
         setLoginMode(false);
         sub.disabled = false; sub.innerHTML = prev;
         return;
+      }
+      
+      // Criar o perfil do engenheiro em l4_engenheiros usando o JWT do usuário recém-criado
+      if (STATE.userId && STATE.jwt) {
+        setLoginStatus('Criando perfil de engenheiro...', 'info');
+        const profileBody = {
+          id: STATE.userId,
+          nome: name,
+          whatsapp: wpp
+        };
+        const rProfile = await fetch(`${SUPA_URL}/rest/v1/l4_engenheiros`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPA_ANON_KEY,
+            'Authorization': `Bearer ${STATE.jwt}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(profileBody)
+        });
+        if (!rProfile.ok) {
+          const t = await rProfile.text();
+          throw new Error('Erro ao criar perfil de engenheiro: ' + t);
+        }
       }
     } else {
       const data = await supaAuthLogin(email, pass);
