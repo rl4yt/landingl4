@@ -3906,8 +3906,17 @@ async function renderInfo(userId) {
   // poll every 3s for whatsapp_verificado_em
   _infoPolling = setInterval(async () => {
     try {
-      const rows = await supaGet('l4_engenheiros', '?id=eq.' + userId + '&select=whatsapp_verificado_em&limit=1');
-      if (rows && rows[0] && rows[0].whatsapp_verificado_em) {
+      const rowsEng = await supaGet('l4_engenheiros', '?id=eq.' + userId + '&select=whatsapp_verificado_em&limit=1');
+      let verified = false;
+      if (rowsEng && rowsEng[0] && rowsEng[0].whatsapp_verificado_em) {
+        verified = true;
+      } else {
+        const rowsDisp = await supaGet('l4_dispositivos_whatsapp', '?user_id=eq.' + userId + '&select=verificado_em&limit=1');
+        if (rowsDisp && rowsDisp[0] && rowsDisp[0].verificado_em) {
+          verified = true;
+        }
+      }
+      if (verified) {
         clearInterval(_infoPolling);
         clearInterval(_infoTickTimer);
         infoShowVerified();
@@ -5105,14 +5114,21 @@ document.getElementById('login-form').addEventListener('submit', async e => {
     let isVerified = true;
     if (!DEV_MODE && STATE.userId) {
       try {
-        const rows = await supaGet('l4_engenheiros', '?id=eq.' + STATE.userId + '&select=whatsapp_verificado_em&limit=1');
-        if (rows && rows[0] && rows[0].whatsapp_verificado_em) {
+        const rowsEng = await supaGet('l4_engenheiros', '?id=eq.' + STATE.userId + '&select=whatsapp_verificado_em&limit=1');
+        if (rowsEng && rowsEng[0] && rowsEng[0].whatsapp_verificado_em) {
           STATE.whatsappVerificado = true;
           localStorage.setItem('l4_verified', '1');
         } else {
-          isVerified = false;
-          STATE.whatsappVerificado = false;
-          localStorage.removeItem('l4_verified');
+          // Fallback: consulta l4_dispositivos_whatsapp
+          const rowsDisp = await supaGet('l4_dispositivos_whatsapp', '?user_id=eq.' + STATE.userId + '&select=verificado_em&limit=1');
+          if (rowsDisp && rowsDisp[0] && rowsDisp[0].verificado_em) {
+            STATE.whatsappVerificado = true;
+            localStorage.setItem('l4_verified', '1');
+          } else {
+            isVerified = false;
+            STATE.whatsappVerificado = false;
+            localStorage.removeItem('l4_verified');
+          }
         }
       } catch (err) {
         console.warn('Erro ao checar verificação:', err);
