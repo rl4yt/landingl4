@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gestão L4 · Auto-diagnóstico</title>
+<template id="__bundler_thumbnail" data-bg-color="#ffffff">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#ffffff"/>
+    <g transform="translate(540 320) scale(2.5)" fill="none" stroke="#0a0a0a" stroke-width="1.75">
+      <circle cx="32" cy="32" r="14"/>
+      <circle cx="32" cy="32" r="26"/>
+      <path d="M 32 32 L 32 6 A 26 26 0 0 1 50.4 13.6 Z" fill="#0a0a0a" stroke="none" opacity="0.85"/>
+      <circle cx="32" cy="32" r="2" fill="#0a0a0a" stroke="none"/>
+    </g>
+    <text x="600" y="640" text-anchor="middle" fill="#0a0a0a" font-family="sans-serif" font-size="32" letter-spacing="6">RAIO-X · L4</text>
+  </svg>
+</template>
+<script>
+  window.tailwind = window.tailwind || {};
+  window.tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          serif: ['Source Serif 4', 'Source Serif Pro', 'Georgia', 'serif'],
+        },
+        colors: {
+          'hero-bg': '#15110E',
+          'hero-bg-2': '#1F1A15',
+          'hero-fg': '#F4EFE7',
+          'hero-mute': 'rgba(244, 239, 231, 0.62)',
+          'hero-mute-2': 'rgba(244, 239, 231, 0.38)',
+          'hero-hair': 'rgba(244, 239, 231, 0.14)',
+          'hero-glass': 'rgba(244, 239, 231, 0.08)',
+          'crit-dark': '#ED7878',
+          'warn-dark': '#E8B354',
+          'ok-dark':   '#6DCB8E',
+          'accent':    '#D6A874',
+        }
+      }
+    }
+  }
+</script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: light; }
+  html, body { background: #15110E; color: #F4EFE7; font-family: 'Inter', 'Geist', system-ui, sans-serif; }
+  .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  /* Marcador de canteiro */
+  .mk-hl { position: relative; display: inline-block; white-space: nowrap; }
+  .mk-hl::before {
+    content: ""; position: absolute; left: -0.08em; right: -0.08em; top: 0.12em; bottom: 0.02em;
+    background: var(--mk-color, rgba(214, 168, 116, 0.55));
+    z-index: 0; transform-origin: left center; transform: scaleX(0);
+    animation: mk-sweep 0.7s cubic-bezier(.7,.05,.3,1) 0.4s forwards;
+    mix-blend-mode: multiply;
+  }
+  .mk-hl > .mk-text { position: relative; z-index: 1; }
+  @keyframes mk-sweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @media (prefers-reduced-motion: reduce) { .mk-hl::before { transform: scaleX(1); animation: none; } }
+  /* Hide scrollbar utilities */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+@media (max-width: 720px) {
+  /* Header — compact */
+  header { padding: 14px 18px !important; }
+  header a.group { font-size: 10px !important; }
+
+  /* Form container */
+  main { padding: 24px 18px !important; }
+
+  /* Headlines — smaller for mobile */
+  h1.font-serif, h2.font-serif { font-size: 28px !important; line-height: 1.1 !important; }
+
+  /* Score number on result screen */
+  .text-7xl, .text-8xl { font-size: 64px !important; }
+
+  /* Option buttons — full width with comfortable padding */
+  button.group { padding: 14px 16px !important; min-height: 56px !important; }
+  button.group span.flex-1 { font-size: 14px !important; line-height: 1.4 !important; }
+
+  /* Input fields */
+  input { height: 48px !important; font-size: 16px !important; }
+
+  /* CTA buttons */
+  a.inline-flex.bg-hero-fg, button.inline-flex.bg-hero-fg {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 14px 22px !important;
+  }
+
+  /* Lead gate grid */
+  .grid.md\:grid-cols-2 { grid-template-columns: 1fr !important; gap: 16px !important; }
+
+  /* Progress bar on top */
+  .max-w-2xl { max-width: 100% !important; }
+
+  /* Result CTAs - stack */
+  .flex.flex-wrap.gap-3 { flex-direction: column; align-items: stretch; }
+  .flex.flex-wrap.gap-3 > * { width: 100% !important; justify-content: center !important; }
+}
+@media (max-width: 480px) {
+  h1.font-serif, h2.font-serif { font-size: 24px !important; }
+  .text-7xl, .text-8xl { font-size: 52px !important; }
+}
+</style>
+</head>
+<body class="bg-hero-bg text-hero-fg">
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <defs>
+    <symbol id="L4-solid" viewBox="0 0 124 88">
+      <g fill="currentColor" fill-rule="evenodd">
+        <rect x="8" y="8" width="15" height="59"/>
+        <rect x="24" y="68" width="64" height="12"/>
+        <path d="M 74 8 L 28 52 L 28 62 L 73 62 L 73 8 Z M 70 14 L 34 50 L 70 50 Z"/>
+        <rect x="74" y="8" width="14" height="59"/>
+        <rect x="96" y="68" width="12" height="12"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useMemo } = React;
+
+/* ----------------------------- CONFIG (match landing) ----------------------------- */
+const CALENDLY_URL = "https://calendar.app.google/MEkG8tsWszd2sXtn9";
+const WHATSAPP_NUMBER = "+5573998174140";
+const WHATSAPP_MSG = encodeURIComponent("Oi Romell, fiz o auto-diagnóstico no site da L4 e quero conversar.");
+const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g,"")}?text=${WHATSAPP_MSG}`;
+
+/* ----------------------------- ICONS ----------------------------- */
+const IconArrowRight = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/>
+  </svg>
+);
+const IconArrowLeft = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12,19 5,12 12,5"/>
+  </svg>
+);
+const IconAlertHigh = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="0.6" fill="currentColor"/>
+  </svg>
+);
+const IconAlertMed = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="0.6" fill="currentColor"/>
+  </svg>
+);
+const IconCheck = (p) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+const IconWA = (p) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...p}>
+    <path d="M20.5 3.5A11.7 11.7 0 0 0 3.5 19.7L2 22l2.4-1.5A11.7 11.7 0 1 0 20.5 3.5Zm-8.4 18a9.6 9.6 0 0 1-4.9-1.3l-.4-.2-2.6.7.7-2.5-.2-.4a9.6 9.6 0 1 1 7.4 3.7Zm5.4-7.2c-.3-.2-1.7-.9-2-1s-.5-.1-.7.2c-.2.3-.8.9-1 1.1-.2.2-.4.2-.7 0a7.7 7.7 0 0 1-3.8-3.4c-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.6 0-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 .9-1 2.4s1 2.8 1.1 3 2 3 4.8 4.2c.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3Z"/>
+  </svg>
+);
+
+/* ----------------------------- DATA ----------------------------- */
+const QUESTIONS = [
+  { id: "porte", label: "Qual o porte do contrato da obra?",
+    options: [
+      { label: "Menor que R$ 5M", weight: 0, alert: null },
+      { label: "R$ 5M a R$ 15M", weight: 2, alert: null },
+      { label: "R$ 15M a R$ 50M", weight: 5, alert: null },
+      { label: "Acima de R$ 50M", weight: 8, alert: null }
+    ]},
+  { id: "cpi", label: "Você sabe seu IDC atual (custo realizado vs valor agregado)?",
+    options: [
+      { label: "Sei — está acima de 1.0", weight: 0, alert: null },
+      { label: "Sei — entre 0.9 e 1.0", weight: 4, alert: "IDC no limite — margem da obra erodindo silenciosamente." },
+      { label: "Sei — abaixo de 0.9", weight: 9, alert: "IDC abaixo de 0.9 indica estouro projetado relevante." },
+      { label: "Não sei calcular hoje", weight: 10, alert: "Você não sabe se sua obra está dentro do orçamento. Auditoria EVM pendente." }
+    ]},
+  { id: "spi", label: "Você sabe seu IDP atual (avanço físico vs planejado)?",
+    options: [
+      { label: "Sei — está acima de 1.0", weight: 0, alert: null },
+      { label: "Sei — entre 0.9 e 1.0", weight: 4, alert: "IDP no limite — cronograma derrapando." },
+      { label: "Sei — abaixo de 0.9", weight: 9, alert: "Cronograma com atraso estrutural detectado." },
+      { label: "Não sei calcular hoje", weight: 10, alert: "Sem IDP = sem rastreabilidade de atraso. Decisão de prazo opera no escuro." }
+    ]},
+  { id: "atualizacao", label: "Há quantos dias foi a última atualização cruzada de avanço físico × financeiro?",
+    options: [
+      { label: "0 a 7 dias", weight: 0, alert: null },
+      { label: "8 a 15 dias", weight: 4, alert: null },
+      { label: "16 a 30 dias", weight: 7, alert: "Dados defasados em mais de 15 dias — decisão chega tarde por design." },
+      { label: "Mais de 30 dias / não sei", weight: 10, alert: "Defasagem crítica de informação. Reunião de diretoria opera com cenário de mês passado." }
+    ]},
+  { id: "estouro", label: "Quando você descobriu o último estouro de centro de custo?",
+    options: [
+      { label: "Antes de virar problema", weight: 0, alert: null },
+      { label: "No mesmo mês", weight: 4, alert: null },
+      { label: "Na medição seguinte", weight: 7, alert: "Estouros detectados a posteriori — controladoria reativa, não preventiva." },
+      { label: "Quando o caixa estourou", weight: 10, alert: "Você só descobre o estouro quando ele cobra. Sem janela de mitigação." }
+    ]},
+  { id: "horas", label: "Quantas horas/mês a equipe gasta consolidando dados para a reunião de diretoria?",
+    options: [
+      { label: "Menos de 8h", weight: 2, alert: null },
+      { label: "8 a 20h", weight: 5, alert: null },
+      { label: "20 a 40h", weight: 8, alert: "Coordenação consumindo 20h+/mês em consolidação manual — custo escondido alto." },
+      { label: "Mais de 40h", weight: 10, alert: "Equipe técnica virou montadora de planilha. Engenharia parou." }
+    ]},
+  { id: "ruptura", label: "Frequência de ruptura/falta de material no canteiro:",
+    options: [
+      { label: "Nunca ou raramente", weight: 0, alert: null },
+      { label: "1× por bimestre", weight: 3, alert: null },
+      { label: "1× por mês", weight: 7, alert: "Suprimentos sem antecipação — cada parada custa 4 a 15 dias de cronograma." },
+      { label: "Múltiplas vezes por mês", weight: 10, alert: "Ruptura sistêmica. Caminho crítico em risco constante." }
+    ]},
+  { id: "diretoria", label: "Como a diretoria recebe os números da obra hoje?",
+    options: [
+      { label: "Dashboard automatizado", weight: 0, alert: null },
+      { label: "Planilha enviada pelo coordenador", weight: 4, alert: null },
+      { label: "Reunião presencial com slides montados manualmente", weight: 6, alert: "Diretoria recebendo dado curado por humano — viés e atraso embutidos." },
+      { label: "Telefone, WhatsApp ou conversa informal", weight: 10, alert: "Diretoria sem versão única auditada. Decisão executiva opera em ruído." }
+    ]}
+];
+
+/* ----------------------------- HELPERS ----------------------------- */
+const useCountUp = (target, start, duration = 1600) => {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!start) return;
+    let raf, t0;
+    const tick = (t) => {
+      if (!t0) t0 = t;
+      const k = Math.min(1, (t - t0) / duration);
+      const eased = 1 - Math.pow(1 - k, 3); // cubic ease-out
+      setVal(target * eased);
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, start, duration]);
+  return val;
+};
+
+const maskPhone = (raw) => {
+  const d = raw.replace(/\D/g, "").slice(0, 13); // up to country+ddd+9digit
+  // Display BR mask: +55 (XX) XXXXX-XXXX
+  let out = "+55 ";
+  let rest = d.startsWith("55") ? d.slice(2) : d;
+  rest = rest.slice(0, 11);
+  if (rest.length > 0) out += "(" + rest.slice(0, 2);
+  if (rest.length >= 2) out += ") ";
+  if (rest.length > 2) out += rest.slice(2, 7);
+  if (rest.length > 7) out += "-" + rest.slice(7, 11);
+  return out;
+};
+const phoneE164 = (raw) => {
+  const d = raw.replace(/\D/g, "");
+  return d.length >= 10 ? "+" + d : null;
+};
+const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+
+/* ----------------------------- COMPONENTS ----------------------------- */
+const Header = () => (
+  <header className="px-6 md:px-16 py-5 flex items-center justify-between border-b border-hero-hair bg-hero-bg/85 sticky top-0 z-40 backdrop-blur">
+    <a href="/" className="flex items-center gap-3 group">
+      <svg viewBox="0 0 124 88" className="h-7" aria-label="Gestão L4" style={{color: "#F4EFE7"}}><use href="#L4-solid"/></svg>
+      <div className="hidden sm:block h-4 w-px bg-hero-hair" />
+      <div className="hidden sm:block font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute group-hover:text-hero-fg transition-colors">
+        ← voltar
+      </div>
+    </a>
+    <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">
+      Auto-diagnóstico · v1
+    </div>
+  </header>
+);
+
+const ProgressBar = ({ step, total }) => {
+  const pct = (step / total) * 100;
+  return (
+    <div className="w-full">
+      <div className="flex items-center justify-between font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute mb-3">
+        <span>Etapa {String(step).padStart(2,"0")} / {String(total).padStart(2,"0")}</span>
+        <span>{Math.round(pct)}%</span>
+      </div>
+      <div className="h-px w-full bg-black/10">
+        <div className="h-px bg-hero-fg"
+          style={{ width: `${pct}%`, transition: "width 600ms cubic-bezier(0.22,1,0.36,1)" }} />
+      </div>
+    </div>
+  );
+};
+
+const Field = ({ label, hint, children }) => (
+  <label className="block">
+    <span className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">{label}</span>
+    <div className="mt-2">{children}</div>
+    {hint && <div className="mt-1 font-mono text-[10px] text-crit-dark">{hint}</div>}
+  </label>
+);
+
+const Input = (props) => (
+  <input {...props}
+    className="w-full h-12 px-0 border-0 border-b border-hero-hair focus:border-hero-fg outline-none transition-colors text-base bg-transparent text-hero-fg placeholder:text-hero-mute-2 rounded-none" />
+);
+
+/* ---- Lead capture ---- */
+const LeadGate = ({ onSubmit }) => {
+  const [data, setData] = useState({ nome:"", email:"", empresa:"", phone:"+55 " });
+  const [errors, setErrors] = useState({});
+  const set = (k) => (e) => {
+    const v = k === "phone" ? maskPhone(e.target.value) : e.target.value;
+    setData((d) => ({...d, [k]: v}));
+  };
+  const submit = (e) => {
+    e.preventDefault();
+    const next = {};
+    if (!data.nome.trim()) next.nome = "Obrigatório";
+    if (!isEmail(data.email)) next.email = "Email inválido";
+    if (!data.empresa.trim()) next.empresa = "Obrigatório";
+    const e164 = phoneE164(data.phone);
+    if (!e164) next.phone = "Telefone inválido";
+    setErrors(next);
+    if (Object.keys(next).length === 0) onSubmit({ ...data, phone: e164 });
+  };
+  return (
+    <form onSubmit={submit} className="space-y-8">
+      <div>
+        <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">Diagnóstico inicial · grátis</p>
+        <h1 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight leading-[1.05]">
+          Score de risco da sua controladoria de obra — em <span className="mk-hl"><span className="mk-text">5 min</span></span>.
+        </h1>
+        <p className="mt-5 text-hero-fg/85 leading-relaxed max-w-xl">
+          Sem upload de arquivo. Sem cadastro pesado. Apenas 8 perguntas e seu diagnóstico inicial,
+          com benchmark de setor e três sinais detectados.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <Field label="Nome" hint={errors.nome}>
+          <Input type="text" value={data.nome} onChange={set("nome")} placeholder="Como prefere ser chamado" autoComplete="name" />
+        </Field>
+        <Field label="Email corporativo" hint={errors.email}>
+          <Input type="email" value={data.email} onChange={set("email")} placeholder="voce@suaempresa.com.br" autoComplete="email" />
+        </Field>
+        <Field label="Empresa (construtora)" hint={errors.empresa}>
+          <Input type="text" value={data.empresa} onChange={set("empresa")} placeholder="Razão social ou nome fantasia" autoComplete="organization" />
+        </Field>
+        <Field label="WhatsApp" hint={errors.phone}>
+          <Input type="tel" value={data.phone} onChange={set("phone")} placeholder="+55 (00) 00000-0000" autoComplete="tel" />
+        </Field>
+      </div>
+      <div className="flex items-center justify-between flex-wrap gap-4 pt-2">
+        <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-hero-mute max-w-sm">
+          Seus dados ficam com a L4. Não vendemos lead, não enviamos newsletter.
+        </p>
+        <button type="submit"
+          className="inline-flex items-center gap-3 bg-hero-fg text-hero-bg px-6 h-12 text-sm font-medium hover:bg-hero-glass transition-colors">
+          Começar diagnóstico
+          <IconArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+    </form>
+  );
+};
+
+/* ---- Question step ---- */
+const QuestionStep = ({ q, value, onPick, dir }) => {
+  const enterX = dir === "back" ? -24 : 24;
+  return (
+    <div key={q.id}
+      style={{
+        animation: `l4-q-in 420ms cubic-bezier(0.22,1,0.36,1)`,
+      }}>
+      <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">Pergunta</div>
+      <h2 className="mt-3 text-2xl md:text-3xl font-bold tracking-tight leading-[1.15] text-pretty">
+        {q.label}
+      </h2>
+      <div className="mt-8 space-y-3">
+        {q.options.map((opt, i) => {
+          const selected = value === i;
+          return (
+            <button key={i} type="button" onClick={() => onPick(i)}
+              className={`group w-full text-left px-5 min-h-[56px] py-4 border rounded-xl transition-all flex items-center gap-4
+                ${selected
+                  ? "bg-hero-fg text-hero-bg border-hero-fg"
+                  : "bg-hero-glass text-hero-fg border-hero-hair hover:border-hero-fg hover:bg-white/[0.10]"}`}>
+              <span className={`font-mono text-[10px] tracking-[0.2em] uppercase ${selected ? "text-hero-bg/60" : "text-hero-mute"}`}>
+                {String.fromCharCode(65 + i)}
+              </span>
+              <span className="flex-1 text-sm md:text-base leading-snug">{opt.label}</span>
+              {selected && <IconCheck className="h-4 w-4 flex-shrink-0" />}
+            </button>
+          );
+        })}
+      </div>
+      <style>{`
+        @keyframes l4-radar-sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes l4-q-in {
+          from { opacity: 0; transform: translateX(${enterX}px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+/* ---- Result ---- */
+const ResultScreen = ({ score, alertsTop3, lead, onReset }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const animScore = useCountUp(score, mounted, 1600);
+  const colorCls = score <= 25 ? "text-ok-dark"
+                : score <= 50 ? "text-warn-dark"
+                : score <= 75 ? "text-warn-dark"
+                : "text-crit-dark";
+  const bandText = score <= 25
+    ? "Risco baixo. Controladoria parece sob controle. Diagnóstico completo otimiza margem."
+    : score <= 50
+    ? "Risco moderado. Sinais de descontrole detectados. Ainda dá tempo de recuperar margem deste ciclo."
+    : score <= 75
+    ? "Risco alto. Você está descobrindo problemas tarde. Próximo estouro provável em menos de 60 dias."
+    : "Risco crítico. Decisão executiva chegando atrasada. Reunião de diretoria operando no escuro.";
+  const tercio = score <= 25 ? "superior" : score <= 60 ? "médio" : "inferior";
+  return (
+    <div className="space-y-12">
+      <div>
+        <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">
+          Score de risco · {lead?.empresa || "—"}
+        </div>
+        <div className={`mt-4 text-7xl md:text-8xl font-extrabold tabular-nums tracking-tight ${colorCls}`}
+             style={{ fontFeatureSettings: '"tnum"' }}>
+          {Math.round(animScore)}
+          <span className="text-3xl md:text-4xl text-hero-mute font-mono align-top ml-2">/100</span>
+        </div>
+        <p className="mt-5 text-lg md:text-xl text-hero-fg leading-snug max-w-2xl text-pretty">
+          {bandText}
+        </p>
+      </div>
+
+      <div>
+        <div className="flex items-baseline justify-between border-b border-hero-hair/15 pb-3 mb-4">
+          <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute">3 sinais detectados</div>
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-hero-mute">{alertsTop3.length} crítico(s)</div>
+        </div>
+        {alertsTop3.length === 0 && (
+          <div className="text-sm text-hero-fg/85 py-2">
+            Nenhum sinal crítico foi detectado nas suas respostas. Ainda assim, o diagnóstico completo identifica
+            oportunidades de margem que escapam do olho.
+          </div>
+        )}
+        <div>
+          {alertsTop3.map((a, i) => {
+            const high = a.weight >= 9;
+            const Ic = high ? IconAlertHigh : IconAlertMed;
+            return (
+              <div key={i} className="flex items-start gap-4 py-4 border-b border-hero-hair/10 last:border-b-0"
+                style={{
+                  opacity: 0,
+                  animation: `l4-fadein 600ms cubic-bezier(0.22,1,0.36,1) ${i * 150 + 200}ms forwards`,
+                }}>
+                <Ic className={`h-5 w-5 flex-shrink-0 mt-0.5 ${high ? "text-crit-dark" : "text-warn-dark"}`} />
+                <div>
+                  <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-hero-mute">
+                    {high ? "Crítico" : "Atenção"} · peso {a.weight}/10
+                  </div>
+                  <div className="mt-1 text-base text-hero-fg leading-snug">{a.alert}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <style>{`@keyframes l4-fadein { to { opacity: 1; transform: translateY(0); } from { opacity: 0; transform: translateY(6px); } }`}</style>
+      </div>
+
+      <div className="border-t border-hero-hair/15 pt-8">
+        <div className="font-mono text-[10px] tracking-[0.28em] uppercase text-hero-mute mb-3">Benchmark setor</div>
+        <p className="text-base text-hero-fg leading-relaxed max-w-2xl">
+          Construtoras BR de porte equivalente operam com IDC médio <span className="font-mono">0,93</span> e
+          IDP médio <span className="font-mono">0,91</span>. Construtoras com PMO interno chegam a IDC <span className="font-mono">0,97</span>.
+        </p>
+        <p className="mt-3 text-base text-hero-fg leading-relaxed max-w-2xl">
+          Seu score posiciona você no terço <strong>{tercio}</strong> do setor.
+        </p>
+      </div>
+
+      <div className="border-t border-hero-hair/15 pt-8 space-y-4">
+        <div>
+          <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+             className="inline-flex items-center gap-3 bg-hero-fg text-hero-bg px-7 h-14 text-base font-medium hover:bg-hero-glass transition-colors">
+            Agendar Diagnóstico Completo
+            <IconArrowRight className="h-4 w-4" />
+          </a>
+          <div className="mt-3 text-sm text-hero-mute max-w-xl">
+            Análise dos 4 módulos com seus dados reais. Plano de ação cirúrgico em 7 dias.
+          </div>
+        </div>
+        <div>
+          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer"
+             className="inline-flex items-center gap-3 border border-hero-hair px-6 h-12 text-sm font-medium hover:bg-hero-fg hover:text-hero-bg transition-colors">
+            <IconWA className="h-4 w-4" />
+            Falar no WhatsApp
+          </a>
+        </div>
+        <button type="button" onClick={onReset}
+          className="font-mono text-[10px] tracking-[0.2em] uppercase text-hero-mute hover:text-black transition-colors pt-3">
+          ↺ Refazer diagnóstico
+        </button>
+      </div>
+    </div>
+  );
+};
+
+/* ----------------------------- APP ----------------------------- */
+const App = () => {
+  const [phase, setPhase] = useState("lead"); // lead | quiz | result
+  const [lead, setLead] = useState(null);
+  const [step, setStep] = useState(0); // 0..QUESTIONS.length-1
+  const [answers, setAnswers] = useState({}); // id -> optionIndex
+  const [dir, setDir] = useState("fwd");
+
+  const total = QUESTIONS.length;
+  const q = QUESTIONS[step];
+  const currentVal = q ? answers[q.id] : undefined;
+
+  const onLead = (data) => {
+    setLead(data);
+    setPhase("quiz");
+    console.log("[L4 lead]", data);
+  };
+
+  const onPick = (idx) => {
+    setAnswers((a) => ({ ...a, [q.id]: idx }));
+    // auto-advance
+    setTimeout(() => {
+      if (step < total - 1) {
+        setDir("fwd");
+        setStep((s) => s + 1);
+      } else {
+        setPhase("result");
+      }
+    }, 250);
+  };
+
+  const onBack = () => {
+    if (step === 0) { setPhase("lead"); return; }
+    setDir("back");
+    setStep((s) => s - 1);
+  };
+
+  const onNext = () => {
+    if (currentVal === undefined) return;
+    if (step < total - 1) {
+      setDir("fwd");
+      setStep((s) => s + 1);
+    } else {
+      setPhase("result");
+    }
+  };
+
+  const { score, alertsTop3 } = useMemo(() => {
+    let total = 0;
+    const fired = [];
+    QUESTIONS.forEach((q) => {
+      const idx = answers[q.id];
+      if (idx === undefined) return;
+      const opt = q.options[idx];
+      total += opt.weight;
+      if (opt.alert) fired.push({ qid: q.id, weight: opt.weight, alert: opt.alert });
+    });
+    const score = Math.round((total / 80) * 100);
+    const top3 = [...fired].sort((a,b) => b.weight - a.weight).slice(0, 3);
+    return { score, alertsTop3: top3 };
+  }, [answers]);
+
+  // Bonus pixel on entering result
+  useEffect(() => {
+    if (phase === "result") {
+      console.log("[L4 diagnóstico completo]", { lead, respostas: answers, score, alertas: alertsTop3 });
+    }
+  }, [phase]);
+
+  const onReset = () => {
+    setAnswers({});
+    setStep(0);
+    setPhase("lead");
+    setLead(null);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 px-6 md:px-16 py-12 md:py-16">
+        <div className="max-w-2xl mx-auto">
+          {phase === "quiz" && (
+            <div className="mb-12">
+              <ProgressBar step={step + 1} total={total} />
+            </div>
+          )}
+
+          {phase === "lead" && <LeadGate onSubmit={onLead} />}
+
+          {phase === "quiz" && (
+            <div>
+              <QuestionStep q={q} value={currentVal} onPick={onPick} dir={dir} />
+              <div className="mt-12 flex items-center justify-between">
+                <button type="button" onClick={onBack}
+                  className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-hero-mute hover:text-black transition-colors">
+                  <IconArrowLeft className="h-3.5 w-3.5" />
+                  Voltar
+                </button>
+                <button type="button" onClick={onNext}
+                  disabled={currentVal === undefined}
+                  className={`inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] transition-colors
+                    ${currentVal === undefined
+                      ? "text-hero-mute cursor-not-allowed"
+                      : "text-black hover:text-hero-mute"}`}>
+                  {step === total - 1 ? "Ver resultado" : "Próximo"}
+                  <IconArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {phase === "result" && (
+            <ResultScreen score={score} alertsTop3={alertsTop3} lead={lead} onReset={onReset} />
+          )}
+        </div>
+      </main>
+
+      <footer className="px-6 md:px-16 py-6 border-t border-hero-hair/5 flex items-center justify-between flex-wrap gap-3 font-mono text-[10px] tracking-[0.2em] uppercase text-hero-mute">
+        <span>Gestão L4 · Auto-diagnóstico</span>
+        <span>Cálculo client-side · sem armazenamento externo</span>
+      </footer>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
