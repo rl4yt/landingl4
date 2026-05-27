@@ -3882,7 +3882,10 @@ let _infoExpiraEm = null;
 let _infoCooldown = 0;
 
 async function renderInfo(userId) {
-  if (!userId) { location.hash = '#obras'; return; }
+  if (!userId || userId === 'undefined' || userId === 'null') {
+    location.hash = '#login';
+    return;
+  }
   // reset UI
   const card = document.getElementById('info-verify-card');
   const verifiedEl = document.getElementById('info-verified-state');
@@ -3960,7 +3963,11 @@ async function infoLoadCode(userId) {
         infoRenderCode(false);
       }
     } else {
-      infoShowError('Erro ao gerar código (' + (data?.message || 'sem detalhe') + ').');
+      let msg = data?.message || 'sem detalhe';
+      if (data && data.reason === 'numero_nao_cadastrado') {
+        msg = 'Seu número de WhatsApp não está cadastrado nas obras da L4. Solicite ao administrador para vincular seu número de WhatsApp a esta conta.';
+      }
+      infoShowError('Erro ao gerar código (' + msg + ').');
     }
   } catch(e) {
     infoShowError('Sem conexão. Verifique sua rede e recarregue.');
