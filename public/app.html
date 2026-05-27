@@ -3938,7 +3938,7 @@ async function renderInfo(userId) {
 
 async function infoLoadCode(userId) {
   try {
-    const r = await fetch(SUPA_URL + '/auth/v1/rpc/rpc_gerar_codigo_whatsapp', {
+    const r = await fetch(SUPA_URL + '/rest/v1/rpc/rpc_gerar_codigo_whatsapp', {
       method: 'POST',
       headers: { 'apikey': SUPA_ANON_KEY, 'Authorization': 'Bearer ' + (STATE.jwt || SUPA_ANON_KEY), 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: userId })
