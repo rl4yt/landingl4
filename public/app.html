@@ -2350,6 +2350,29 @@ table.t .end { text-align: right; }
 .hbadge.erro               { background: rgba(248,113,113,.1); color: #f87171; border-color: rgba(248,113,113,.2); }
 .hbadge.rejeitado_preview  { background: rgba(180,80,80,.1);   color: #e07070; border-color: rgba(180,80,80,.2); }
 .hbadge.pendente           { background: rgba(100,100,100,.08); color: #666666; border-color: #333333; }
+
+/* ─── WhatsApp Verify (view-info) ─── */
+.info-copy-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(244, 239, 231, 0.62);
+  background: transparent;
+  border: 1px solid rgba(244, 239, 231, 0.14);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+  flex: none;
+}
+.info-copy-btn:hover { color: #F4EFE7; border-color: rgba(244,239,231,0.38); }
+.info-copy-btn:disabled { opacity: 0.3; cursor: default; }
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 </style>
 </head>
 <body>
@@ -2389,6 +2412,67 @@ table.t .end { text-align: right; }
 
     <div class="sub">
       <a href="#cadastro">Cadastrar nova conta</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── Verificação WhatsApp (pós-cadastro) ── -->
+<div id="view-info" class="view-info-wrap" hidden>
+  <div style="background: #15110E; color: #F4EFE7; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 16px;">
+    
+    <!-- Estado: verificado -->
+    <div id="info-verified-state" hidden style="text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+      <div style="font-family: var(--mono); font-size: 14px; color: #6DCB8E; letter-spacing: 0.1em; margin-bottom: 8px;">WhatsApp verificado!</div>
+      <div style="font-family: var(--mono); font-size: 11px; color: rgba(244, 239, 231, 0.62);">Redirecionando para suas obras...</div>
+    </div>
+
+    <!-- Estado: aguardando verificação -->
+    <div id="info-verify-card" style="width: 100%; max-width: 420px;">
+      <div style="text-align: center; margin-bottom: 32px;">
+        <div style="font-family: var(--mono); font-size: 9px; letter-spacing: 0.36em; text-transform: uppercase; color: rgba(244, 239, 231, 0.62); margin-bottom: 12px;">Passo 2 de 2</div>
+        <div style="font-family: var(--serif); font-size: 28px; color: #F4EFE7; letter-spacing: -0.01em; line-height: 1.1;">Verificar WhatsApp</div>
+        <div style="font-family: var(--mono); font-size: 11px; color: rgba(244, 239, 231, 0.62); margin-top: 12px; line-height: 1.7; max-width: 320px; margin-left: auto; margin-right: auto;">
+          Envie o código abaixo pelo WhatsApp para o número da Maya e sua conta será ativada automaticamente.
+        </div>
+      </div>
+
+      <!-- Número WhatsApp -->
+      <div style="background: rgba(244, 239, 231, 0.08); border: 1px solid rgba(244, 239, 231, 0.14); border-radius: 14px; padding: 20px 24px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div>
+          <div style="font-family: var(--mono); font-size: 9px; letter-spacing: 0.32em; text-transform: uppercase; color: rgba(244, 239, 231, 0.38); margin-bottom: 6px;">Envie para</div>
+          <div style="font-family: var(--mono); font-size: 15px; color: #F4EFE7; letter-spacing: 1.5px;">+55 73 98825-8146</div>
+        </div>
+        <button class="info-copy-btn" id="info-copy-number" onclick="infoCopy('number')">Copiar</button>
+      </div>
+
+      <!-- Código -->
+      <div style="background: rgba(244, 239, 231, 0.08); border: 1px solid rgba(244, 239, 231, 0.14); border-radius: 14px; padding: 28px 24px; margin-bottom: 10px; text-align: center;">
+        <div style="font-family: var(--mono); font-size: 9px; letter-spacing: 0.32em; text-transform: uppercase; color: rgba(244, 239, 231, 0.38); margin-bottom: 18px;">Seu código</div>
+        <div id="info-codigo" style="font-family: var(--mono); font-size: 38px; font-weight: 600; letter-spacing: 12px; color: #F4EFE7; padding: 14px 0; transition: color 300ms;">----</div>
+        <button class="info-copy-btn" id="info-copy-code" onclick="infoCopy('code')" disabled style="margin-top: 12px;">Copiar código</button>
+      </div>
+
+      <!-- Status + timer + regen -->
+      <div style="background: rgba(244, 239, 231, 0.08); border: 1px solid rgba(244, 239, 231, 0.14); border-radius: 14px; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px;">
+        <div id="info-status-line" style="display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; color: rgba(244, 239, 231, 0.62); flex: 1; min-width: 0;">
+          <div id="info-spinner" style="width: 10px; height: 10px; border: 1.5px solid rgba(244, 239, 231, 0.62); border-top-color: #F4EFE7; border-radius: 50%; animation: spin 1s linear infinite; flex: none;"></div>
+          <span id="info-status-text">Aguardando sua mensagem...</span>
+        </div>
+        <div style="text-align: right; flex: none;">
+          <div style="font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(244, 239, 231, 0.38); margin-bottom: 2px;">Expira em</div>
+          <div id="info-timer" style="font-family: var(--mono); font-size: 13px; color: #F4EFE7;">--:--</div>
+        </div>
+      </div>
+
+      <div style="text-align: center;">
+        <button id="info-regen-btn" onclick="infoRequestNew()" style="background: transparent; border: none; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: rgba(244, 239, 231, 0.62); cursor: pointer; text-decoration: underline; padding: 4px 0;">
+          Solicitar novo código
+        </button>
+      </div>
+
+      <div id="info-error" style="font-family: var(--mono); font-size: 10px; color: #E87A7A; text-align: center; margin-top: 14px; display: none;"></div>
+
     </div>
   </div>
 </div>
@@ -3718,24 +3802,49 @@ async function vpsPost(path, body) {
   return r.json();
 }
 
+async function supaAuthSignup(email, password) {
+  const r = await fetch(`${SUPA_URL}/auth/v1/signup`, { method: 'POST', headers: { 'apikey': SUPA_ANON_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error_description || data.msg || data.error || 'cadastro falhou');
+  if (data.access_token) saveAuthTokens(data, email);
+  return data;
+}
+
 async function supaAuthLogin(email, password) {
-  const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: { 'apikey': SUPA_ANON_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
+  const r = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { 'apikey': SUPA_ANON_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
   const data = await r.json();
   if (!r.ok) throw new Error(data.error_description || data.msg || 'login falhou');
-  STATE.jwt = data.access_token;
-  STATE.auth = { email };
-  localStorage.setItem('l4_user', email);
-  localStorage.setItem('l4_jwt', data.access_token);
+  saveAuthTokens(data, email);
   return data;
+}
+
+function saveAuthTokens(data, email) {
+  STATE.jwt = data.access_token;
+  STATE.refreshToken = data.refresh_token;
+  STATE.userId = data.user?.id || decodeJwtSub(data.access_token);
+  if (email) STATE.auth = { email };
+  if (email) localStorage.setItem('l4_user', email);
+  localStorage.setItem('l4_jwt', data.access_token);
+  if (data.refresh_token) localStorage.setItem('l4_refresh', data.refresh_token);
+  if (STATE.userId) localStorage.setItem('l4_userId', STATE.userId);
+  if (data.expires_at) localStorage.setItem('l4_jwt_exp', String(data.expires_at));
+  else if (data.expires_in) localStorage.setItem('l4_jwt_exp', String(Math.floor(Date.now()/1000) + Number(data.expires_in)));
+}
+
+function decodeJwtSub(jwt) {
+  try {
+    const payload = jwt.split('.')[1];
+    const padded = payload + '='.repeat((4 - payload.length % 4) % 4);
+    const json = JSON.parse(atob(padded.replace(/-/g, '+').replace(/_/g, '/')));
+    return json.sub;
+  } catch (e) { return null; }
 }
 
 const STATE = {
   auth: null,
   jwt: null,
+  refreshToken: null,
+  userId: null,
   obras: [],
   obraAtiva: 'residencial-demo',
   run: null,
@@ -3763,13 +3872,174 @@ const AGENTS = [
   { key: 'alfie',    name: 'ALFIE',    desc: 'Sintetizador executivo — dossiê HTML A4 + outline Canva (só com PVO ✓)',                output: { dossier_id: 'L4-DOSS-2026-0520', formato: 'HTML A4', pages: 1, canva_outline: true } },
 ];
 
+// ─── VIEW-INFO: WhatsApp Verification ──────────────────
+const INFO_WPP = '+5573988258146';
+let _infoPolling = null;
+let _infoTickTimer = null;
+let _infoCodigo = '';
+let _infoExpiraEm = null;
+let _infoCooldown = 0;
+
+async function renderInfo(userId) {
+  if (!userId) { location.hash = '#obras'; return; }
+  // reset UI
+  const card = document.getElementById('info-verify-card');
+  const verifiedEl = document.getElementById('info-verified-state');
+  if (card) card.hidden = false;
+  if (verifiedEl) verifiedEl.hidden = true;
+  const errEl = document.getElementById('info-error');
+  if (errEl) errEl.style.display = 'none';
+  _infoCodigo = ''; _infoExpiraEm = null; _infoCooldown = 0;
+  infoUpdateRegenBtn();
+
+  // stop stale timers
+  clearInterval(_infoPolling);
+  clearInterval(_infoTickTimer);
+
+  // generate / fetch code
+  await infoLoadCode(userId);
+
+  // poll every 3s for whatsapp_verificado_em
+  _infoPolling = setInterval(async () => {
+    try {
+      const rows = await supaGet('l4_engenheiros', '?id=eq.' + userId + '&select=whatsapp_verificado_em&limit=1');
+      if (rows && rows[0] && rows[0].whatsapp_verificado_em) {
+        clearInterval(_infoPolling);
+        clearInterval(_infoTickTimer);
+        infoShowVerified();
+      }
+    } catch(e) {}
+  }, 3000);
+
+  // 1s tick: countdown timers
+  _infoTickTimer = setInterval(() => {
+    if (_infoCooldown > 0) { _infoCooldown--; infoUpdateRegenBtn(); }
+    if (_infoExpiraEm) {
+      const diff = Math.max(0, Math.floor((_infoExpiraEm - Date.now()) / 1000));
+      const timerEl = document.getElementById('info-timer');
+      if (timerEl) {
+        if (diff === 0) {
+          timerEl.textContent = 'Expirado';
+          timerEl.style.color = '#E87A7A';
+          const statusText = document.getElementById('info-status-text');
+          const spinner = document.getElementById('info-spinner');
+          if (statusText) statusText.textContent = 'Código expirado. Solicite um novo.';
+          if (statusText) statusText.style.color = '#E87A7A';
+          if (spinner) spinner.style.display = 'none';
+          const codeEl = document.getElementById('info-codigo');
+          if (codeEl) codeEl.style.color = '#E87A7A';
+        } else {
+          timerEl.textContent = String(Math.floor(diff / 60)).padStart(2,'0') + ':' + String(diff % 60).padStart(2,'0');
+        }
+      }
+    }
+  }, 1000);
+}
+
+async function infoLoadCode(userId) {
+  try {
+    const r = await fetch(SUPA_URL + '/auth/v1/rpc/rpc_gerar_codigo_whatsapp', {
+      method: 'POST',
+      headers: { 'apikey': SUPA_ANON_KEY, 'Authorization': 'Bearer ' + (STATE.jwt || SUPA_ANON_KEY), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId })
+    });
+    const data = await r.json();
+    if (data && data.success) {
+      _infoCodigo = data.codigo;
+      _infoExpiraEm = new Date(data.expira_em).getTime();
+      infoRenderCode(false);
+    } else if (data && data.reason === 'aguarde_60_segundos') {
+      _infoCooldown = 60;
+      infoUpdateRegenBtn();
+      // busca código existente
+      const rows = await supaGet('l4_codigos_whatsapp', '?user_id=eq.' + userId + '&usado_em=is.null&select=codigo,expira_em&order=criado_em.desc&limit=1');
+      if (rows && rows[0]) {
+        _infoCodigo = rows[0].codigo;
+        _infoExpiraEm = new Date(rows[0].expira_em).getTime();
+        infoRenderCode(false);
+      }
+    } else {
+      infoShowError('Erro ao gerar código (' + (data?.message || 'sem detalhe') + ').');
+    }
+  } catch(e) {
+    infoShowError('Sem conexão. Verifique sua rede e recarregue.');
+  }
+}
+
+function infoRenderCode(expired) {
+  const el = document.getElementById('info-codigo');
+  if (el) {
+    el.textContent = _infoCodigo || '----';
+    el.style.color = expired ? '#E87A7A' : '#F4EFE7';
+  }
+  const copyBtn = document.getElementById('info-copy-code');
+  if (copyBtn) copyBtn.disabled = !_infoCodigo || expired;
+}
+
+function infoShowVerified() {
+  const card = document.getElementById('info-verify-card');
+  const verifiedEl = document.getElementById('info-verified-state');
+  if (card) card.hidden = true;
+  if (verifiedEl) verifiedEl.hidden = false;
+  setTimeout(() => { location.hash = '#obras'; }, 2200);
+}
+
+function infoShowError(msg) {
+  const el = document.getElementById('info-error');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+function infoUpdateRegenBtn() {
+  const btn = document.getElementById('info-regen-btn');
+  if (!btn) return;
+  if (_infoCooldown > 0) {
+    btn.textContent = 'Aguarde ' + _infoCooldown + 's';
+    btn.style.color = 'rgba(244, 239, 231, 0.38)';
+    btn.disabled = true;
+  } else {
+    btn.textContent = 'Solicitar novo código';
+    btn.style.color = 'rgba(244, 239, 231, 0.62)';
+    btn.disabled = false;
+  }
+}
+
+async function infoRequestNew() {
+  if (_infoCooldown > 0) return;
+  const userId = location.hash.split('/')[1];
+  if (!userId) return;
+  _infoCooldown = 60;
+  infoUpdateRegenBtn();
+  const errEl = document.getElementById('info-error');
+  if (errEl) errEl.style.display = 'none';
+  // reset spinner/status
+  const statusText = document.getElementById('info-status-text');
+  const spinner = document.getElementById('info-spinner');
+  if (statusText) { statusText.textContent = 'Aguardando sua mensagem...'; statusText.style.color = 'rgba(244, 239, 231, 0.62)'; }
+  if (spinner) spinner.style.display = '';
+  const timerEl = document.getElementById('info-timer');
+  if (timerEl) { timerEl.textContent = '--:--'; timerEl.style.color = '#F4EFE7'; }
+  await infoLoadCode(userId);
+}
+
+function infoCopy(type) {
+  const text = type === 'number' ? INFO_WPP : _infoCodigo;
+  if (!text) return;
+  navigator.clipboard.writeText(text).catch(() => {});
+  const btnId = type === 'number' ? 'info-copy-number' : 'info-copy-code';
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = 'Copiado ✓';
+  setTimeout(() => { btn.textContent = orig; }, 2000);
+}
+
 // ─── Routing
 function router() {
   const hash = location.hash.slice(1) || 'login';
   const [route, arg] = hash.split('/');
 
   // Hide all primary views + login
-  ['view-login','view-obras','view-obra','view-upload','view-pipeline','view-relatorio','view-historico','view-agentes','view-config','view-nova-obra'].forEach(id => {
+  ['view-login','view-obras','view-obra','view-upload','view-pipeline','view-relatorio','view-historico','view-agentes','view-config','view-nova-obra','view-info'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.hidden = true;
   });
@@ -3780,6 +4050,13 @@ function router() {
     document.getElementById('app-shell').hidden = true;
     showId = 'view-login';
     crumb = 'LOGIN';
+    setLoginMode(route === 'cadastro');
+    resetLoginForm();
+  } else if (route === 'info') {
+    document.getElementById('app-shell').hidden = true;
+    showId = 'view-info';
+    crumb = 'VERIFICAÇÃO';
+    renderInfo(arg);
   } else if (route === 'obras') {
     showId = 'view-obras'; crumb = 'OBRAS';
     renderObras();
@@ -4736,20 +5013,111 @@ document.addEventListener('click', e => {
   }
 });
 
-// ─── Login form
-document.getElementById('login-form').addEventListener('submit', e => {
+// ─── Login/Signup and Auth Helpers
+let LOGIN_MODE_SIGNUP = false;
+function setLoginMode(signup) {
+  LOGIN_MODE_SIGNUP = !!signup;
+  const acc = document.querySelector('#view-login .access');
+  const sub = document.querySelector('#login-form button[type="submit"]');
+  const foot = document.querySelector('#view-login .sub a');
+  if (signup) {
+    if (acc) acc.textContent = 'CRIAR NOVA CONTA';
+    if (sub) sub.textContent = 'Cadastrar →';
+    if (foot) {
+      foot.href = '#login';
+      foot.textContent = 'Já tem conta? Fazer login';
+    }
+  } else {
+    if (acc) acc.textContent = 'ACESSO RESTRITO';
+    if (sub) sub.textContent = 'Entrar →';
+    if (foot) {
+      foot.href = '#cadastro';
+      foot.textContent = 'Cadastrar nova conta';
+    }
+  }
+}
+
+function setLoginStatus(msg, kind) {
+  let el = document.getElementById('login-status');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'login-status';
+    el.style.cssText = 'margin-top: 14px; padding: 12px 14px; font-family: var(--mono, monospace); font-size: 12px; border: 1px solid; line-height: 1.5; white-space: pre-wrap;';
+    const form = document.getElementById('login-form');
+    if (form) form.appendChild(el);
+  }
+  const colors = { ok: '#166534', err: '#B91C1C', info: '#666' };
+  el.style.color = colors[kind] || '#000';
+  el.style.borderColor = colors[kind] || '#666';
+  el.textContent = msg;
+}
+
+function resetLoginForm() {
+  const form = document.getElementById('login-form'); if (!form) return;
+  const sub = form.querySelector('button[type="submit"]');
+  if (sub) { sub.disabled = false; sub.innerHTML = (LOGIN_MODE_SIGNUP ? 'Cadastrar' : 'Entrar') + ' →'; }
+  const stEl = document.getElementById('login-status'); if (stEl) stEl.remove();
+  const em = document.getElementById('li-email'); if (em && !STATE.jwt) em.value = '';
+  const pw = document.getElementById('li-pass'); if (pw) pw.value = '';
+}
+
+document.getElementById('login-form').addEventListener('submit', async e => {
   e.preventDefault();
-  STATE.auth = { email: document.getElementById('li-email').value || 'eng@construtora' };
-  localStorage.setItem('l4_user', STATE.auth.email);
-  document.getElementById('hd-user').textContent = STATE.auth.email.split('@')[0];
-  location.hash = '#obras';
+  const email = document.getElementById('li-email').value.trim();
+  const pass = document.getElementById('li-pass').value;
+  if (!email || !pass) { setLoginStatus('Preencha e-mail e senha.', 'err'); return; }
+  const sub = e.target.querySelector('button[type="submit"]');
+  const prev = sub.innerHTML;
+  sub.disabled = true; sub.innerHTML = (LOGIN_MODE_SIGNUP ? 'Cadastrando...' : 'Entrando...');
+  setLoginStatus(LOGIN_MODE_SIGNUP ? 'Criando conta...' : 'Autenticando...', 'info');
+  try {
+    if (LOGIN_MODE_SIGNUP) {
+      const data = await supaAuthSignup(email, pass);
+      if (!data.access_token) {
+        setLoginStatus('Cadastro criado ✓\nConfirme o link no seu e-mail e faça login.', 'ok');
+        setLoginMode(false);
+        sub.disabled = false; sub.innerHTML = prev;
+        return;
+      }
+    } else {
+      const data = await supaAuthLogin(email, pass);
+    }
+    const hdUser = document.getElementById('hd-user');
+    if (hdUser) hdUser.textContent = email.split('@')[0];
+    setLoginStatus('Entrando...', 'ok');
+    
+    if (LOGIN_MODE_SIGNUP && STATE.userId) {
+      location.hash = '#info/' + STATE.userId;
+    } else {
+      location.hash = '#obras';
+    }
+  } catch (err) {
+    setLoginStatus((LOGIN_MODE_SIGNUP ? 'Cadastro' : 'Login') + ' falhou: ' + err.message, 'err');
+    sub.disabled = false; sub.innerHTML = prev;
+  }
 });
 
-document.getElementById('btn-logout').addEventListener('click', () => {
+function doLogout() {
   localStorage.removeItem('l4_user');
+  localStorage.removeItem('l4_jwt');
+  localStorage.removeItem('l4_refresh');
+  localStorage.removeItem('l4_userId');
+  localStorage.removeItem('l4_jwt_exp');
+  localStorage.removeItem('l4_obra_ativa');
   STATE.auth = null;
+  STATE.jwt = null;
+  STATE.refreshToken = null;
+  STATE.userId = null;
   location.hash = '#login';
-});
+}
+
+const btnLogout = document.getElementById('btn-logout');
+if (btnLogout) {
+  btnLogout.addEventListener('click', e => {
+    e.preventDefault();
+    doLogout();
+  });
+}
 
 // ─── Boot
 (function boot() {
