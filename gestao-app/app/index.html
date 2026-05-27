@@ -4283,6 +4283,14 @@ table.t .end { text-align: right; }
         </div>
 
         <form id="login-form" class="login-form-fields" autocomplete="off">
+          <div class="fld" id="fld-name" style="display: none;">
+            <label for="li-name">Nome completo</label>
+            <input id="li-name" type="text" placeholder="Seu nome" />
+          </div>
+          <div class="fld" id="fld-wpp" style="display: none;">
+            <label for="li-wpp">WhatsApp (DDI + DDD + número)</label>
+            <input id="li-wpp" type="tel" placeholder="5573999999999" />
+          </div>
           <div class="fld">
             <label for="li-email">E-mail corporativo</label>
             <input id="li-email" type="email" required placeholder="seu.email@construtora.com.br" />
@@ -5999,6 +6007,7 @@ const STATE = {
   jwt: null,
   refreshToken: null,
   userId: null,
+  whatsappVerificado: false,
   obraAtiva: null,
   obraNome: '',
   obraIsDemo: false,
@@ -6209,8 +6218,10 @@ function doLogout() {
   localStorage.removeItem('l4_jwt_exp');
   localStorage.removeItem('l4_obra_ativa');
   localStorage.removeItem('l4_obra_nome');
+  localStorage.removeItem('l4_verified');
   STATE.auth = null; STATE.jwt = null; STATE.refreshToken = null; STATE.userId = null;
   STATE.obraAtiva = null; STATE.obraNome = ''; STATE.audAtual = null; STATE.audStatus = null;
+  STATE.whatsappVerificado = false;
   location.hash = '#welcome';
 }
 
@@ -6854,8 +6865,17 @@ async function renderInfo(userId) {
   // poll every 3s for whatsapp_verificado_em
   _infoPolling = setInterval(async () => {
     try {
-      const rows = await supaGet('l4_engenheiros', '?id=eq.' + userId + '&select=whatsapp_verificado_em&limit=1');
-      if (rows && rows[0] && rows[0].whatsapp_verificado_em) {
+      const rowsEng = await supaGet('l4_engenheiros', '?id=eq.' + userId + '&select=whatsapp_verificado_em&limit=1');
+      let verified = false;
+      if (rowsEng && rowsEng[0] && rowsEng[0].whatsapp_verificado_em) {
+        verified = true;
+      } else {
+        const rowsDisp = await supaGet('l4_dispositivos_whatsapp', '?user_id=eq.' + userId + '&select=verificado_em&limit=1');
+        if (rowsDisp && rowsDisp[0] && rowsDisp[0].verificado_em) {
+          verified = true;
+        }
+      }
+      if (verified) {
         clearInterval(_infoPolling);
         clearInterval(_infoTickTimer);
         infoShowVerified();
@@ -6911,7 +6931,11 @@ async function infoLoadCode(userId) {
         infoRenderCode(false);
       }
     } else {
-      infoShowError('Erro ao gerar código (' + (data?.message || 'sem detalhe') + ').');
+      let msg = data?.message || 'sem detalhe';
+      if (data && data.reason === 'numero_nao_cadastrado') {
+        msg = 'Seu número de WhatsApp não está cadastrado nas obras da L4. Solicite ao administrador para vincular seu número de WhatsApp a esta conta.';
+      }
+      infoShowError('Erro ao gerar código (' + msg + ').');
     }
   } catch(e) {
     infoShowError('Sem conexão. Verifique sua rede e recarregue.');
@@ -6929,6 +6953,8 @@ function infoRenderCode(expired) {
 }
 
 function infoShowVerified() {
+  STATE.whatsappVerificado = true;
+  localStorage.setItem('l4_verified', '1');
   const card = document.getElementById('info-verify-card');
   const verifiedEl = document.getElementById('info-verified-state');
   if (card) card.hidden = true;
@@ -6989,6 +7015,13 @@ function infoCopy(type) {
 function router() {
   const hash = location.hash.slice(1) || (STATE.jwt ? 'obras' : 'welcome');
   const [route, arg] = hash.split('/');
+
+  const PROTECTED_ROUTES = ['obras', 'obra', 'documentos', 'nova-obra', 'pipeline', 'relatorio'];
+  if (PROTECTED_ROUTES.includes(route) && !DEV_MODE && STATE.userId && !STATE.whatsappVerificado) {
+    location.hash = '#info/' + STATE.userId;
+    return;
+  }
+
   ['view-welcome','view-login','view-obras','view-obras-v2','view-novaobra','view-info','view-documentos','view-obra','view-upload','view-pipeline','view-relatorio','view-metodologia','view-casos','view-manifesto','view-contato','view-admin'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; });
   const shell = document.getElementById('app-shell');
   if (shell) shell.hidden = false;
@@ -7054,16 +7087,28 @@ function setLoginMode(signup) {
   const lead = document.querySelector('#view-login .login-form-lead');
   const sub = document.querySelector('#view-login .login-form-submit');
   const foot = document.querySelector('#view-login .login-form-foot span:first-child');
+  const fldName = document.getElementById('fld-name');
+  const fldWpp = document.getElementById('fld-wpp');
+  const inpName = document.getElementById('li-name');
+  const inpWpp = document.getElementById('li-wpp');
   if (signup) {
     if (h) h.innerHTML = 'Crie sua <em>conta.</em>';
     if (lead) lead.textContent = 'Cadastro de novo cliente. Use o e-mail corporativo da construtora — ele identifica a equipe na plataforma.';
     if (sub) sub.innerHTML = 'Cadastrar <span style="font-family: var(--mono);">→</span>';
     if (foot) foot.innerHTML = 'Já tem conta? <a href="#login">Fazer login</a>';
+    if (fldName) fldName.style.display = '';
+    if (fldWpp) fldWpp.style.display = '';
+    if (inpName) inpName.required = true;
+    if (inpWpp) inpWpp.required = true;
   } else {
     if (h) h.innerHTML = 'Entre na <em>auditoria.</em>';
     if (lead) lead.textContent = 'Para sócios, engenheiros responsáveis e equipe L4. Sua sessão é assinada e o audit-log fica salvo na obra.';
     if (sub) sub.innerHTML = 'Entrar <span style="font-family: var(--mono);">→</span>';
     if (foot) foot.innerHTML = 'Sem conta? <a href="#cadastro">Cadastrar nova conta</a>';
+    if (fldName) fldName.style.display = 'none';
+    if (fldWpp) fldWpp.style.display = 'none';
+    if (inpName) { inpName.required = false; inpName.value = ''; }
+    if (inpWpp) { inpWpp.required = false; inpWpp.value = ''; }
   }
 }
 
@@ -7096,6 +7141,14 @@ document.getElementById('login-form').addEventListener('submit', async e => {
   const email = document.getElementById('li-email').value.trim();
   const pass = document.getElementById('li-pass').value;
   if (!email || !pass) { setLoginStatus('Preencha email e senha.', 'err'); return; }
+  
+  let name = '', wpp = '';
+  if (LOGIN_MODE_SIGNUP) {
+    name = document.getElementById('li-name').value.trim();
+    wpp = document.getElementById('li-wpp').value.trim();
+    if (!name || !wpp) { setLoginStatus('Preencha nome e WhatsApp.', 'err'); return; }
+  }
+
   const sub = e.target.querySelector('.login-form-submit');
   const prev = sub.innerHTML;
   sub.disabled = true; sub.innerHTML = (LOGIN_MODE_SIGNUP ? 'Cadastrando...' : 'Entrando...');
@@ -7111,6 +7164,30 @@ document.getElementById('login-form').addEventListener('submit', async e => {
         sub.disabled = false; sub.innerHTML = prev;
         return;
       }
+      
+      // Criar o perfil do engenheiro em l4_engenheiros usando o JWT do usuário recém-criado
+      if (STATE.userId && STATE.jwt) {
+        setLoginStatus('Criando perfil de engenheiro...', 'info');
+        const profileBody = {
+          id: STATE.userId,
+          nome: name,
+          whatsapp: wpp
+        };
+        const rProfile = await fetch(`${SUPA_URL}/rest/v1/l4_engenheiros`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPA_ANON_KEY,
+            'Authorization': `Bearer ${STATE.jwt}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(profileBody)
+        });
+        if (!rProfile.ok) {
+          const t = await rProfile.text();
+          throw new Error('Erro ao criar perfil de engenheiro: ' + t);
+        }
+      }
     } else {
       const data = await supaAuthLogin(email, pass);
       console.log('[auth] login response', data);
@@ -7118,10 +7195,43 @@ document.getElementById('login-form').addEventListener('submit', async e => {
     const hdUser = document.getElementById('hd-user');
     if (hdUser) hdUser.textContent = email.split('@')[0];
     setLoginStatus('OK · entrando...', 'ok');
+    
+    let isVerified = true;
+    if (!DEV_MODE && STATE.userId) {
+      try {
+        const rowsEng = await supaGet('l4_engenheiros', '?id=eq.' + STATE.userId + '&select=whatsapp_verificado_em&limit=1');
+        if (rowsEng && rowsEng[0] && rowsEng[0].whatsapp_verificado_em) {
+          STATE.whatsappVerificado = true;
+          localStorage.setItem('l4_verified', '1');
+        } else {
+          // Fallback: consulta l4_dispositivos_whatsapp
+          const rowsDisp = await supaGet('l4_dispositivos_whatsapp', '?user_id=eq.' + STATE.userId + '&select=verificado_em&limit=1');
+          if (rowsDisp && rowsDisp[0] && rowsDisp[0].verificado_em) {
+            STATE.whatsappVerificado = true;
+            localStorage.setItem('l4_verified', '1');
+          } else {
+            isVerified = false;
+            STATE.whatsappVerificado = false;
+            localStorage.removeItem('l4_verified');
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao checar verificação:', err);
+        isVerified = true;
+      }
+    } else if (DEV_MODE) {
+      STATE.whatsappVerificado = true;
+      localStorage.setItem('l4_verified', '1');
+    }
+
     if (LOGIN_MODE_SIGNUP && STATE.userId) {
       location.hash = '#info/' + STATE.userId;
+    } else if (isUserAdmin()) {
+      location.hash = '#admin';
+    } else if (isVerified) {
+      location.hash = '#obras';
     } else {
-      location.hash = isUserAdmin() ? '#admin' : '#obras';
+      location.hash = '#info/' + STATE.userId;
     }
   } catch (err) {
     console.error('[auth] error', err);
@@ -7447,10 +7557,12 @@ if (btnLogout) btnLogout.addEventListener('click', doLogout);
   const savedRef = localStorage.getItem('l4_refresh');
   const savedEmail = localStorage.getItem('l4_user');
   const savedUserId = localStorage.getItem('l4_userId');
+  const verified = localStorage.getItem('l4_verified') === '1';
   if (savedJwt) STATE.jwt = savedJwt;
   if (savedRef) STATE.refreshToken = savedRef;
   if (savedEmail) { STATE.auth = { email: savedEmail }; STATE.emailUser = savedEmail; const hdUser = document.getElementById('hd-user'); if (hdUser) hdUser.textContent = savedEmail.split('@')[0]; }
   if (savedUserId) STATE.userId = savedUserId;
+  STATE.whatsappVerificado = verified;
 
   // Restore obra
   const savedObra = localStorage.getItem('l4_obra_ativa');
