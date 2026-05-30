@@ -169,17 +169,16 @@ const Nav = () => (
     <div className="hidden md:flex items-center gap-8 font-mono text-[11px] tracking-[0.2em] uppercase text-hero-mute">
       <a href="#dashboard" className="hover:text-hero-fg transition">A entrega</a>
       <a href="#processo" className="hover:text-hero-fg transition">Processo</a>
-      <a href="#casos" className="hover:text-hero-fg transition">Casos</a>
-      <a href="#manifesto" className="hover:text-hero-fg transition">Manifesto</a>
+      <a href="#sobre" className="hover:text-hero-fg transition">Quem opera</a>
       <a href="#faq" className="hover:text-hero-fg transition">FAQ</a>
     </div>
     <div className="flex items-center gap-3">
-      <a href="/app#login" className="hidden md:inline-flex items-center gap-2 border border-hero-hair text-hero-fg hover:bg-hero-fg/10 transition px-4 py-2.5 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
-        Entrar
+      <a href="/app#welcome" className="hidden md:inline-flex items-center gap-2 border border-hero-hair text-hero-fg hover:bg-hero-fg/10 transition px-4 py-2.5 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+        Plataforma
       </a>
-      <a href="/app#cadastro"
-         className="inline-flex items-center gap-2 bg-accent text-hero-bg hover:bg-white transition px-5 py-2.5 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
-        Criar conta
+      <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+         className="inline-flex items-center gap-2 bg-hero-fg text-hero-bg hover:bg-white transition px-5 py-2.5 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+        Agendar Diagnóstico
         <IconArrowRight className="h-3.5 w-3.5"/>
       </a>
     </div>
@@ -508,11 +507,11 @@ const HeroSection = () => {
       <div className="relative z-10 max-w-3xl mx-auto text-center">
         <p className="font-mono text-[10px] tracking-[0.4em] uppercase text-hero-mute mb-8 inline-flex items-center gap-3">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_10px_rgba(214,168,116,0.7)]"></span>
-          Plataforma de gestão de obra · Gestão L4
+          Controladoria de obras · Gestão L4
         </p>
 
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-medium tracking-[-0.02em] leading-[1.05] text-balance">
-          Seu orçamento estourou. Você vai descobrir <em className="hero-mark text-accent" style={{fontStyle:'italic'}}>QUANDO?</em>
+          Auditar a obra antes que <em className="hero-mark text-accent" style={{fontStyle:'italic'}}>o estouro</em> vire prejuízo.
         </h1>
         <style>{`
           .hero-mark {
@@ -566,23 +565,23 @@ const HeroSection = () => {
         `}</style>
 
         <p className="mt-7 text-lg text-hero-mute leading-relaxed max-w-xl mx-auto text-pretty">
-          Dados espalhados em cinco Excel não são gestão de obra — são aposta. Engenheiro manda no WhatsApp, IA organiza, você abre a plataforma e decide.
+          Controladoria que pega o desvio enquanto dá pra corrigir — não no balanço do ano seguinte.
         </p>
 
         <div className="mt-10 flex flex-wrap gap-3 items-center justify-center">
-          <a href="/app#cadastro"
-             className="hero-cta-pulse inline-flex items-center gap-2 bg-accent text-hero-bg hover:bg-white transition px-7 h-12 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
-            Criar conta
+          <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+             className="inline-flex items-center gap-2 bg-hero-fg text-hero-bg hover:bg-white transition px-7 h-12 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+            Agendar Diagnóstico
             <IconArrowRight className="h-4 w-4"/>
           </a>
-          <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
-             className="inline-flex items-center gap-2 border border-accent/45 text-hero-fg hover:bg-accent/10 transition px-7 h-12 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
-            Agendar diagnóstico
+          <a href="diagnostico.html"
+             className="hero-cta-pulse inline-flex items-center gap-2 border border-accent/45 text-hero-fg hover:bg-accent/10 transition px-7 h-12 text-[10px] tracking-[0.24em] uppercase font-semibold rounded-full font-mono">
+            Auto-diagnóstico · 5 min
           </a>
         </div>
 
-        <div className="mt-6 font-mono text-[10px] tracking-[0.2em] uppercase text-hero-mute-2">
-          Acesso ao painel + agendamento de diagnóstico. Ativação de obra após análise.
+        <div className="mt-12 font-mono text-[10px] tracking-[0.24em] uppercase text-hero-mute-2">
+          ↓ passe o mouse · revele o dashboard
         </div>
       </div>
     </section>
@@ -807,20 +806,21 @@ const DashboardSection = () => (
   <section id="dashboard" className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg relative grain-bg">
     <div className="flex items-end justify-between flex-wrap gap-4">
       <div>
-        <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">01 — O que você ganha</p>
+        <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">01 — A entrega</p>
         <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
-          Sua obra inteira em um lugar só.
+          É isso que chega na sua mesa.
         </h2>
       </div>
       <p className="max-w-md text-hero-mute text-pretty">
-        CPI, SPI, EAC, estouros por centro de custo, etapas críticas e antecipação de ruptura de suprimentos atualizados em tempo real. Clique nas abas — exemplo abaixo.
+        Dashboard navegável com KPIs EVM, estouros por centro de custo, etapas críticas do cronograma
+        e antecipação de ruptura de suprimentos. Clique nas abas — dados de exemplo.
       </p>
     </div>
     <div className="mt-12">
       <DashboardDemo />
     </div>
     <p className="mt-6 text-xs text-hero-mute font-mono">
-      Demo com dados sintéticos. Sua plataforma é populada com a sua obra a partir do cadastro.
+      Demo com dados sintéticos. Sua versão chega populada com a obra real após o diagnóstico.
     </p>
   </section>
 );
@@ -828,18 +828,18 @@ const DashboardSection = () => (
 /* ----------------------------- HOW IT WORKS ----------------------------- */
 const HowItWorksSection = () => {
   const steps = [
-    { Icon: IconUpload, n: "01", title: "Engenheiro lança no WhatsApp",
-      desc: "Foto da concretagem, nota fiscal, problema com fornecedor — tudo entra pelo grupo da obra que já existe. Sem app novo, sem planilha pra preencher, sem padronizar nada." },
-    { Icon: IconCpu, n: "02", title: "IA estrutura e cruza",
-      desc: "OCR de nota fiscal, categorização por etapa, cruzamento orçado × realizado, atualização de CPI/SPI/EAC a cada entrada. Dado ausente vira alerta — nunca chute." },
-    { Icon: IconBars, n: "03", title: "Você abre e decide",
-      desc: "Diretor entra na plataforma a qualquer hora, vê dado fresco — não consolidação de duas semanas atrás. Engenheiro residente volta a ser engenheiro, não digitador de Excel." },
+    { Icon: IconUpload, n: "01", title: "Você sobe os arquivos",
+      desc: "Orçamento (.xlsx), cronograma (.mpp), boletins de medição, notas fiscais (PDF). Como já estão hoje — sem padronizar nada." },
+    { Icon: IconCpu, n: "02", title: "A L4 audita com IA",
+      desc: "Higienização dos dados, cruzamento orçado vs realizado, projeção de EAC, análise de cronograma e mapa de suprimentos. Sem alucinação — dado ausente vira alerta, nunca chute." },
+    { Icon: IconBars, n: "03", title: "Você recebe o dossiê executivo",
+      desc: "Dashboard navegável + relatório Markdown + apresentação Canva pronta para diretoria. Plano de ação com 3 movimentos cirúrgicos priorizados." },
   ];
   return (
     <section id="processo" className="px-6 md:px-16 py-24 bg-hero-bg text-hero-fg relative grain-bg">
       <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">02 — Como funciona</p>
       <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
-        Três passos. Zero planilha nova.
+        Três passos. Zero ERP novo.
       </h2>
       <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-10">
         {steps.map((s, i) => (
@@ -860,18 +860,17 @@ const HowItWorksSection = () => {
 /* ----------------------------- BEFORE / AFTER ----------------------------- */
 const BeforeAfterSection = () => {
   const rows = [
-    { task: "Diário de obra", before: "WhatsApp do grupo, perdido em scroll infinito", after: "Timeline estruturada por etapa, IA categoriza" },
-    { task: "Relatório semanal", before: "1 dia de engenheiro consolidando planilha", after: "Atualizado a cada mensagem do canteiro" },
-    { task: "Cotação de fornecedor", before: "E-mail circular, planilha de 47 abas", after: "Mapa visual item × fornecedor × preço" },
-    { task: "Nota fiscal de material", before: "PDF na pasta, lançamento manual no ERP", after: "Foto no WhatsApp, OCR automático, comparação com orçamento" },
-    { task: "Medição de contrato", before: "Excel separado por empreiteiro", after: "Lançamento na plataforma, progresso vs valor contratado" },
-    { task: "Estouro de orçamento", before: "Descobre no fechamento mensal", after: "Alerta no dia, com causa rastreável" }
+    { task: "Consolidar dados de 5+ planilhas", before: "1 a 3 dias / engenheiro", after: "Automático" },
+    { task: "Cruzar boletim de medição × NF", before: "Manual, propenso a erro", after: "Auditado, com flags" },
+    { task: "Projetar custo final (EAC)", before: "Estimativa intuitiva", after: "Fórmula EVM rastreável" },
+    { task: "Mapear ruptura de suprimentos", before: "Descoberta no canteiro", after: "Antecipada em 14 dias" },
+    { task: "Apresentação para diretoria", before: "Coordenador para no operacional", after: "Pronta em Canva" }
   ];
   return (
     <section className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg">
       <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">03 — Antes / Depois</p>
       <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
-        A planilha sai. A obra entra.
+        Sua coordenação volta a coordenar.
       </h2>
       <div className="mt-12 border border-hero-hair">
         <div className="grid grid-cols-12 gap-2 px-4 md:px-6 py-3 border-b border-hero-hair font-mono text-[10px] tracking-wider uppercase text-hero-mute">
@@ -897,18 +896,20 @@ const BeforeAfterSection = () => {
 /* ----------------------------- ABOUT ----------------------------- */
 const AboutSection = () => (
   <section id="sobre" className="px-6 md:px-16 py-24 bg-hero-bg text-hero-fg relative grain-bg">
-    <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">04 — Como a L4 opera</p>
+    <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">04 — Quem opera</p>
     <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
-      Plataforma de engenharia, não bot genérico de planilha.
+      Engenharia operando os agentes — não SaaS de prateleira.
     </h2>
     <p className="mt-6 max-w-3xl text-lg text-hero-mute text-pretty leading-relaxed">
-      A Gestão L4 não é ChatGPT plugado em Excel. É plataforma com lógica EVM formal, captura via WhatsApp da obra, OCR de nota fiscal e validação humana antes de qualquer entrega crítica. O que entra no seu dashboard tem fórmula rastreável.
+      A Gestão L4 não é um app que você baixa. É uma operação de controladoria de obra com engenheiros
+      auditando cada dossiê antes de entregar. A IA roda no nosso lado, com PVO bloqueante e validação
+      humana final. Você recebe a saída — não as suposições.
     </p>
     <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
       {[
-        { k: "Complementa, não substitui", v: "A L4 opera em cima do Sienge, AltoQi ou planilha que você já usa. Sem migração, sem onboarding de equipe, sem rastro novo de sistema. Automatiza o que ERP é fraco — captura via WhatsApp, mapa de cotação, alerta de ruptura." },
-        { k: "Zero alucinação", v: "Dado ausente vira alerta visível, nunca chute. CPI, SPI, EAC e VAC têm fórmula EVM auditável. Validação humana em qualquer entrega que vai pro board." },
-        { k: "Confidencialidade", v: "NDA antes da implantação. Dados em ambiente dedicado, sem treinamento de modelo público, sem cruzamento entre clientes. Sua obra fica sua." },
+        { k: "Operação", v: "Auditoria executada pela equipe técnica da L4. Cada dossiê passa por engenheiro civil antes da entrega. Sem auto-serviço, sem dashboard que ninguém olha." },
+        { k: "Stack", v: "Pipeline EVM completo com fórmulas rastreáveis: CPI, SPI, EAC, VAC, ruptura de suprimentos. Cruzamento Sienge × físico × cronograma. Tudo auditável linha a linha." },
+        { k: "Compromisso", v: "Base contratual sempre — nunca medimos contra baseline replanejado para esconder atraso. PVO 27/27 bloqueia entrega que não convergir. Sem palpite, sem alucinação." },
       ].map((c, i) => (
         <div key={i} className="border-t border-hero-hair pt-5">
           <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-hero-mute">{c.k}</div>
@@ -936,18 +937,18 @@ const AccordionItem = ({ q, a, open, onClick }) => (
 
 const FAQSection = () => {
   const items = [
-    { q: "Como o engenheiro da obra lança dados no WhatsApp?",
-      a: "Você cadastra o grupo da obra no painel. A partir daí, foto da concretagem, NF de material, problema com empreiteiro — tudo que o engenheiro residente já manda no grupo vira registro estruturado na plataforma. IA categoriza por etapa e faz OCR das notas." },
-    { q: "Substitui meu Sienge / ERP?",
-      a: "Não. A L4 complementa. Sienge é ótimo pra contábil-fiscal, ruim pra dia-a-dia de obra (cotação visual, diário do canteiro, RFI com SLA, alerta de ruptura). A plataforma é a camada operacional que falta — sua equipe continua usando Sienge sem mudança." },
+    { q: "Quais formatos de arquivo a L4 aceita?",
+      a: "Excel (orçamento, curva ABC, boletins de medição), MS Project (.mpp), PDF (NFs, contratos), exportações de ERP (Sienge, AltoQi). Se vier no formato em que sua equipe trabalha hoje, entra no pipeline." },
+    { q: "Funciona com Sienge ou outro ERP que já usamos?",
+      a: "Sim. O pipeline lê exportações de Sienge e similares. A L4 não substitui seu ERP — opera em cima dele e devolve o dossiê executivo que o ERP não entrega." },
     { q: "Onde ficam os dados da obra?",
-      a: "Em ambiente dedicado da L4 (Supabase isolado por cliente, RLS ativo). Sem treinamento de modelo público, sem cruzamento entre clientes. NDA antes da implantação." },
-    { q: "Quanto tempo até começar a ver dados na plataforma?",
-      a: "Cadastro da obra: 2 minutos. Conexão do grupo WhatsApp: mesmo dia. Primeiro dossiê executivo (Auditoria L4 com CPI/SPI/EAC): 24-48h após upload do orçamento. Rotina mensal estável: 30 dias." },
+      a: "Em ambiente dedicado da L4 ou na sua infraestrutura, conforme contrato. Sem upload para SaaS de terceiros, sem treinamento de modelo público com seus dados. NDA assinado antes do diagnóstico." },
+    { q: "Quanto tempo até o primeiro dossiê?",
+      a: "Após o diagnóstico (call de 30min), o primeiro dossiê executivo sai em até 7 dias com seus dados reais. Implantação completa de rotina mensal em 30 dias." },
     { q: "E se a IA errar um número crítico?",
-      a: "Política zero-alucinação. Dado ausente vira alerta explícito, nunca palpite. CPI/SPI/EAC/VAC têm fórmula EVM rastreável. Auditoria L4 (entrega trimestral) passa por validação humana antes de ir pro board." },
-    { q: "Que porte de obra faz sentido?",
-      a: "Construtoras com 3+ obras simultâneas ou contrato acima de R$ 5M. Pode escalar pra portfólio inteiro depois. Obras menores: ideal pra Auditoria L4 pontual (sem mensalidade)." },
+      a: "Política zero-alucinação. Dado ausente vira alerta explícito, nunca palpite. Toda métrica EVM (CPI, SPI, EAC, VAC) tem fórmula rastreável e auditável. Validação humana final pela L4 antes da entrega." },
+    { q: "Que porte de obra faz sentido para a L4?",
+      a: "Obras com BIM 5D ou estruturas matriciais com múltiplos centros de custo, múltiplas frentes, contrato acima de R$ 8M. Para obras menores ou times sem BIM, o caminho é uma sessão de diagnóstico pontual." },
   ];
   const [open, setOpen] = useState(0);
   return (
@@ -978,7 +979,7 @@ const CTASection = () => {
     <section className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg">
       <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">06 — Próximo passo</p>
       <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
-        Cada semana sem isso custa caro.
+        30 minutos. Sem custo. Saímos com mapa de oportunidades.
       </h2>
 
       <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -991,7 +992,7 @@ const CTASection = () => {
           </div>
           <div className="mt-4 font-serif text-2xl font-medium tracking-tight">Agendar Diagnóstico</div>
           <div className="mt-2 text-sm text-hero-mute leading-relaxed">
-            Cadastro abre o painel + acesso à demo. Ativação de obra real é avaliada na call de diagnóstico.
+            Call de 30min. Saímos com mapa de oportunidades específico da sua obra.
           </div>
           <div className="mt-6 inline-flex items-center gap-2 text-sm font-mono group-hover:translate-x-1 transition">
             Calendly <IconArrowRight className="h-3.5 w-3.5"/>
@@ -1059,68 +1060,6 @@ const WhatsAppFloating = () => (
   </a>
 );
 
-/* ----------------------------- CASOS ----------------------------- */
-const CasosSection = () => {
-  const cases = [
-    {label:'DIÁRIO DE OBRA', antes:'WhatsApp do grupo soterrado em fotos, memes e confirmações. Reconstituir a semana é impossível.', depois:'Cada mensagem alimenta timeline estruturada — ocorrências, fotos, RDO em ordem cronológica, vinculados à etapa.', ganho:'A memória da obra deixa de depender da memória das pessoas.'},
-    {label:'COMPRAS E COTAÇÃO', antes:'E-mail circular pra cinco fornecedores. Respostas em formatos diferentes em dias diferentes. Decisão demora.', depois:'Pedido sai pelo painel, respostas entram no mapa de cotação — mesmo campo, mesma unidade, lado a lado.', ganho:'A decisão de compra passa a ser analítica, não intuitiva.'},
-    {label:'ENTRADA DE MATERIAL', antes:'NF em PDF, foto pro administrativo, lançamento no ERP quando der tempo. O custo da etapa fica defasado.', depois:'NF fotografada no canteiro vai por OCR. Fornecedor, valor, itens, CNPJ extraídos e vinculados à etapa correta.', ganho:'O custo da etapa é atualizado no dia em que o material entra na obra.'},
-    {label:'REUNIÃO DE OBRA', antes:'Reunião começa com 10 minutos discutindo qual número é verdade. Residente, administrativo e orçamentista têm dados diferentes.', depois:'CPI, SPI e avanço físico por etapa no painel antes da reunião. Todos partem do mesmo número.', ganho:'A pauta passa de "qual é o número?" para "o que fazemos com ele?".'},
-    {label:'CONTROLE DE ORÇAMENTO', antes:'Estouro aparece no fechamento mensal. Material já comprado, serviço já medido, desvio já é histórico.', depois:'EAC por etapa via CPI acumulado. Alerta sobe antes da próxima compra quando o índice cai abaixo do limiar.', ganho:'O estouro deixa de ser notícia. Vira sinal — ainda dentro do prazo de reação.'},
-  ];
-  return (
-    <section id="casos" className="px-6 md:px-16 py-24 bg-hero-bg text-hero-fg relative grain-bg">
-      <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">04 — Casos</p>
-      <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl">
-        O problema não é a obra. <em className="text-accent" style={{fontStyle:'italic'}}>É quando você descobre.</em>
-      </h2>
-      <p className="mt-6 max-w-2xl text-hero-mute text-pretty leading-relaxed">
-        Toda obra tem desvio. A diferença está em quando o desvio chega até você. No fluxo tradicional, a informação nasce no canteiro, morre no WhatsApp e ressurge — já tarde — no fechamento mensal. A Gestão L4 fecha esse intervalo.
-      </p>
-      <div className="mt-12 flex flex-col gap-5">
-        {cases.map((c, i) => (
-          <div key={i} className="border border-hero-hair p-7 md:p-8 bg-hero-glass">
-            <div className="font-mono text-[10px] tracking-[0.24em] uppercase text-accent mb-5">{c.label}</div>
-            <div className="grid md:grid-cols-2 gap-6 mb-5">
-              <div className="border-l-2 border-crit-dark pl-4">
-                <div className="font-mono text-[10px] tracking-[0.22em] uppercase text-crit-dark mb-2">Antes</div>
-                <p className="text-sm text-hero-mute leading-relaxed">{c.antes}</p>
-              </div>
-              <div className="border-l-2 border-ok-dark pl-4">
-                <div className="font-mono text-[10px] tracking-[0.22em] uppercase text-ok-dark mb-2">Depois</div>
-                <p className="text-sm text-hero-fg leading-relaxed">{c.depois}</p>
-              </div>
-            </div>
-            <div className="pt-4 border-t border-hero-hair">
-              <p className="font-serif text-base md:text-lg italic text-accent">{c.ganho}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-};
-
-/* ----------------------------- MANIFESTO ----------------------------- */
-const ManifestoSection = () => (
-  <section id="manifesto" className="px-6 md:px-16 py-24 bg-hero-bg-2 text-hero-fg relative grain-bg">
-    <p className="font-mono text-[11px] tracking-[0.28em] uppercase text-hero-mute">05 — Manifesto</p>
-    <h2 className="mt-4 font-serif text-3xl md:text-5xl font-medium tracking-tight max-w-3xl leading-[1.1]">
-      O dado que salva sua obra já existe. <em className="text-accent" style={{fontStyle:'italic'}}>Ele só não chega a quem decide.</em>
-    </h2>
-    <div className="mt-10 max-w-3xl font-serif text-lg md:text-xl text-hero-fg/85 leading-[1.75] space-y-5">
-      <p>A construtora brasileira não quebra por falta de informação. Quebra porque a informação existe em cinco lugares ao mesmo tempo e não chega a lugar nenhum no momento certo.</p>
-      <p>A foto da concretagem foi no grupo do WhatsApp. A NF do aço, no e-mail de compras. A medição da empreiteira, no bloco do residente. A cotação rodou três dias no e-mail circular. Cada um desses é um dado real — sobre sua obra.</p>
-      <p className="text-accent italic">Nenhum deles chegou a você antes da reunião de segunda.</p>
-      <p>Quando o desvio aparece no fechamento mensal, ele já tem semanas de atraso embutidas. O orçamento não estourou ontem — estourou no dia em que a decisão deveria ter sido tomada e não foi, porque o dado ainda estava no scroll do WhatsApp.</p>
-      <p>A Gestão L4 não cria dado novo. Não pede que seu engenheiro residente abra mais um app. O WhatsApp do canteiro continua sendo o sistema que a equipe já domina. A plataforma plugga ali. <em className="text-hero-fg font-medium">Faz o dado que já existe chegar na hora.</em></p>
-    </div>
-    <div className="mt-12 pl-5 border-l-2 border-accent font-serif text-xl md:text-2xl italic text-hero-fg max-w-2xl">
-      Ou você sabe o que está acontecendo na sua obra hoje — ou vai descobrir <em className="text-accent">no boleto.</em>
-    </div>
-  </section>
-);
-
 /* ----------------------------- APP ----------------------------- */
 const App = () => (
   <main className="font-sans">
@@ -1129,8 +1068,6 @@ const App = () => (
     <DashboardSection />
     <HowItWorksSection />
     <BeforeAfterSection />
-    <CasosSection />
-    <ManifestoSection />
     <AboutSection />
     <FAQSection />
     <CTASection />

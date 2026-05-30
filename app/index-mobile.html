@@ -4,16 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Gestão L4 — Auditoria de Obras</title>
-<script>
-  (function(){
-    var ua = navigator.userAgent || '';
-    var isMobile = /iPhone|iPad|iPod|Android|Mobile|webOS|BlackBerry|Opera Mini|IEMobile/i.test(ua);
-    var forced = location.search.indexOf('desktop=1') !== -1;
-    if (isMobile && !forced) {
-      location.replace('/app/index-mobile' + location.search + location.hash);
-    }
-  })();
-</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
@@ -44,10 +34,8 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html, body { margin:0; padding:0; }
-/* Selects e options legíveis em fundo escuro (warm-dark) */
 select { color: #F4EFE7; background-color: #1F1A15; }
 select option, select optgroup { background-color: #1F1A15; color: #F4EFE7; }
-/* Selects em fundo claro (forms brancos) */
 .view-novaobra select, .novaobra-form select { background-color: #FFFFFF; color: #0A0A0A; }
 .view-novaobra select option, .novaobra-form select option { background-color: #FFFFFF; color: #0A0A0A; }
 body {
@@ -2434,52 +2422,6 @@ table.t .end { text-align: right; }
 .obra-card-status.s-analise { color: #E8B354; }
 .obra-card-status.s-pronto  { color: #6DCB8E; }
 
-.obra-card-footer {
-  padding-top: 16px;
-  margin-top: 16px;
-  border-top: 1px solid var(--hero-hair);
-  display: flex;
-  justify-content: flex-end;
-}
-.obra-card-dash-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--hero-mute);
-  border: 1px solid var(--hero-hair);
-  border-radius: 999px;
-  padding: 6px 14px;
-  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
-  text-decoration: none;
-}
-.obra-card-dash-link:hover {
-  color: var(--hero-fg);
-  border-color: rgba(244, 239, 231, 0.38);
-  background: rgba(244, 239, 231, 0.06);
-}
-
-/* ─── WhatsApp Verify (view-info) ─── */
-.info-copy-btn {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--hero-mute);
-  background: transparent;
-  border: 1px solid var(--hero-hair);
-  border-radius: 999px;
-  padding: 6px 14px;
-  cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease;
-  flex: none;
-}
-.info-copy-btn:hover { color: var(--hero-fg); border-color: rgba(244,239,231,0.38); }
-.info-copy-btn:disabled { opacity: 0.3; cursor: default; }
-
 /* ─── Documentos ─── */
 /* Status card */
 .docs-status {
@@ -4125,6 +4067,227 @@ table.t .end { text-align: right; }
   .public-hero-band { height: 300px; }
   .public-hero-band-text { left: 24px; right: 24px; bottom: 24px; }
 }
+
+
+/* ════════════════════════════════════════════════════════
+   MOBILE OVERRIDES — applied at ≤ 720px
+   ════════════════════════════════════════════════════════ */
+@media (max-width: 720px) {
+
+  /* Welcome — collapse 3-row grid into a clean stack */
+  .welcome-canvas {
+    padding: 16px 16px 24px !important;
+    gap: 18px !important;
+    min-height: 100vh !important;
+  }
+  .welcome-nav { flex-wrap: wrap; gap: 12px; }
+  .welcome-nav-pills, .welcome-cta-group { display: none !important; }
+  .welcome-brand { display: flex !important; position: static !important; transform: none !important; flex: 1; justify-content: flex-start; font-size: 10px !important; letter-spacing: 0.32em !important; }
+  .welcome-cta-group.mobile-show {
+    display: flex !important;
+    padding: 4px;
+  }
+
+  .welcome-body { grid-template-columns: 1fr !important; gap: 16px !important; }
+  .welcome-h1 {
+    font-size: clamp(28px, 9vw, 40px) !important;
+    line-height: 1.05 !important;
+  }
+  .welcome-subhead { font-size: 14px !important; margin-top: 14px !important; }
+  .welcome-card { width: 100% !important; padding: 18px 20px !important; }
+  .welcome-card-anchor { display: none !important; }
+  .welcome-card-body { font-size: 12px !important; }
+  .welcome-foot-lean { justify-content: stretch !important; }
+  .welcome-cta-row { width: 100%; flex-direction: column; gap: 10px !important; align-items: stretch !important; }
+  .welcome-cta-row > * { width: 100% !important; justify-content: center !important; }
+  .welcome-cta-primary, .welcome-cta-link { padding: 14px 20px !important; }
+  .welcome-photo { background-position: center, 85% 0% !important; }
+
+  /* Login split → single column */
+  .login-split { grid-template-columns: 1fr !important; padding: 12px !important; gap: 12px !important; }
+  .login-hero { min-height: 280px !important; padding: 20px !important; }
+  .login-hero-top { flex-wrap: wrap; gap: 8px; }
+  .login-hero-h1 { font-size: clamp(24px, 8vw, 36px) !important; }
+  .login-hero-strip { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
+  .login-hero-chip { padding: 10px 12px !important; }
+  .login-hero-chip .val { font-size: 16px !important; }
+  .login-form-side { padding: 24px 18px !important; }
+  .login-form-body { padding: 24px 0 !important; max-width: none !important; }
+  .login-form-h2 { font-size: 28px !important; }
+  .login-form-actions { flex-direction: column; gap: 14px; align-items: stretch; }
+  .login-form-submit { width: 100% !important; justify-content: center !important; }
+
+  /* Client nav (Obras / Documentos / Dashboard / Pipeline / Dossiê) */
+  .client-canvas, .public-canvas, .pipe-canvas, .dash-canvas, .novaobra-canvas {
+    padding: 18px 16px 36px !important;
+    min-height: calc(100vh - 24px) !important;
+  }
+  .view-client, .view-obra-dark, .view-pipeline-dark, .view-novaobra,
+  .public-page, .view-doss {
+    padding: 12px !important;
+  }
+  .client-nav, .public-nav {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    margin-bottom: 28px !important;
+  }
+  .client-nav-pills, .public-nav-pills {
+    order: 99;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start;
+    padding: 4px !important;
+  }
+  .client-nav-pill, .public-nav-pill, .welcome-nav-pill {
+    white-space: nowrap !important;
+    padding: 7px 11px !important;
+    font-size: 9px !important;
+    letter-spacing: 0.18em !important;
+    flex: none;
+  }
+  .client-nav-end, .public-nav-end {
+    margin-left: 0 !important;
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .client-user { display: none !important; }
+
+  /* Obras grid */
+  .obra-grid { grid-template-columns: 1fr !important; }
+  .obra-card { padding: 20px 22px !important; }
+  .obra-card-name { font-size: 22px !important; }
+  .obra-card-meta { grid-template-columns: 1fr 1fr !important; gap: 10px 16px !important; }
+
+  /* Documentos */
+  .docs-status { grid-template-columns: 1fr !important; padding: 24px 22px !important; gap: 20px !important; }
+  .docs-status .h { font-size: 22px !important; }
+  .docs-status .d { font-size: 13px !important; }
+  .docs-status .rhs { align-items: stretch !important; }
+  .docs-status .rhs .client-pill-solid { width: 100%; text-align: center; justify-content: center; }
+  .upload-grid { grid-template-columns: 1fr !important; }
+  .upload-zone { min-height: 0 !important; padding: 18px 20px !important; }
+  .delivery-tiles { grid-template-columns: 1fr !important; }
+  .delivery-tile { padding: 20px 22px !important; min-height: 0 !important; }
+
+  /* Page heads (public + client) */
+  .client-page-head, .public-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+    padding-bottom: 20px !important;
+    margin-bottom: 28px !important;
+  }
+  .client-page-head h1, .public-head h1 {
+    font-size: clamp(28px, 8vw, 44px) !important;
+    line-height: 1.05 !important;
+  }
+  .client-page-head .actions { width: 100%; }
+  .client-page-head .actions .client-pill-solid { width: 100%; text-align: center; justify-content: center; }
+  .public-head .rhs { text-align: left !important; line-height: 1.7 !important; }
+
+  /* Dashboard (view-obra) */
+  .view-obra-dark .dash-head { flex-direction: column !important; gap: 14px !important; align-items: flex-start !important; }
+  .view-obra-dark .dash-head h1 { font-size: 32px !important; white-space: normal !important; }
+  .view-obra-dark .dash-head .right { text-align: left !important; }
+  .view-obra-dark .dash-sec { margin-top: 36px !important; }
+  .view-obra-dark .dash-sec-h { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
+  .view-obra-dark .dash-sec-h h2 { font-size: 20px !important; white-space: normal !important; }
+  .ekpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+  .ekpi .val { font-size: 26px !important; }
+  .idx-row { grid-template-columns: 1fr !important; gap: 14px !important; }
+  .idx-card .val { font-size: 36px !important; }
+  .eta-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    padding: 16px !important;
+  }
+  .eta-row .v, .eta-row .tag { text-align: left !important; }
+  table.t { font-size: 12px !important; }
+  table.t th, table.t td { padding: 8px 6px !important; }
+  .act-card { grid-template-columns: 1fr !important; gap: 14px !important; padding: 20px 0 !important; }
+  .act-card .impact { text-align: left !important; }
+  .source-row {
+    grid-template-columns: 24px 1fr !important;
+    gap: 10px !important;
+    padding: 14px 0 !important;
+  }
+  .source-row .ver, .source-row .ts, .source-row .st { grid-column: 2 !important; text-align: left !important; }
+
+  /* Pipeline */
+  .pipe-row { grid-template-columns: 28px 1fr 80px !important; padding: 14px 0 !important; gap: 8px !important; }
+  .pipe-row .time, .pipe-row .chev { display: none !important; }
+  .pipe-row .name { font-size: 11px !important; }
+  .pipe-row .desc { display: none !important; }
+  .pipe-out { padding: 12px !important; font-size: 11px !important; }
+  .fan { grid-template-columns: 1fr !important; }
+
+  /* Nova obra form */
+  .novaobra-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+  .novaobra-form-row { grid-template-columns: 1fr !important; gap: 18px !important; }
+  .novaobra-form-row.three { grid-template-columns: 1fr !important; }
+  .novaobra-aside { position: relative !important; top: 0 !important; padding: 24px 22px !important; }
+
+  /* Public sections (Metodologia / Casos / Manifesto / Contato) */
+  .public-sec { margin-top: 40px !important; }
+  .public-hero-band { height: 240px !important; margin-bottom: 36px !important; }
+  .public-hero-band-text { left: 20px !important; right: 20px !important; bottom: 20px !important; }
+  .public-hero-band-text h3 { font-size: 20px !important; }
+  .method-flow .step { min-width: 100% !important; border-radius: 12px !important; border-right: 1px solid var(--hero-hair) !important; margin-bottom: 6px; }
+  .method-flow .step:first-child, .method-flow .step:last-child { border-radius: 12px !important; }
+  .agent-grid { grid-template-columns: 1fr !important; }
+  .caso-card { padding: 22px !important; }
+  .caso-card-head { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+  .caso-card-head h3 { font-size: 24px !important; }
+  .caso-grid { grid-template-columns: 1fr 1fr !important; gap: 14px !important; }
+  .caso-grid .val { font-size: 22px !important; }
+  .caso-quote { font-size: 14px !important; padding-left: 16px !important; }
+  .manifesto-body { font-size: 17px !important; }
+  .manifesto-creed li { grid-template-columns: 44px 1fr !important; padding: 16px 0 !important; gap: 14px !important; }
+  .manifesto-creed .t { font-size: 17px !important; }
+  .contato-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
+  .contato-form-row { grid-template-columns: 1fr !important; gap: 18px !important; }
+  .contato-aside { padding: 24px !important; }
+  .contato-form-actions { flex-direction: column; align-items: stretch; gap: 12px; }
+  .contato-form-actions > * { width: 100% !important; justify-content: center !important; }
+
+  /* Dossiê paper sheet */
+  .doss-toolbar { padding: 12px 14px !important; flex-wrap: wrap; gap: 6px !important; }
+  .doss-toolbar-pills { order: 99; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; }
+  .doss-toolbar .id-tag { display: none; }
+  .doss-toolbar .btn, .doss-toolbar .btn-ghost { font-size: 9px !important; padding: 7px 12px !important; }
+  .doss-shell { padding: 12px 8px 0 !important; }
+  .doss-wrap { margin: 12px 0 24px !important; border-radius: 6px !important; }
+  .doss-page { padding: 32px 24px !important; }
+  .doss-cover { min-height: 0 !important; }
+  .doss-cover-meta { grid-template-columns: 1fr !important; gap: 18px !important; }
+  .doss-cover-foot { flex-direction: column !important; align-items: flex-start !important; gap: 18px !important; }
+  .doss-kpis, .doss-kpis.kpi3 { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
+  .doss-kpis .val { font-size: 24px !important; }
+  .doss-idx { grid-template-columns: 1fr !important; gap: 16px !important; }
+  .doss-idx .val { font-size: 40px !important; }
+  .row-eta { grid-template-columns: 1fr !important; gap: 8px !important; padding: 14px !important; }
+  .row-eta .d, .row-eta .tag { text-align: left !important; }
+  .row-sup { padding: 18px !important; }
+  .row-sup .grid { grid-template-columns: 1fr !important; gap: 12px !important; }
+  .row-act { grid-template-columns: 1fr !important; gap: 14px !important; padding: 20px 0 !important; }
+  .row-act .imp { text-align: left !important; }
+  .doss-toc li { grid-template-columns: 28px 1fr !important; gap: 10px !important; }
+  .doss-toc .d, .doss-toc .p { display: none !important; }
+  .doss-table { font-size: 12px !important; }
+  .doss-table th, .doss-table td { padding: 10px 4px !important; }
+  .doss-total { flex-direction: column !important; padding: 22px !important; gap: 14px !important; }
+  .doss-sign { grid-template-columns: 1fr !important; gap: 24px !important; }
+  .doss-foot-final { flex-direction: column !important; gap: 14px !important; align-items: flex-start !important; }
+  .doss-toolbar-pill { padding: 6px 10px !important; font-size: 9px !important; letter-spacing: 0.18em !important; }
+}
+
+@media (max-width: 480px) {
+  .welcome-h1, .client-page-head h1, .public-head h1 { font-size: 28px !important; }
+  .ekpi-grid, .caso-grid, .doss-kpis { grid-template-columns: 1fr 1fr !important; }
+  .login-hero-strip { grid-template-columns: 1fr !important; }
+}
 </style>
 </head>
 <body>
@@ -4283,14 +4446,6 @@ table.t .end { text-align: right; }
         </div>
 
         <form id="login-form" class="login-form-fields" autocomplete="off">
-          <div class="fld" id="fld-name" style="display: none;">
-            <label for="li-name">Nome completo</label>
-            <input id="li-name" type="text" placeholder="Seu nome" />
-          </div>
-          <div class="fld" id="fld-wpp" style="display: none;">
-            <label for="li-wpp">WhatsApp (DDI + DDD + número)</label>
-            <input id="li-wpp" type="tel" placeholder="5573999999999" />
-          </div>
           <div class="fld">
             <label for="li-email">E-mail corporativo</label>
             <input id="li-email" type="email" required placeholder="seu.email@construtora.com.br" />
@@ -4349,80 +4504,6 @@ table.t .end { text-align: right; }
       </div>
 
       <div class="obra-grid" id="obras-v2-grid"></div>
-
-    </div>
-  </div>
-</div>
-
-<!-- ── Verificação WhatsApp (pós-cadastro) ── -->
-<div id="view-info" class="view-client" hidden>
-  <div class="client-shell">
-    <div class="client-canvas">
-
-      <nav class="client-nav">
-        <button class="client-brand" onclick="location.hash='#welcome'">
-          <svg viewBox="0 0 124 88" width="39" height="28" style="color: #F4EFE7" aria-hidden="true"><use href="#L4-solid"/></svg>
-        </button>
-      </nav>
-
-      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:calc(100vh - 80px); padding:40px 16px;">
-
-        <!-- Estado: verificado -->
-        <div id="info-verified-state" hidden style="text-align:center;">
-          <div style="font-size:48px; margin-bottom:16px;">✅</div>
-          <div style="font-family:var(--mono); font-size:14px; color:#6DCB8E; letter-spacing:0.1em; margin-bottom:8px;">WhatsApp verificado!</div>
-          <div style="font-family:var(--mono); font-size:11px; color:var(--hero-mute);">Redirecionando para suas obras...</div>
-        </div>
-
-        <!-- Estado: aguardando verificação -->
-        <div id="info-verify-card" style="width:100%; max-width:420px;">
-
-          <div style="text-align:center; margin-bottom:32px;">
-            <div style="font-family:var(--mono); font-size:9px; letter-spacing:0.36em; text-transform:uppercase; color:var(--hero-mute); margin-bottom:12px;">Passo 2 de 2</div>
-            <div style="font-family:var(--serif); font-size:28px; color:var(--hero-fg); letter-spacing:-0.01em; line-height:1.1;">Verificar WhatsApp</div>
-            <div style="font-family:var(--mono); font-size:11px; color:var(--hero-mute); margin-top:12px; line-height:1.7; max-width:320px; margin-left:auto; margin-right:auto;">
-              Envie o código abaixo pelo WhatsApp para o número da Maya e sua conta será ativada automaticamente.
-            </div>
-          </div>
-
-          <!-- Número WhatsApp -->
-          <div style="background:var(--hero-glass); border:1px solid var(--hero-hair); border-radius:14px; padding:20px 24px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
-            <div>
-              <div style="font-family:var(--mono); font-size:9px; letter-spacing:0.32em; text-transform:uppercase; color:var(--hero-mute-2); margin-bottom:6px;">Envie para</div>
-              <div style="font-family:var(--mono); font-size:15px; color:var(--hero-fg); letter-spacing:1.5px;">+55 73 98825-8146</div>
-            </div>
-            <button class="info-copy-btn" id="info-copy-number" onclick="infoCopy('number')">Copiar</button>
-          </div>
-
-          <!-- Código -->
-          <div style="background:var(--hero-glass); border:1px solid var(--hero-hair); border-radius:14px; padding:28px 24px; margin-bottom:10px; text-align:center;">
-            <div style="font-family:var(--mono); font-size:9px; letter-spacing:0.32em; text-transform:uppercase; color:var(--hero-mute-2); margin-bottom:18px;">Seu código</div>
-            <div id="info-codigo" style="font-family:var(--mono); font-size:38px; font-weight:600; letter-spacing:12px; color:var(--hero-fg); padding:14px 0; transition:color 300ms;">----</div>
-            <button class="info-copy-btn" id="info-copy-code" onclick="infoCopy('code')" disabled style="margin-top:12px;">Copiar código</button>
-          </div>
-
-          <!-- Status + timer + regen -->
-          <div style="background:var(--hero-glass); border:1px solid var(--hero-hair); border-radius:14px; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px;">
-            <div id="info-status-line" style="display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:10px; color:var(--hero-mute); flex:1; min-width:0;">
-              <div id="info-spinner" style="width:10px; height:10px; border:1.5px solid var(--hero-mute); border-top-color:var(--hero-fg); border-radius:50%; animation:spin 1s linear infinite; flex:none;"></div>
-              <span id="info-status-text">Aguardando sua mensagem...</span>
-            </div>
-            <div style="text-align:right; flex:none;">
-              <div style="font-family:var(--mono); font-size:9px; letter-spacing:0.2em; text-transform:uppercase; color:var(--hero-mute-2); margin-bottom:2px;">Expira em</div>
-              <div id="info-timer" style="font-family:var(--mono); font-size:13px; color:var(--hero-fg);">--:--</div>
-            </div>
-          </div>
-
-          <div style="text-align:center;">
-            <button id="info-regen-btn" onclick="infoRequestNew()" style="background:transparent; border:none; font-family:var(--mono); font-size:10px; letter-spacing:0.1em; color:var(--hero-mute); cursor:pointer; text-decoration:underline; padding:4px 0;">
-              Solicitar novo código
-            </button>
-          </div>
-
-          <div id="info-error" style="font-family:var(--mono); font-size:10px; color:#E87A7A; text-align:center; margin-top:14px; display:none;"></div>
-
-        </div>
-      </div>
 
     </div>
   </div>
@@ -4511,14 +4592,6 @@ table.t .end { text-align: right; }
         </div>
 
         <div class="upload-grid" id="upload-grid"></div>
-      </section>
-
-      <!-- Histórico de documentos por categoria -->
-      <section style="margin-top: 40px;" id="docs-history-section" hidden>
-        <div class="docs-section-head" style="margin-bottom: 16px;">
-          <h2>Histórico de documentos</h2>
-        </div>
-        <div id="docs-history"></div>
       </section>
 
     </div>
@@ -4695,32 +4768,30 @@ table.t .end { text-align: right; }
         </button>
         <div class="client-nav-pills">
           <button class="client-nav-pill active">Admin</button>
-          <button class="client-nav-pill" onclick="location.hash='#obras'">Minhas obras</button>
+          <button class="client-nav-pill" onclick="location.hash='#obras'">Obras</button>
         </div>
         <div class="client-nav-end">
           <span class="client-user" id="client-user-admin">—</span>
           <button class="client-logout" onclick="doLogout()">Sair</button>
         </div>
       </nav>
-
       <div class="client-page-head">
         <div>
           <h1>Admin L4 <em id="admin-count">/ 00</em></h1>
-          <div class="sub">Painel de controle · clientes, obras, documentos, auditorias</div>
-        </div>
-        <div class="actions" style="display:flex; gap:10px; align-items:center;">
-          <input id="admin-search" placeholder="Buscar email, obra, endereço..." style="background:rgba(244,239,231,0.06); border:1px solid rgba(244,239,231,0.18); color:#F4EFE7; padding:10px 14px; font-family:var(--mono); font-size:12px; min-width:280px;" />
-          <select id="admin-filter" style="background:rgba(244,239,231,0.06); border:1px solid rgba(244,239,231,0.18); color:#F4EFE7; padding:10px 14px; font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.16em;">
-            <option value="">TODOS</option>
-            <option value="inicial">Sem solicitação</option>
-            <option value="em_analise">Em análise</option>
-            <option value="pronto">Pronto</option>
-          </select>
+          <div class="sub">Clientes, obras, documentos</div>
         </div>
       </div>
-
-      <div id="admin-stats" style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px;"></div>
-      <div id="admin-grid" style="display:flex; flex-direction:column; gap:12px;"></div>
+      <div style="display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap;">
+        <input id="admin-search" placeholder="Buscar..." style="flex:1; min-width:160px; background:rgba(244,239,231,0.06); border:1px solid rgba(244,239,231,0.18); color:#F4EFE7; padding:10px 12px; font-family:var(--mono); font-size:12px;" />
+        <select id="admin-filter" style="background:rgba(244,239,231,0.06); border:1px solid rgba(244,239,231,0.18); color:#F4EFE7; padding:10px 12px; font-family:var(--mono); font-size:11px;">
+          <option value="">TODOS</option>
+          <option value="inicial">Sem solicitação</option>
+          <option value="em_analise">Em análise</option>
+          <option value="pronto">Pronto</option>
+        </select>
+      </div>
+      <div id="admin-stats" style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px;"></div>
+      <div id="admin-grid" style="display:flex; flex-direction:column; gap:10px;"></div>
     </div>
   </div>
 </div>
@@ -6015,7 +6086,6 @@ const STATE = {
   jwt: null,
   refreshToken: null,
   userId: null,
-  whatsappVerificado: false,
   obraAtiva: null,
   obraNome: '',
   obraIsDemo: false,
@@ -6032,22 +6102,8 @@ function canSeeDelivery() {
   return DEV_MODE || STATE.obraIsDemo || isAdminMode() || STATE.audStatus === 'pronto';
 }
 
-let _docsPollTimer = null;
-function _startDocsPoll(obraId) {
-  _stopDocsPoll();
-  _docsPollTimer = setInterval(async () => {
-    if (!location.hash.startsWith('#documentos/' + obraId)) { _stopDocsPoll(); return; }
-    delete STATE.obras_state[obraId];
-    await renderDocumentos(obraId);
-  }, 5000);
-}
-function _stopDocsPoll() {
-  if (_docsPollTimer) { clearInterval(_docsPollTimer); _docsPollTimer = null; }
-}
-
 // ─── DOC TYPES MAPPING ──────────────────────────────────
 // UI shows 3 categories. Backend has 6 types. Adicionais covers extras.
-// Cada categoria UI tem subtipos (label → tipo backend). Subtipos podem mapear pro mesmo tipo backend.
 const DOC_TYPES = [
   { id: 'orcamento', ico: 'O', name: 'Orçamento', desc: 'Planilhas, composições e memoriais de orçamento.', subtipos: [
     { label: 'Planilha de orçamento',            tipo: 'orcamento' },
@@ -6063,40 +6119,37 @@ const DOC_TYPES = [
     { label: 'Cronograma contratual',            tipo: 'cronograma' },
     { label: 'Cronograma replanejado',           tipo: 'cronograma' },
     { label: 'Linha de base / baseline',         tipo: 'cronograma' },
-    { label: 'Boletim de medição',               tipo: 'boletim_medicao' },
-    { label: 'Avanço físico (planilha)',         tipo: 'boletim_medicao' },
-    { label: 'Curva S',                          tipo: 'boletim_medicao' },
+    { label: 'Boletim de medição',               tipo: 'boletins' },
+    { label: 'Avanço físico (planilha)',         tipo: 'boletins' },
+    { label: 'Curva S',                          tipo: 'boletins' },
     { label: 'Outro',                            tipo: 'cronograma' },
   ]},
   { id: 'suprimentos', ico: 'S', name: 'Suprimentos', desc: 'NFs, contratos, pedidos e cotações.', subtipos: [
-    { label: 'NF recebidas (SEFAZ — XML)',       tipo: 'nota_fiscal' },
-    { label: 'NF lançadas no sistema',           tipo: 'nota_fiscal' },
-    { label: 'Contrato com fornecedor',          tipo: 'nota_fiscal' },
-    { label: 'Pedido de compra',                 tipo: 'nota_fiscal' },
-    { label: 'Cotação',                          tipo: 'nota_fiscal' },
-    { label: 'Manifesto SEFAZ',                  tipo: 'nota_fiscal' },
-    { label: 'Outro',                            tipo: 'nota_fiscal' },
+    { label: 'NF recebidas (SEFAZ — XML)',       tipo: 'nf-rec' },
+    { label: 'NF lançadas no sistema',           tipo: 'nf-lanc' },
+    { label: 'Contrato com fornecedor',          tipo: 'nf-lanc' },
+    { label: 'Pedido de compra',                 tipo: 'nf-lanc' },
+    { label: 'Cotação',                          tipo: 'nf-lanc' },
+    { label: 'Manifesto SEFAZ',                  tipo: 'nf-rec' },
+    { label: 'Outro',                            tipo: 'nf-lanc' },
   ]},
 ];
-
-// Adicionais inclui diário e outros que não entram nas 3 categorias acima
 const ADICIONAIS_SUBTIPOS = [
-  { label: 'Diário de obra',                     tipo: 'nota_fiscal' },
-  { label: 'ART / RRT',                          tipo: 'nota_fiscal' },
-  { label: 'Ata de reunião',                     tipo: 'nota_fiscal' },
-  { label: 'Laudo técnico',                      tipo: 'nota_fiscal' },
-  { label: 'Memorial descritivo',                tipo: 'nota_fiscal' },
-  { label: 'Outro',                              tipo: 'nota_fiscal' },
+  { label: 'Diário de obra',                     tipo: 'diario' },
+  { label: 'ART / RRT',                          tipo: 'diario' },
+  { label: 'Ata de reunião',                     tipo: 'diario' },
+  { label: 'Laudo técnico',                      tipo: 'diario' },
+  { label: 'Memorial descritivo',                tipo: 'diario' },
+  { label: 'Outro',                              tipo: 'diario' },
 ];
-
 const TIPO_LABELS = {
   'orcamento': 'Orçamento',
   'cronograma': 'Cronograma',
-  'boletim_medicao': 'Boletins / medição',
-  'nota_fiscal': 'Notas fiscais',
+  'boletins': 'Boletins / medição',
+  'nf-rec': 'NF recebidas',
+  'nf-lanc': 'NF lançadas',
+  'diario': 'Diário / outros',
 };
-
-// Formatos aceitos (não-binários processáveis pelo Gemini)
 const ACCEPT_FORMATS = '.xlsx,.xls,.xml,.pdf,.csv,.json,.txt';
 const ACCEPT_HINT = 'Formatos aceitos: XLSX · XML · PDF · CSV. NÃO envie .mpp (formato binário do MS Project — exporte como XLSX ou XML primeiro).';
 
@@ -6226,10 +6279,8 @@ function doLogout() {
   localStorage.removeItem('l4_jwt_exp');
   localStorage.removeItem('l4_obra_ativa');
   localStorage.removeItem('l4_obra_nome');
-  localStorage.removeItem('l4_verified');
   STATE.auth = null; STATE.jwt = null; STATE.refreshToken = null; STATE.userId = null;
   STATE.obraAtiva = null; STATE.obraNome = ''; STATE.audAtual = null; STATE.audStatus = null;
-  STATE.whatsappVerificado = false;
   location.hash = '#welcome';
 }
 
@@ -6291,13 +6342,13 @@ async function loadDocsState(obraId) {
     // map para categorias UI
     const uiDocs = {};
     for (const cat of DOC_TYPES) {
-      const hasAny = cat.subtipos.some(s => (realDocsByTipo[s.tipo] || []).length > 0);
+      const hasAny = cat.tipos.some(t => (realDocsByTipo[t] || []).length > 0);
       uiDocs[cat.id] = hasAny ? 'uploaded' : null;
     }
     // adicionais: docs fora dos tipos cobertos vão aparecer aqui (não há atualmente outro tipo, mas guardamos contagem extra)
     const adicionais = [];
     for (const tipo in realDocsByTipo) {
-      if (!DOC_TYPES.some(c => c.subtipos.some(s => s.tipo === tipo))) {
+      if (!Object.values(DOC_TYPES).some(c => c.tipos.includes(tipo))) {
         for (const d of realDocsByTipo[tipo]) adicionais.push({ name: `${TIPO_LABELS[tipo] || tipo} · ${d.nome_arquivo_original || ''}`, state: 'uploaded' });
       }
     }
@@ -6354,7 +6405,6 @@ function renderObrasV2Grid(obras) {
     const st = STATE.obras_state[o.uuid] || { audit_state: 'inicial', docs: {} };
     const docCount = Object.values(st.docs || {}).filter(v => v === 'uploaded').length;
     const stateLabel = { 'inicial': 'Documentos · em envio', 'em_analise': 'Auditoria em análise', 'pronto': 'Dossiê pronto' }[st.audit_state] || 'Documentos · em envio';
-    const gestaoUrl = 'https://landingl4.vercel.app/gestao/' + o.uuid;
     return `<div class="obra-card" onclick="location.hash='#documentos/${o.uuid}'">
       <div class="obra-card-head">
         <div>
@@ -6368,9 +6418,6 @@ function renderObrasV2Grid(obras) {
         <div><div class="lbl">Documentos</div><div class="val">${docCount} / ${DOC_TYPES.length} enviados</div></div>
         <div><div class="lbl">Data-base</div><div class="val">${o.db}</div></div>
         <div><div class="lbl">Chave</div><div class="val">${o.gphy}</div></div>
-      </div>
-      <div class="obra-card-footer">
-        <a class="obra-card-dash-link" href="${gestaoUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Dashboard operacional →</a>
       </div>
     </div>`;
   }).join('');
@@ -6415,33 +6462,11 @@ async function renderDocumentos(obraId) {
   const grid = document.getElementById('upload-grid');
   if (grid) {
     const docCards = DOC_TYPES.map(d => {
-      // Latest real doc across all subtipos of this category
-      const allCatDocs = d.subtipos.flatMap(s => ((st.real_docs_by_tipo || {})[s.tipo] || []));
-      allCatDocs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      const latestDoc = allCatDocs[0];
-      const latestStatus = latestDoc?.status;
-
       const docState = (st.docs || {})[d.id];
-      let cls, statusLabel, footLabel, clickHandler;
-
-      if (latestStatus === 'aguardando_preview') {
-        cls = 'processing';
-        statusLabel = '⚡ Aguardando OK';
-        footLabel = 'Ver dados e confirmar →';
-        clickHandler = `showPreviewModal('${latestDoc.id}','${latestDoc.tipo}','${obraId}')`;
-      } else if (latestStatus === 'processando') {
-        cls = 'processing';
-        statusLabel = 'Processando…';
-        footLabel = 'aguarde o processamento…';
-        clickHandler = `handleUploadClick('${obraId}','${d.id}')`;
-      } else {
-        cls = docState === 'uploaded' ? 'uploaded' : (docState === 'processing' ? 'processing' : '');
-        statusLabel = docState === 'uploaded' ? '✓ Recebido' : (docState === 'processing' ? 'Processando' : 'Aguardando envio');
-        footLabel = docState === 'uploaded' ? 'Última atualização · ' + new Date().toLocaleDateString('pt-BR') : 'Clique para enviar arquivo';
-        clickHandler = `handleUploadClick('${obraId}','${d.id}')`;
-      }
-
-      return `<div class="upload-zone ${cls}" data-doc="${d.id}" onclick="${clickHandler}">
+      const cls = docState === 'uploaded' ? 'uploaded' : (docState === 'processing' ? 'processing' : '');
+      const statusLabel = docState === 'uploaded' ? '✓ Recebido' : (docState === 'processing' ? 'Processando' : 'Aguardando envio');
+      const footLabel = docState === 'uploaded' ? 'Última atualização · ' + new Date().toLocaleDateString('pt-BR') : 'Clique para enviar arquivo';
+      return `<div class="upload-zone ${cls}" data-doc="${d.id}" onclick="handleUploadClick('${obraId}','${d.id}')">
         <div class="upload-zone-head">
           <span class="upload-zone-ico">${d.ico}</span>
           <span class="upload-zone-status">${statusLabel}</span>
@@ -6468,70 +6493,6 @@ async function renderDocumentos(obraId) {
   const totalDocs = DOC_TYPES.length;
   const prog = document.getElementById('docs-progress');
   if (prog) prog.textContent = `${docCount} / ${totalDocs} enviados`;
-
-  // Histórico de documentos agrupado por categoria
-  const histSection = document.getElementById('docs-history-section');
-  const histContainer = document.getElementById('docs-history');
-  if (histSection && histContainer) {
-    const rdbt = st.real_docs_by_tipo || {};
-    const HIST_GROUPS = [
-      { label: 'Orçamento',    tipos: ['orcamento'] },
-      { label: 'Planejamento', tipos: ['cronograma', 'boletim_medicao'] },
-      { label: 'Suprimentos',  tipos: ['nota_fiscal'] },
-    ];
-    const coveredTipos = HIST_GROUPS.flatMap(g => g.tipos);
-    const extraTipos = Object.keys(rdbt).filter(t => !coveredTipos.includes(t));
-    if (extraTipos.length) HIST_GROUPS.push({ label: 'Adicionais', tipos: extraTipos });
-
-    const STATUS_CFG = {
-      processando:        { color: '#E8B354', label: 'PROCESSANDO' },
-      aguardando_preview: { color: '#D6A874', label: 'AGUARDANDO OK' },
-      processado:         { color: '#6DCB8E', label: 'PROCESSADO' },
-      erro:               { color: '#F87171', label: 'ERRO' },
-      rejeitado_preview:  { color: '#F87171', label: 'REJEITADO' },
-    };
-    const fmtD = ts => ts ? new Date(ts).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—';
-
-    const groupsHtml = HIST_GROUPS.map(g => {
-      const docs = g.tipos.flatMap(t => rdbt[t] || []);
-      if (!docs.length) return '';
-      docs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-      const rows = docs.map(d => {
-        const sc = STATUS_CFG[d.status] || { color: 'rgba(244,239,231,0.4)', label: (d.status || '').toUpperCase() };
-        const fname = (d.nome_arquivo_original || '—');
-        const fnameS = fname.length > 48 ? fname.slice(0, 48) + '…' : fname;
-        const action = d.status === 'aguardando_preview'
-          ? `<button onclick="event.stopPropagation();showPreviewModal('${d.id}','${d.tipo}','${obraId}')" style="background:transparent;border:none;color:#D6A874;font-family:monospace;font-size:10px;letter-spacing:0.12em;cursor:pointer;padding:0;white-space:nowrap;">VER DADOS →</button>`
-          : '';
-        return `<div style="display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid rgba(244,239,231,0.06);font-family:monospace;font-size:11px;">
-          <span style="color:rgba(244,239,231,0.35);min-width:28px;">v${d.versao}</span>
-          <span style="flex:1;color:rgba(244,239,231,0.7);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${fname}">${fnameS}</span>
-          <span style="color:${sc.color};letter-spacing:0.1em;font-size:9px;white-space:nowrap;">${sc.label}</span>
-          <span style="min-width:72px;text-align:right;">${action}</span>
-          <span style="color:rgba(244,239,231,0.25);font-size:10px;white-space:nowrap;">${fmtD(d.created_at)}</span>
-        </div>`;
-      }).join('');
-
-      return `<div style="margin-bottom:12px;border:1px solid rgba(244,239,231,0.1);border-radius:10px;overflow:hidden;background:rgba(244,239,231,0.02);">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(244,239,231,0.04);border-bottom:1px solid rgba(244,239,231,0.08);">
-          <span style="font-family:monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(244,239,231,0.7);">${g.label}</span>
-          <span style="font-family:monospace;font-size:10px;color:rgba(244,239,231,0.35);">${docs.length} versão${docs.length > 1 ? 'ões' : ''}</span>
-        </div>
-        <div style="max-height:240px;overflow-y:auto;">${rows}</div>
-      </div>`;
-    }).join('');
-
-    const hasAny = HIST_GROUPS.some(g => g.tipos.some(t => rdbt[t]?.length));
-    histSection.hidden = !hasAny;
-    histContainer.innerHTML = groupsHtml;
-  }
-
-  // Auto-polling: atualiza sem F5 enquanto houver docs processando ou aguardando preview
-  const allRealDocs = Object.values(st.real_docs_by_tipo || {}).flat();
-  const hasActive = allRealDocs.some(d => d.status === 'processando' || d.status === 'aguardando_preview');
-  if (hasActive && !STATE.obraIsDemo) _startDocsPoll(obraId);
-  else _stopDocsPoll();
 }
 
 function renderDocsStatus(obraId) {
@@ -6606,29 +6567,26 @@ function renderAdminBlock(obraId) {
 }
 
 // ─── HANDLERS: upload ──────────────────────────────────
-// Modal custom de seleção de tipo. Aceita [{label, tipo}] e mostra dica de formato.
 function pickTipo(title, subtipos) {
   return new Promise(resolve => {
     const old = document.getElementById('tipo-picker'); if (old) old.remove();
     const wrap = document.createElement('div');
     wrap.id = 'tipo-picker';
-    wrap.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(10,8,6,0.72); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; padding:24px;';
+    wrap.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(10,8,6,0.72); backdrop-filter:blur(8px); display:flex; align-items:flex-end; justify-content:center; padding:0;';
     wrap.innerHTML = `
-      <div style="background:#1F1A15; color:#F4EFE7; border:1px solid rgba(244,239,231,0.14); max-width:460px; width:100%; padding:28px; max-height:90vh; overflow-y:auto;">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.28em; text-transform:uppercase; color:rgba(244,239,231,0.62); margin-bottom:12px;">SELECIONE O TIPO</div>
-        <h3 style="font-family:'Source Serif 4',serif; font-size:22px; margin:0 0 8px; font-weight:500;">${title}</h3>
-        <div style="font-size:12px; line-height:1.5; color:rgba(244,239,231,0.55); margin-bottom:20px; padding:10px 12px; background:rgba(214,168,116,0.06); border-left:2px solid #D6A874;">${ACCEPT_HINT}</div>
+      <div style="background:#1F1A15; color:#F4EFE7; border-top:1px solid rgba(244,239,231,0.14); width:100%; max-width:520px; padding:24px 20px 32px; border-radius:18px 18px 0 0; max-height:90vh; overflow-y:auto;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:0.28em; text-transform:uppercase; color:rgba(244,239,231,0.62); margin-bottom:10px;">SELECIONE O TIPO</div>
+        <h3 style="font-family:'Source Serif 4',serif; font-size:20px; margin:0 0 10px; font-weight:500;">${title}</h3>
+        <div style="font-size:11px; line-height:1.5; color:rgba(244,239,231,0.55); margin-bottom:16px; padding:10px 12px; background:rgba(214,168,116,0.06); border-left:2px solid #D6A874;">${ACCEPT_HINT}</div>
         <div id="tipo-opts" style="display:flex; flex-direction:column; gap:8px;"></div>
-        <button id="tipo-cancel" style="margin-top:20px; width:100%; padding:12px; background:transparent; color:rgba(244,239,231,0.62); border:1px solid rgba(244,239,231,0.18); font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer;">Cancelar</button>
+        <button id="tipo-cancel" style="margin-top:18px; width:100%; padding:14px; background:transparent; color:rgba(244,239,231,0.62); border:1px solid rgba(244,239,231,0.18); font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer;">Cancelar</button>
       </div>`;
     document.body.appendChild(wrap);
     const opts = wrap.querySelector('#tipo-opts');
     subtipos.forEach(st => {
       const b = document.createElement('button');
-      b.style.cssText = 'padding:14px 16px; background:rgba(244,239,231,0.04); color:#F4EFE7; border:1px solid rgba(244,239,231,0.14); text-align:left; font-family:inherit; font-size:14px; cursor:pointer; transition:background 0.15s;';
+      b.style.cssText = 'padding:16px; background:rgba(244,239,231,0.04); color:#F4EFE7; border:1px solid rgba(244,239,231,0.14); text-align:left; font-family:inherit; font-size:15px; cursor:pointer;';
       b.textContent = st.label;
-      b.onmouseover = () => b.style.background = 'rgba(214,168,116,0.12)';
-      b.onmouseout = () => b.style.background = 'rgba(244,239,231,0.04)';
       b.onclick = () => { wrap.remove(); resolve(st.tipo); };
       opts.appendChild(b);
     });
@@ -6662,7 +6620,7 @@ function pickAndUpload(obraId, tipo) {
   if (STATE.obraIsDemo || DEV_MODE) {
     // Mock cycle
     const st = STATE.obras_state[obraId] = STATE.obras_state[obraId] || { docs: {}, adicionais: [] };
-    const cat = DOC_TYPES.find(c => c.subtipos.some(s => s.tipo === tipo));
+    const cat = DOC_TYPES.find(c => c.tipos.includes(tipo));
     if (cat) { st.docs[cat.id] = 'processing'; renderDocumentos(obraId); setTimeout(() => { st.docs[cat.id] = 'uploaded'; renderDocumentos(obraId); }, 800); }
     return;
   }
@@ -6684,13 +6642,11 @@ async function uploadDocReal(obraId, tipo, file) {
   }
   await ensureFreshToken();
   try {
-    // 1) Próxima versão para esse tipo
     const existing = await supaGet('l4_documentos_obra', `?project_id=eq.${obraId}&tipo=eq.${tipo}&select=versao&order=versao.desc&limit=1`);
     const versao = (existing[0]?.versao || 0) + 1;
     const safeName = file.name.replace(/\s+/g, '_').replace(/[^\w.\-]/g, '');
     const path = `${obraId}/${tipo}/v${versao}_${safeName}`;
 
-    // 2) Storage (bucket: documentos-obra)
     const upR = await fetch(`${SUPA_URL}/storage/v1/object/documentos-obra/${path}`, {
       method: 'POST',
       headers: { 'apikey': SUPA_ANON_KEY, 'Authorization': `Bearer ${STATE.jwt}`, 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'true' },
@@ -6698,21 +6654,22 @@ async function uploadDocReal(obraId, tipo, file) {
     });
     if (!upR.ok) { const t = await upR.text(); throw new Error('Storage: ' + upR.status + ' · ' + t.slice(0,150)); }
 
-    // 3) Insert l4_documentos_obra (trigger Supabase dispara VPS /process-documento)
     await supaPost('l4_documentos_obra', {
-      project_id: obraId,
-      tipo,
-      versao,
+      project_id: obraId, tipo, versao,
       nome_arquivo_original: file.name,
       storage_path: path,
       content_type: file.type || 'application/octet-stream',
-      status: 'processando',
-      canal_origem: 'site',
+      status: 'processando', canal_origem: 'site',
       uploaded_by: STATE.userId,
     });
 
-    // Não chama VPS direto — depende do trigger Supabase (igual à Base de Dados)
-    // O trigger dispara o n8n automaticamente via webhook configurado no Supabase
+    try {
+      await fetch(`${VPS}/process-documento`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'INSERT', table: 'l4_documentos_obra', schema: 'public', record: { project_id: obraId, tipo, storage_path: path }, old_record: null }),
+      });
+    } catch (e) { console.warn('VPS /process-documento fallback fail:', e.message); }
 
     renderDocumentos(obraId);
     alert(`"${file.name}" enviado. Gemini processando.`);
@@ -6768,79 +6725,6 @@ async function publicarDossie() {
   } catch (e) { if (statusEl) statusEl.textContent = 'erro: ' + e.message; }
 }
 
-// ─── HANDLER: Preview modal (aguardando_preview) ───────
-function showPreviewModal(docId, tipo, obraId) {
-  const old = document.getElementById('l4-preview-modal'); if (old) old.remove();
-  const wrap = document.createElement('div');
-  wrap.id = 'l4-preview-modal';
-  wrap.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px;';
-  document.body.appendChild(wrap);
-
-  supaGet('l4_documentos_obra', `?id=eq.${docId}&select=ia_output,nome_arquivo_original`)
-    .then(rows => {
-      const doc = rows[0];
-      if (!doc || !doc.ia_output) { wrap.remove(); alert('Dados não disponíveis.'); return; }
-      const out = doc.ia_output;
-      let tableHtml = '';
-
-      if (tipo === 'cronograma' && Array.isArray(out.tarefas)) {
-        tableHtml = `<p style="margin:0 0 8px;opacity:0.55;font-size:12px;">${out.tarefas.length} tarefas · data ref: ${out.data_referencia || '—'}</p>
-        <div style="overflow:auto;max-height:340px;">
-        <table style="width:100%;font-size:11px;border-collapse:collapse;font-family:monospace;">
-          <thead><tr style="background:#111;">${['WBS','Etapa','Início','Fim','%'].map(h=>`<th style="padding:6px 8px;text-align:left;white-space:nowrap;">${h}</th>`).join('')}</tr></thead>
-          <tbody>${out.tarefas.slice(0,50).map((t,i)=>`<tr style="background:${i%2?'rgba(255,255,255,0.03)':''}">
-            <td style="padding:4px 8px;">${t.wbs_id||''}</td>
-            <td style="padding:4px 8px;">${(t.nome_etapa||'').slice(0,55)}</td>
-            <td style="padding:4px 8px;">${t.inicio_planejado||'—'}</td>
-            <td style="padding:4px 8px;">${t.fim_planejado||'—'}</td>
-            <td style="padding:4px 8px;">${t.percentual_concluido??'—'}%</td>
-          </tr>`).join('')}</tbody>
-        </table></div>`;
-      } else if (tipo === 'orcamento' && Array.isArray(out.itens)) {
-        tableHtml = `<p style="margin:0 0 8px;opacity:0.55;font-size:12px;">${out.itens.length} itens · total: ${out.total_geral||'—'}</p>
-        <div style="overflow:auto;max-height:340px;">
-        <table style="width:100%;font-size:11px;border-collapse:collapse;font-family:monospace;">
-          <thead><tr style="background:#111;">${['Código','Descrição','Qtd','Un','Total'].map(h=>`<th style="padding:6px 8px;text-align:left;">${h}</th>`).join('')}</tr></thead>
-          <tbody>${out.itens.slice(0,50).map((t,i)=>`<tr style="background:${i%2?'rgba(255,255,255,0.03)':''}">
-            <td style="padding:4px 8px;">${t.codigo||''}</td>
-            <td style="padding:4px 8px;">${(t.descricao||'').slice(0,55)}</td>
-            <td style="padding:4px 8px;">${t.quantidade||''}</td>
-            <td style="padding:4px 8px;">${t.unidade||''}</td>
-            <td style="padding:4px 8px;">${t.valor_total||''}</td>
-          </tr>`).join('')}</tbody>
-        </table></div>`;
-      } else {
-        tableHtml = `<pre style="font-size:11px;overflow:auto;max-height:340px;white-space:pre-wrap;">${JSON.stringify(out,null,2).slice(0,3000)}</pre>`;
-      }
-
-      wrap.innerHTML = `<div style="background:#0A0A0A;color:#F4EFE7;border:1px solid rgba(255,255,255,0.12);max-width:780px;width:100%;padding:28px;max-height:88vh;overflow-y:auto;font-family:sans-serif;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-          <div>
-            <div style="font-family:monospace;font-size:10px;letter-spacing:0.2em;opacity:0.5;margin-bottom:4px;">DADOS EXTRAÍDOS · AGUARDANDO CONFIRMAÇÃO</div>
-            <div style="font-size:14px;">${doc.nome_arquivo_original||''}</div>
-          </div>
-          <button onclick="document.getElementById('l4-preview-modal').remove()" style="background:transparent;border:none;color:#F4EFE7;cursor:pointer;font-size:20px;padding:0 0 0 16px;">✕</button>
-        </div>
-        ${tableHtml}
-        <div style="display:flex;gap:12px;margin-top:20px;">
-          <button onclick="confirmDocPreview('${docId}','${obraId}')" style="flex:1;padding:12px;background:#1a5c1a;color:#F4EFE7;border:none;cursor:pointer;font-family:monospace;font-size:11px;letter-spacing:0.15em;">CONFIRMAR E LIBERAR PARA PIPELINE</button>
-          <button onclick="document.getElementById('l4-preview-modal').remove()" style="padding:12px 20px;background:transparent;color:rgba(244,239,231,0.55);border:1px solid rgba(244,239,231,0.18);cursor:pointer;font-family:monospace;font-size:11px;">CANCELAR</button>
-        </div>
-      </div>`;
-      wrap.onclick = e => { if (e.target === wrap) wrap.remove(); };
-    })
-    .catch(e => { wrap.remove(); alert('Erro ao carregar dados: ' + e.message); });
-}
-
-async function confirmDocPreview(docId, obraId) {
-  try {
-    await supaPatch('l4_documentos_obra', `?id=eq.${docId}`, { status: 'processado' });
-    document.getElementById('l4-preview-modal')?.remove();
-    delete STATE.obras_state[obraId]; // força re-fetch no próximo render
-    renderDocumentos(obraId);
-  } catch (e) { alert('Erro ao confirmar: ' + e.message); }
-}
-
 // ─── HANDLER: Export JSON pra rodar no Claude Code ─────
 async function exportarDados() {
   if (!STATE.obraAtiva || STATE.obraIsDemo) { alert('Selecione uma obra real.'); return; }
@@ -6871,7 +6755,6 @@ function renderPipeShell() {
 }
 
 // ─── PUBLIC pages ──────────────────────────────────────
-// Pills só Metodologia + Casos (match welcome). Manifesto+Contato vão pro cluster direito.
 const PUBLIC_NAV = [
   { id: 'metodologia', label: 'Metodologia', href: '#metodologia' },
   { id: 'casos',       label: 'Casos',        href: '#casos' },
@@ -6901,194 +6784,11 @@ function renderCasos() { buildPublicNav(document.querySelector('#view-casos .pub
 function renderManifesto() { buildPublicNav(document.querySelector('#view-manifesto .public-nav')); }
 function renderContato() { buildPublicNav(document.querySelector('#view-contato .public-nav')); }
 
-// ─── VIEW-INFO: WhatsApp Verification ──────────────────
-const INFO_WPP = '+5573988258146';
-let _infoPolling = null;
-let _infoTickTimer = null;
-let _infoCodigo = '';
-let _infoExpiraEm = null;
-let _infoCooldown = 0;
-
-async function renderInfo(userId) {
-  if (!userId) { location.hash = '#obras'; return; }
-  // reset UI
-  const card = document.getElementById('info-verify-card');
-  const verifiedEl = document.getElementById('info-verified-state');
-  if (card) card.hidden = false;
-  if (verifiedEl) verifiedEl.hidden = true;
-  const errEl = document.getElementById('info-error');
-  if (errEl) errEl.style.display = 'none';
-  _infoCodigo = ''; _infoExpiraEm = null; _infoCooldown = 0;
-  infoUpdateRegenBtn();
-
-  // stop stale timers
-  clearInterval(_infoPolling);
-  clearInterval(_infoTickTimer);
-
-  // generate / fetch code
-  await infoLoadCode(userId);
-
-  // poll every 3s for whatsapp_verificado_em
-  _infoPolling = setInterval(async () => {
-    try {
-      const rowsEng = await supaGet('l4_engenheiros', '?id=eq.' + userId + '&select=whatsapp_verificado_em&limit=1');
-      let verified = false;
-      if (rowsEng && rowsEng[0] && rowsEng[0].whatsapp_verificado_em) {
-        verified = true;
-      } else {
-        const rowsDisp = await supaGet('l4_dispositivos_whatsapp', '?user_id=eq.' + userId + '&select=verificado_em&limit=1');
-        if (rowsDisp && rowsDisp[0] && rowsDisp[0].verificado_em) {
-          verified = true;
-        }
-      }
-      if (verified) {
-        clearInterval(_infoPolling);
-        clearInterval(_infoTickTimer);
-        infoShowVerified();
-      }
-    } catch(e) {}
-  }, 3000);
-
-  // 1s tick: countdown timers
-  _infoTickTimer = setInterval(() => {
-    if (_infoCooldown > 0) { _infoCooldown--; infoUpdateRegenBtn(); }
-    if (_infoExpiraEm) {
-      const diff = Math.max(0, Math.floor((_infoExpiraEm - Date.now()) / 1000));
-      const timerEl = document.getElementById('info-timer');
-      if (timerEl) {
-        if (diff === 0) {
-          timerEl.textContent = 'Expirado';
-          timerEl.style.color = '#E87A7A';
-          const statusText = document.getElementById('info-status-text');
-          const spinner = document.getElementById('info-spinner');
-          if (statusText) statusText.textContent = 'Código expirado. Solicite um novo.';
-          if (statusText) statusText.style.color = '#E87A7A';
-          if (spinner) spinner.style.display = 'none';
-          const codeEl = document.getElementById('info-codigo');
-          if (codeEl) codeEl.style.color = '#E87A7A';
-        } else {
-          timerEl.textContent = String(Math.floor(diff / 60)).padStart(2,'0') + ':' + String(diff % 60).padStart(2,'0');
-        }
-      }
-    }
-  }, 1000);
-}
-
-async function infoLoadCode(userId) {
-  try {
-    const r = await fetch(SUPA_URL + '/rest/v1/rpc/rpc_gerar_codigo_whatsapp', {
-      method: 'POST',
-      headers: { 'apikey': SUPA_ANON_KEY, 'Authorization': 'Bearer ' + (STATE.jwt || SUPA_ANON_KEY), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId })
-    });
-    const data = await r.json();
-    if (data && data.success) {
-      _infoCodigo = data.codigo;
-      _infoExpiraEm = new Date(data.expira_em).getTime();
-      infoRenderCode(false);
-    } else if (data && data.reason === 'aguarde_60_segundos') {
-      _infoCooldown = 60;
-      infoUpdateRegenBtn();
-      // busca código existente
-      const rows = await supaGet('l4_codigos_whatsapp', '?user_id=eq.' + userId + '&usado_em=is.null&select=codigo,expira_em&order=criado_em.desc&limit=1');
-      if (rows && rows[0]) {
-        _infoCodigo = rows[0].codigo;
-        _infoExpiraEm = new Date(rows[0].expira_em).getTime();
-        infoRenderCode(false);
-      }
-    } else {
-      let msg = data?.message || 'sem detalhe';
-      if (data && data.reason === 'numero_nao_cadastrado') {
-        msg = 'Seu número de WhatsApp não está cadastrado nas obras da L4. Solicite ao administrador para vincular seu número de WhatsApp a esta conta.';
-      }
-      infoShowError('Erro ao gerar código (' + msg + ').');
-    }
-  } catch(e) {
-    infoShowError('Sem conexão. Verifique sua rede e recarregue.');
-  }
-}
-
-function infoRenderCode(expired) {
-  const el = document.getElementById('info-codigo');
-  if (el) {
-    el.textContent = _infoCodigo || '----';
-    el.style.color = expired ? '#E87A7A' : 'var(--hero-fg)';
-  }
-  const copyBtn = document.getElementById('info-copy-code');
-  if (copyBtn) copyBtn.disabled = !_infoCodigo || expired;
-}
-
-function infoShowVerified() {
-  STATE.whatsappVerificado = true;
-  localStorage.setItem('l4_verified', '1');
-  const card = document.getElementById('info-verify-card');
-  const verifiedEl = document.getElementById('info-verified-state');
-  if (card) card.hidden = true;
-  if (verifiedEl) verifiedEl.hidden = false;
-  setTimeout(() => { location.hash = '#obras'; }, 2200);
-}
-
-function infoShowError(msg) {
-  const el = document.getElementById('info-error');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-}
-
-function infoUpdateRegenBtn() {
-  const btn = document.getElementById('info-regen-btn');
-  if (!btn) return;
-  if (_infoCooldown > 0) {
-    btn.textContent = 'Aguarde ' + _infoCooldown + 's';
-    btn.style.color = 'var(--hero-mute-2)';
-    btn.disabled = true;
-  } else {
-    btn.textContent = 'Solicitar novo código';
-    btn.style.color = 'var(--hero-mute)';
-    btn.disabled = false;
-  }
-}
-
-async function infoRequestNew() {
-  if (_infoCooldown > 0) return;
-  const userId = location.hash.split('/')[1];
-  if (!userId) return;
-  _infoCooldown = 60;
-  infoUpdateRegenBtn();
-  const errEl = document.getElementById('info-error');
-  if (errEl) errEl.style.display = 'none';
-  // reset spinner/status
-  const statusText = document.getElementById('info-status-text');
-  const spinner = document.getElementById('info-spinner');
-  if (statusText) { statusText.textContent = 'Aguardando sua mensagem...'; statusText.style.color = 'var(--hero-mute)'; }
-  if (spinner) spinner.style.display = '';
-  const timerEl = document.getElementById('info-timer');
-  if (timerEl) { timerEl.textContent = '--:--'; timerEl.style.color = 'var(--hero-fg)'; }
-  await infoLoadCode(userId);
-}
-
-function infoCopy(type) {
-  const text = type === 'number' ? INFO_WPP : _infoCodigo;
-  if (!text) return;
-  navigator.clipboard.writeText(text).catch(() => {});
-  const btnId = type === 'number' ? 'info-copy-number' : 'info-copy-code';
-  const btn = document.getElementById(btnId);
-  if (!btn) return;
-  const orig = btn.textContent;
-  btn.textContent = 'Copiado ✓';
-  setTimeout(() => { btn.textContent = orig; }, 2000);
-}
-
 // ─── ROUTER ────────────────────────────────────────────
 function router() {
   const hash = location.hash.slice(1) || (STATE.jwt ? 'obras' : 'welcome');
   const [route, arg] = hash.split('/');
-
-  const PROTECTED_ROUTES = ['obras', 'obra', 'documentos', 'nova-obra', 'pipeline', 'relatorio'];
-  if (PROTECTED_ROUTES.includes(route) && !DEV_MODE && STATE.userId && !STATE.whatsappVerificado) {
-    location.hash = '#info/' + STATE.userId;
-    return;
-  }
-
-  ['view-welcome','view-login','view-obras','view-obras-v2','view-novaobra','view-info','view-documentos','view-obra','view-upload','view-pipeline','view-relatorio','view-metodologia','view-casos','view-manifesto','view-contato','view-admin'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; });
+  ['view-welcome','view-login','view-obras','view-obras-v2','view-novaobra','view-documentos','view-obra','view-upload','view-pipeline','view-relatorio','view-metodologia','view-casos','view-manifesto','view-contato','view-admin'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = true; });
   const shell = document.getElementById('app-shell');
   if (shell) shell.hidden = false;
 
@@ -7100,7 +6800,6 @@ function router() {
   else if (route === 'contato') { if (shell) shell.hidden = true; showId = 'view-contato'; crumb = 'CONTATO'; renderContato(); }
   else if (route === 'login' || route === 'cadastro') { if (shell) shell.hidden = true; showId = 'view-login'; crumb = 'LOGIN'; setLoginMode(route === 'cadastro'); resetLoginForm(); }
   else if (route === 'obras') { if (shell) shell.hidden = true; showId = 'view-obras-v2'; crumb = 'OBRAS'; renderObrasV2(); }
-  else if (route === 'info') { if (shell) shell.hidden = true; showId = 'view-info'; crumb = 'VERIFICAÇÃO'; renderInfo(arg); }
   else if (route === 'nova-obra') { if (shell) shell.hidden = true; showId = 'view-novaobra'; crumb = 'NOVA OBRA'; }
   else if (route === 'admin') {
     if (!isAdminMode() && !STATE.jwt) { location.hash = '#login'; return; }
@@ -7126,7 +6825,6 @@ function router() {
     });
   }
   else if (route === 'relatorio') {
-    // Dossiê SEMPRE renderiza (não redireciona). Se não houver dossiê publicado, mostra estado vazio.
     if (shell) shell.hidden = true; showId = 'view-relatorio'; crumb = 'DOSSIÊ';
     if (arg && arg.startsWith('run-')) setObraAtiva(arg.slice(4));
     loadDocsState(STATE.obraAtiva).then(() => renderRelatorio());
@@ -7153,28 +6851,16 @@ function setLoginMode(signup) {
   const lead = document.querySelector('#view-login .login-form-lead');
   const sub = document.querySelector('#view-login .login-form-submit');
   const foot = document.querySelector('#view-login .login-form-foot span:first-child');
-  const fldName = document.getElementById('fld-name');
-  const fldWpp = document.getElementById('fld-wpp');
-  const inpName = document.getElementById('li-name');
-  const inpWpp = document.getElementById('li-wpp');
   if (signup) {
     if (h) h.innerHTML = 'Crie sua <em>conta.</em>';
     if (lead) lead.textContent = 'Cadastro de novo cliente. Use o e-mail corporativo da construtora — ele identifica a equipe na plataforma.';
     if (sub) sub.innerHTML = 'Cadastrar <span style="font-family: var(--mono);">→</span>';
     if (foot) foot.innerHTML = 'Já tem conta? <a href="#login">Fazer login</a>';
-    if (fldName) fldName.style.display = '';
-    if (fldWpp) fldWpp.style.display = '';
-    if (inpName) inpName.required = true;
-    if (inpWpp) inpWpp.required = true;
   } else {
     if (h) h.innerHTML = 'Entre na <em>auditoria.</em>';
     if (lead) lead.textContent = 'Para sócios, engenheiros responsáveis e equipe L4. Sua sessão é assinada e o audit-log fica salvo na obra.';
     if (sub) sub.innerHTML = 'Entrar <span style="font-family: var(--mono);">→</span>';
     if (foot) foot.innerHTML = 'Sem conta? <a href="#cadastro">Cadastrar nova conta</a>';
-    if (fldName) fldName.style.display = 'none';
-    if (fldWpp) fldWpp.style.display = 'none';
-    if (inpName) { inpName.required = false; inpName.value = ''; }
-    if (inpWpp) { inpWpp.required = false; inpWpp.value = ''; }
   }
 }
 
@@ -7207,14 +6893,6 @@ document.getElementById('login-form').addEventListener('submit', async e => {
   const email = document.getElementById('li-email').value.trim();
   const pass = document.getElementById('li-pass').value;
   if (!email || !pass) { setLoginStatus('Preencha email e senha.', 'err'); return; }
-  
-  let name = '', wpp = '';
-  if (LOGIN_MODE_SIGNUP) {
-    name = document.getElementById('li-name').value.trim();
-    wpp = document.getElementById('li-wpp').value.trim();
-    if (!name || !wpp) { setLoginStatus('Preencha nome e WhatsApp.', 'err'); return; }
-  }
-
   const sub = e.target.querySelector('.login-form-submit');
   const prev = sub.innerHTML;
   sub.disabled = true; sub.innerHTML = (LOGIN_MODE_SIGNUP ? 'Cadastrando...' : 'Entrando...');
@@ -7230,30 +6908,6 @@ document.getElementById('login-form').addEventListener('submit', async e => {
         sub.disabled = false; sub.innerHTML = prev;
         return;
       }
-      
-      // Criar o perfil do engenheiro em l4_engenheiros usando o JWT do usuário recém-criado
-      if (STATE.userId && STATE.jwt) {
-        setLoginStatus('Criando perfil de engenheiro...', 'info');
-        const profileBody = {
-          id: STATE.userId,
-          nome: name,
-          whatsapp: wpp
-        };
-        const rProfile = await fetch(`${SUPA_URL}/rest/v1/l4_engenheiros`, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPA_ANON_KEY,
-            'Authorization': `Bearer ${STATE.jwt}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          },
-          body: JSON.stringify(profileBody)
-        });
-        if (!rProfile.ok) {
-          const t = await rProfile.text();
-          throw new Error('Erro ao criar perfil de engenheiro: ' + t);
-        }
-      }
     } else {
       const data = await supaAuthLogin(email, pass);
       console.log('[auth] login response', data);
@@ -7261,44 +6915,7 @@ document.getElementById('login-form').addEventListener('submit', async e => {
     const hdUser = document.getElementById('hd-user');
     if (hdUser) hdUser.textContent = email.split('@')[0];
     setLoginStatus('OK · entrando...', 'ok');
-    
-    let isVerified = true;
-    if (!DEV_MODE && STATE.userId) {
-      try {
-        const rowsEng = await supaGet('l4_engenheiros', '?id=eq.' + STATE.userId + '&select=whatsapp_verificado_em&limit=1');
-        if (rowsEng && rowsEng[0] && rowsEng[0].whatsapp_verificado_em) {
-          STATE.whatsappVerificado = true;
-          localStorage.setItem('l4_verified', '1');
-        } else {
-          // Fallback: consulta l4_dispositivos_whatsapp
-          const rowsDisp = await supaGet('l4_dispositivos_whatsapp', '?user_id=eq.' + STATE.userId + '&select=verificado_em&limit=1');
-          if (rowsDisp && rowsDisp[0] && rowsDisp[0].verificado_em) {
-            STATE.whatsappVerificado = true;
-            localStorage.setItem('l4_verified', '1');
-          } else {
-            isVerified = false;
-            STATE.whatsappVerificado = false;
-            localStorage.removeItem('l4_verified');
-          }
-        }
-      } catch (err) {
-        console.warn('Erro ao checar verificação:', err);
-        isVerified = true;
-      }
-    } else if (DEV_MODE) {
-      STATE.whatsappVerificado = true;
-      localStorage.setItem('l4_verified', '1');
-    }
-
-    if (LOGIN_MODE_SIGNUP && STATE.userId) {
-      location.hash = '#info/' + STATE.userId;
-    } else if (isUserAdmin()) {
-      location.hash = '#admin';
-    } else if (isVerified) {
-      location.hash = '#obras';
-    } else {
-      location.hash = '#info/' + STATE.userId;
-    }
+    location.hash = isUserAdmin() ? '#admin' : '#obras';
   } catch (err) {
     console.error('[auth] error', err);
     setLoginStatus((LOGIN_MODE_SIGNUP ? 'Cadastro' : 'Login') + ' falhou: ' + err.message, 'err');
@@ -7320,7 +6937,6 @@ document.getElementById('novaobra-form').addEventListener('submit', async e => {
     STATE.obraAtiva = slug; e.target.reset(); location.hash = '#documentos/' + slug; return;
   }
   await ensureFreshToken();
-  // Compõe endereço com cidade+uf (schema só tem 1 campo endereco_obra)
   const cidade = fd.get('cidade')?.trim() || '';
   const uf = (fd.get('uf')?.trim() || '').toUpperCase();
   const endereco = [cidade, uf].filter(Boolean).join(' / ');
@@ -7558,24 +7174,20 @@ document.addEventListener('click', e => {
   if (e.target.id === 'btn-ver-dossie' && !e.target.disabled) location.hash = '#relatorio/run-' + STATE.obraAtiva;
 });
 
-// ─── RELATORIO (Dossiê) — injeta dossie_html publicado, ou estado vazio ──
 function renderRelatorio() {
   const wrap = document.querySelector('#view-relatorio .doss-wrap');
   if (!wrap) return;
   const st = STATE.obras_state[STATE.obraAtiva];
   const html = st?.dossie_html;
   if (html) { wrap.innerHTML = html; return; }
-  if (STATE.obraIsDemo) return; // demo: mantém mock A4 hardcoded no HTML
-  // Real obra sem dossiê publicado: estado vazio
+  if (STATE.obraIsDemo) return;
   wrap.innerHTML = `
-    <section class="doss-page" style="display:flex; align-items:center; justify-content:center; min-height:600px;">
-      <div style="text-align:center; max-width:480px; padding:48px;">
+    <section class="doss-page" style="display:flex; align-items:center; justify-content:center; min-height:480px;">
+      <div style="text-align:center; max-width:420px; padding:32px;">
         <div class="caps micro mute" style="letter-spacing:0.32em;">DOSSIÊ · NÃO PUBLICADO</div>
-        <h2 class="serif-h" style="margin-top:16px; font-size:32px;">Dossiê ainda não disponível</h2>
-        <p style="margin-top:16px; color:#666; line-height:1.6;">
-          A equipe L4 ainda não publicou a entrega desta obra. Quando estiver pronta, o dossiê executivo aparecerá aqui.
-        </p>
-        <a href="#documentos/${STATE.obraAtiva}" style="display:inline-block; margin-top:24px; padding:12px 24px; border:1px solid #000; font-family:var(--mono); font-size:11px; letter-spacing:0.2em; text-transform:uppercase; text-decoration:none; color:#000;">Voltar aos documentos</a>
+        <h2 class="serif-h" style="margin-top:14px; font-size:24px;">Dossiê ainda não disponível</h2>
+        <p style="margin-top:14px; color:#666; line-height:1.6; font-size:14px;">A equipe L4 ainda não publicou a entrega desta obra. Quando estiver pronta, aparecerá aqui.</p>
+        <a href="#documentos/${STATE.obraAtiva}" style="display:inline-block; margin-top:20px; padding:12px 22px; border:1px solid #000; font-family:var(--mono); font-size:11px; letter-spacing:0.2em; text-transform:uppercase; text-decoration:none; color:#000;">Voltar aos documentos</a>
       </div>
     </section>`;
 }
@@ -7607,7 +7219,7 @@ document.addEventListener('click', e => {
   if (pill && !pill.classList.contains('locked')) {
     const t = pill.dataset.target;
     if (t === 'documentos') location.hash = '#documentos/' + STATE.obraAtiva;
-    else if (t === 'dashboard') window.open('https://landingl4.vercel.app/gestao/' + STATE.obraAtiva, '_blank');
+    else if (t === 'dashboard') location.hash = '#obra/' + STATE.obraAtiva;
     else if (t === 'pipeline')  location.hash = '#pipeline/run-' + STATE.obraAtiva;
     else if (t === 'dossie')    location.hash = '#relatorio/run-' + STATE.obraAtiva;
   }
@@ -7623,12 +7235,10 @@ if (btnLogout) btnLogout.addEventListener('click', doLogout);
   const savedRef = localStorage.getItem('l4_refresh');
   const savedEmail = localStorage.getItem('l4_user');
   const savedUserId = localStorage.getItem('l4_userId');
-  const verified = localStorage.getItem('l4_verified') === '1';
   if (savedJwt) STATE.jwt = savedJwt;
   if (savedRef) STATE.refreshToken = savedRef;
   if (savedEmail) { STATE.auth = { email: savedEmail }; STATE.emailUser = savedEmail; const hdUser = document.getElementById('hd-user'); if (hdUser) hdUser.textContent = savedEmail.split('@')[0]; }
   if (savedUserId) STATE.userId = savedUserId;
-  STATE.whatsappVerificado = verified;
 
   // Restore obra
   const savedObra = localStorage.getItem('l4_obra_ativa');
@@ -7646,10 +7256,9 @@ if (btnLogout) btnLogout.addEventListener('click', doLogout);
   router();
 })();
 
-// Injeta link "Admin" em todos os navs quando ?admin=1
+// Injeta link "Admin" no welcome quando ?admin=1
 function injectAdminCtas() {
   if (!isUserAdmin()) return;
-  // Welcome
   const group = document.querySelector('#view-welcome .welcome-cta-group');
   if (group && !group.querySelector('[data-admin-link]')) {
     const a = document.createElement('a');
@@ -7659,22 +7268,18 @@ function injectAdminCtas() {
     a.style.background = '#D6A874';
     group.appendChild(a);
   }
-  // Client nav em todas as views logadas (obras-v2, documentos, view-obra, view-pipeline)
   document.querySelectorAll('.client-nav-end').forEach(end => {
     if (end.querySelector('[data-admin-link]')) return;
     const a = document.createElement('a');
-    a.href = '#admin';
-    a.textContent = 'Admin';
+    a.href = '#admin'; a.textContent = 'Admin';
     a.setAttribute('data-admin-link', '1');
-    a.style.cssText = 'padding:8px 14px; background:#D6A874; color:#15110E; font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; text-decoration:none; border-radius:99px; margin-right:8px;';
+    a.style.cssText = 'padding:6px 12px; background:#D6A874; color:#15110E; font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; text-decoration:none; border-radius:99px; margin-right:6px;';
     end.insertBefore(a, end.firstChild);
   });
 }
 
-// Re-injeta CTAs em qualquer mudança de rota (não só welcome)
 function tryInjectAdminCtas() { setTimeout(injectAdminCtas, 60); }
 
-// ─── ADMIN PANEL ───────────────────────────────────────
 async function renderAdmin() {
   const userEl = document.getElementById('client-user-admin');
   if (userEl) userEl.textContent = (STATE.auth?.email || 'admin').split('@')[0];
@@ -7682,12 +7287,9 @@ async function renderAdmin() {
   const stats = document.getElementById('admin-stats');
   const countEl = document.getElementById('admin-count');
   if (!grid) return;
-
-  grid.innerHTML = '<div style="padding:32px; text-align:center; color:rgba(244,239,231,0.5); font-family:var(--mono); font-size:12px;">CARREGANDO...</div>';
-
-  if (!STATE.jwt) { grid.innerHTML = '<div style="padding:32px; color:#ED7878;">Login necessário.</div>'; return; }
+  grid.innerHTML = '<div style="padding:24px; text-align:center; color:rgba(244,239,231,0.5); font-family:var(--mono); font-size:11px;">CARREGANDO...</div>';
+  if (!STATE.jwt) { grid.innerHTML = '<div style="padding:24px; color:#ED7878;">Login necessário.</div>'; return; }
   await ensureFreshToken();
-
   let rows;
   try {
     const _rpc = await fetch(`${SUPA_URL}/rest/v1/rpc/get_l4_clientes`, { method:'POST', headers:{ 'apikey': SUPA_ANON_KEY, 'Authorization': 'Bearer '+STATE.jwt, 'Content-Type':'application/json' }, body:'{}' });
@@ -7695,31 +7297,20 @@ async function renderAdmin() {
     rows = await _rpc.json();
     rows.sort((a,b)=> (b.obra_criada_em||'').localeCompare(a.obra_criada_em||''));
   } catch (e) {
-    grid.innerHTML = `<div style="padding:32px; color:#ED7878;">Falha: ${e.message}<br><br>Confirma que rodou o SQL admin no Supabase e que seu email é admin.</div>`;
+    grid.innerHTML = `<div style="padding:24px; color:#ED7878;">Falha: ${e.message}</div>`;
     return;
   }
-
-  // Stats
   const total = rows.length;
   const clientes = new Set(rows.map(r => r.user_email)).size;
   const emAnalise = rows.filter(r => r.aud_status === 'em_analise').length;
   const prontos = rows.filter(r => r.aud_status === 'pronto').length;
-
   if (countEl) countEl.textContent = '/ ' + String(total).padStart(2,'0');
-  stats.innerHTML = `
-    ${[
-      ['Clientes', clientes],
-      ['Obras', total],
-      ['Em análise', emAnalise, '#E8B354'],
-      ['Prontos', prontos, '#6DCB8E'],
-    ].map(([lbl,val,color]) => `
-      <div style="background:rgba(244,239,231,0.04); border:1px solid rgba(244,239,231,0.14); padding:18px 20px;">
-        <div style="font-family:var(--mono); font-size:10px; letter-spacing:0.28em; text-transform:uppercase; color:rgba(244,239,231,0.55);">${lbl}</div>
-        <div style="font-family:'Source Serif 4',serif; font-size:32px; font-weight:500; margin-top:6px; color:${color||'#F4EFE7'};">${val}</div>
-      </div>
-    `).join('')}
-  `;
-
+  stats.innerHTML = [
+    ['Clientes', clientes, '#F4EFE7'],
+    ['Obras', total, '#F4EFE7'],
+    ['Em análise', emAnalise, '#E8B354'],
+    ['Prontos', prontos, '#6DCB8E'],
+  ].map(([lbl,val,color]) => `<div style="background:rgba(244,239,231,0.04); border:1px solid rgba(244,239,231,0.14); padding:14px;"><div style="font-family:var(--mono); font-size:9px; letter-spacing:0.24em; text-transform:uppercase; color:rgba(244,239,231,0.55);">${lbl}</div><div style="font-family:'Source Serif 4',serif; font-size:24px; font-weight:500; margin-top:4px; color:${color};">${val}</div></div>`).join('');
   renderAdminRows(rows);
   document.getElementById('admin-search').oninput = () => renderAdminRows(rows);
   document.getElementById('admin-filter').onchange = () => renderAdminRows(rows);
@@ -7730,59 +7321,16 @@ function renderAdminRows(allRows) {
   const search = (document.getElementById('admin-search')?.value || '').toLowerCase();
   const filter = document.getElementById('admin-filter')?.value || '';
   const rows = allRows.filter(r => {
-    if (search && !(
-      (r.nome_projeto||'').toLowerCase().includes(search) ||
-      (r.user_email||'').toLowerCase().includes(search) ||
-      (r.endereco_obra||'').toLowerCase().includes(search) ||
-      (r.whatsapp_engenheiro||'').toLowerCase().includes(search)
-    )) return false;
-    if (filter) {
-      const status = r.aud_status || 'inicial';
-      if (status !== filter) return false;
-    }
+    if (search && !((r.nome_projeto||'').toLowerCase().includes(search) || (r.user_email||'').toLowerCase().includes(search) || (r.endereco_obra||'').toLowerCase().includes(search) || (r.whatsapp_engenheiro||'').toLowerCase().includes(search))) return false;
+    if (filter) { const status = r.aud_status || 'inicial'; if (status !== filter) return false; }
     return true;
   });
-  if (!rows.length) { grid.innerHTML = '<div style="padding:48px; text-align:center; color:rgba(244,239,231,0.55); font-family:var(--mono); font-size:12px; border:1px dashed rgba(244,239,231,0.18);">NENHUM RESULTADO</div>'; return; }
+  if (!rows.length) { grid.innerHTML = '<div style="padding:32px; text-align:center; color:rgba(244,239,231,0.55); font-family:var(--mono); font-size:11px; border:1px dashed rgba(244,239,231,0.18);">NENHUM RESULTADO</div>'; return; }
   grid.innerHTML = rows.map(r => {
     const status = r.aud_status || 'inicial';
     const statusLabel = { inicial: 'Sem solicitação', em_analise: 'Em análise', pronto: 'Pronto' }[status];
     const statusColor = { inicial: 'rgba(244,239,231,0.55)', em_analise: '#E8B354', pronto: '#6DCB8E' }[status];
-    return `
-      <details style="background:rgba(244,239,231,0.04); border:1px solid rgba(244,239,231,0.14); padding:0;">
-        <summary style="padding:18px 22px; cursor:pointer; display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:20px; align-items:center; list-style:none;">
-          <div>
-            <div style="font-family:'Source Serif 4',serif; font-size:16px; font-weight:500;">${r.nome_projeto || '(sem nome)'}</div>
-            <div style="font-family:var(--mono); font-size:11px; color:rgba(244,239,231,0.55); margin-top:4px;">${r.endereco_obra || '—'}</div>
-          </div>
-          <div>
-            <div style="font-family:var(--mono); font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(244,239,231,0.55);">Cliente</div>
-            <div style="font-family:var(--mono); font-size:13px; margin-top:4px;">${r.user_email || '—'}</div>
-            <div style="font-family:var(--mono); font-size:11px; color:rgba(244,239,231,0.55); margin-top:2px;">${r.whatsapp_engenheiro || ''}</div>
-          </div>
-          <div>
-            <div style="font-family:var(--mono); font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(244,239,231,0.55);">Status</div>
-            <div style="font-family:var(--mono); font-size:12px; color:${statusColor}; margin-top:4px;">● ${statusLabel}</div>
-            <div style="font-family:var(--mono); font-size:11px; color:rgba(244,239,231,0.55); margin-top:2px;">${r.docs_count||0} doc(s)</div>
-          </div>
-          <div style="font-family:var(--mono); font-size:18px; color:rgba(244,239,231,0.55);">▾</div>
-        </summary>
-        <div style="padding:0 22px 22px;" id="adm-detail-${r.project_id}">
-          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
-            <button class="client-pill-ghost" onclick="adminOpenObra('${r.project_id}')" style="font-size:11px;">Abrir como cliente</button>
-            <button class="client-pill-ghost" onclick="adminExport('${r.project_id}','${(r.nome_projeto||'obra').replace(/'/g,'')}')" style="font-size:11px;">Exportar JSON</button>
-            <button class="client-pill-ghost" onclick="adminLoadDocs('${r.project_id}')" style="font-size:11px;">Listar documentos</button>
-            <button class="client-pill-ghost" onclick="adminPublishPrompt('${r.project_id}')" style="font-size:11px;">Publicar dossiê</button>
-          </div>
-          <div id="adm-docs-${r.project_id}" style="font-family:var(--mono); font-size:11px; color:rgba(244,239,231,0.7);"></div>
-          <div id="adm-publish-${r.project_id}"></div>
-          <div style="margin-top:14px; font-family:var(--mono); font-size:10px; color:rgba(244,239,231,0.4); letter-spacing:0.15em;">
-            ID: ${r.project_id} · USER ID: ${r.user_id || '—'}
-            ${r.aud_solicitada ? '· solicitado ' + new Date(r.aud_solicitada).toLocaleString('pt-BR') : ''}
-            ${r.aud_concluida ? '· concluído ' + new Date(r.aud_concluida).toLocaleString('pt-BR') : ''}
-          </div>
-        </div>
-      </details>
-    `;
+    return `<details style="background:rgba(244,239,231,0.04); border:1px solid rgba(244,239,231,0.14);"><summary style="padding:14px 16px; cursor:pointer; list-style:none;"><div style="font-family:'Source Serif 4',serif; font-size:15px; font-weight:500;">${r.nome_projeto || '(sem nome)'}</div><div style="font-family:var(--mono); font-size:11px; color:rgba(244,239,231,0.55); margin-top:4px;">${r.user_email || '—'}</div><div style="font-family:var(--mono); font-size:11px; color:${statusColor}; margin-top:4px;">● ${statusLabel} · ${r.docs_count||0} doc(s)</div></summary><div style="padding:0 16px 16px;"><div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;"><button onclick="adminOpenObra('${r.project_id}')" style="font-size:11px; padding:8px 12px; background:rgba(244,239,231,0.08); color:#F4EFE7; border:1px solid rgba(244,239,231,0.18); font-family:var(--mono); cursor:pointer;">Abrir</button><button onclick="adminExport('${r.project_id}','${(r.nome_projeto||'obra').replace(/'/g,'')}')" style="font-size:11px; padding:8px 12px; background:rgba(244,239,231,0.08); color:#F4EFE7; border:1px solid rgba(244,239,231,0.18); font-family:var(--mono); cursor:pointer;">JSON</button><button onclick="adminLoadDocs('${r.project_id}')" style="font-size:11px; padding:8px 12px; background:rgba(244,239,231,0.08); color:#F4EFE7; border:1px solid rgba(244,239,231,0.18); font-family:var(--mono); cursor:pointer;">Docs</button><button onclick="adminPublishPrompt('${r.project_id}')" style="font-size:11px; padding:8px 12px; background:rgba(214,168,116,0.18); color:#D6A874; border:1px solid #D6A874; font-family:var(--mono); cursor:pointer;">Publicar</button></div><div style="font-family:var(--mono); font-size:11px; color:rgba(244,239,231,0.7);">${r.endereco_obra || ''} ${r.whatsapp_engenheiro ? '· '+r.whatsapp_engenheiro : ''}</div><div id="adm-docs-${r.project_id}" style="font-family:var(--mono); font-size:10px; color:rgba(244,239,231,0.7); margin-top:8px;"></div><div id="adm-publish-${r.project_id}"></div></div></details>`;
   }).join('');
 }
 
@@ -7792,16 +7340,10 @@ async function adminLoadDocs(projectId) {
   el.textContent = 'carregando...';
   try {
     const docs = await supaGet('l4_documentos_obra', `?project_id=eq.${projectId}&select=id,tipo,versao,status,nome_arquivo_original,storage_path,created_at&order=created_at.desc`);
-    if (!docs.length) { el.textContent = '— nenhum documento enviado —'; return; }
-    el.innerHTML = '<div style="display:grid; grid-template-columns:80px 1fr 100px 140px auto; gap:8px; padding:8px 0; border-bottom:1px solid rgba(244,239,231,0.14); font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(244,239,231,0.55);"><span>TIPO</span><span>ARQUIVO</span><span>STATUS</span><span>DATA</span><span></span></div>' + docs.map(d => {
-      const dlUrl = `${SUPA_URL}/storage/v1/object/documentos-obra/${d.storage_path}`;
-      return `<div style="display:grid; grid-template-columns:80px 1fr 100px 140px auto; gap:8px; padding:8px 0; border-bottom:1px solid rgba(244,239,231,0.06);">
-        <span>${d.tipo} v${d.versao}</span>
-        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.nome_arquivo_original||'—'}</span>
-        <span style="color:${d.status==='processado'?'#6DCB8E':d.status==='erro'?'#ED7878':'#E8B354'};">${d.status||'?'}</span>
-        <span style="color:rgba(244,239,231,0.5);">${new Date(d.created_at).toLocaleString('pt-BR')}</span>
-        <a href="${dlUrl}" target="_blank" style="color:#D6A874; text-decoration:none;">baixar ↗</a>
-      </div>`;
+    if (!docs.length) { el.textContent = '— nenhum doc —'; return; }
+    el.innerHTML = docs.map(d => {
+      const url = `${SUPA_URL}/storage/v1/object/documentos-obra/${d.storage_path}`;
+      return `<div style="padding:6px 0; border-bottom:1px solid rgba(244,239,231,0.08);">${d.tipo} v${d.versao} · ${d.nome_arquivo_original||'—'} · <a href="${url}" target="_blank" style="color:#D6A874;">baixar ↗</a></div>`;
     }).join('');
   } catch (e) { el.textContent = 'erro: ' + e.message; }
 }
@@ -7815,41 +7357,30 @@ async function adminExport(projectId, nome) {
     const bundle = { obra: nome, project_id: projectId, exportado_em: new Date().toISOString(), documentos: byTipo };
     const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `L4-${nome.replace(/\s+/g,'_')}.json`;
+    const a = document.createElement('a'); a.href = url; a.download = `L4-${nome.replace(/\s+/g,'_')}.json`;
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  } catch (e) { alert('Erro export: ' + e.message); }
+  } catch (e) { alert('Erro: ' + e.message); }
 }
 
 function adminPublishPrompt(projectId) {
   const wrap = document.getElementById('adm-publish-' + projectId);
   if (!wrap) return;
   if (wrap.innerHTML) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = `
-    <div style="margin-top:14px; padding:14px; background:rgba(214,168,116,0.06); border:1px solid rgba(214,168,116,0.25);">
-      <div style="font-family:var(--mono); font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#D6A874; margin-bottom:8px;">PUBLICAR DOSSIÊ</div>
-      <textarea id="adm-html-${projectId}" placeholder="Cole o HTML do dossiê gerado..." style="width:100%; min-height:120px; padding:10px; font-family:var(--mono); font-size:11px; background:rgba(0,0,0,0.3); color:#F4EFE7; border:1px solid rgba(244,239,231,0.18);"></textarea>
-      <button class="client-pill-solid" style="margin-top:10px; font-size:12px;" onclick="adminPublish('${projectId}')">Publicar (status → pronto)</button>
-      <span id="adm-pub-status-${projectId}" style="margin-left:12px; font-family:var(--mono); font-size:11px; color:rgba(244,239,231,0.55);"></span>
-    </div>
-  `;
+  wrap.innerHTML = `<div style="margin-top:10px; padding:12px; background:rgba(214,168,116,0.08); border:1px solid #D6A874;"><textarea id="adm-html-${projectId}" placeholder="Cole HTML do dossiê..." style="width:100%; min-height:100px; padding:8px; font-family:var(--mono); font-size:11px; background:rgba(0,0,0,0.3); color:#F4EFE7; border:1px solid rgba(244,239,231,0.18);"></textarea><button onclick="adminPublish('${projectId}')" style="margin-top:8px; padding:10px 16px; background:#D6A874; color:#15110E; border:0; font-family:var(--mono); font-size:11px; font-weight:600; cursor:pointer;">Publicar</button> <span id="adm-pub-status-${projectId}" style="font-size:11px; color:rgba(244,239,231,0.55);"></span></div>`;
 }
 
 async function adminPublish(projectId) {
   const ta = document.getElementById('adm-html-' + projectId);
   const html = (ta?.value || '').trim();
-  if (!html) { alert('Cole o HTML do dossiê.'); return; }
+  if (!html) { alert('Cole o HTML.'); return; }
   const statusEl = document.getElementById('adm-pub-status-' + projectId);
   statusEl.textContent = 'publicando...';
   await ensureFreshToken();
   try {
     const auds = await supaGet('l4_auditorias', `?project_id=eq.${projectId}&select=id&order=solicitado_em.desc&limit=1`);
     const audId = auds[0]?.id;
-    if (audId) {
-      await supaPatch('l4_auditorias', `?id=eq.${audId}`, { status: 'pronto', dossie_html: html, concluido_em: new Date().toISOString() });
-    } else {
-      await supaPost('l4_auditorias', { project_id: projectId, status: 'pronto', dossie_html: html, concluido_em: new Date().toISOString(), solicitado_por: STATE.userId });
-    }
+    if (audId) await supaPatch('l4_auditorias', `?id=eq.${audId}`, { status: 'pronto', dossie_html: html, concluido_em: new Date().toISOString() });
+    else await supaPost('l4_auditorias', { project_id: projectId, status: 'pronto', dossie_html: html, concluido_em: new Date().toISOString(), solicitado_por: STATE.userId });
     statusEl.textContent = '✓ publicado';
     setTimeout(() => renderAdmin(), 600);
   } catch (e) { statusEl.textContent = 'erro: ' + e.message; }
